@@ -5,6 +5,7 @@ import (
 
 	"github.com/dedis/kyber"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/drynx/lib/proof"
 )
 
 // EncodeCosim computes the elements needed to compute cosine similarity
@@ -14,7 +15,7 @@ func EncodeCosim(rijs, riks []int64, pubKey kyber.Point) ([]libunlynx.CipherText
 }
 
 // EncodeCosimWithProofs computes the elements needed to compute cosine similarity with the proof of range
-func EncodeCosimWithProofs(rijs, riks []int64, pubKey kyber.Point, sigs [][]libunlynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libunlynx.CreateProof) {
+func EncodeCosimWithProofs(rijs, riks []int64, pubKey kyber.Point, sigs [][]proof.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []proof.CreateProof) {
 	//sum the rijs
 	rijs_sum := int64(0)
 	riks_sum := int64(0)
@@ -51,18 +52,18 @@ func EncodeCosimWithProofs(rijs, riks []int64, pubKey kyber.Point, sigs [][]libu
 		return result_encrypted, resultClear, nil
 	}
 
-	createProofs := make([]libunlynx.CreateProof, len(resultClear))
+	createProofs := make([]proof.CreateProof, len(resultClear))
 	wg = libunlynx.StartParallelize(len(resultClear))
 	for i, v := range resultClear {
 		if libunlynx.PARALLELIZE {
 			go func(i int, v int64) {
 				defer wg.Done()
 				//input range validation proof
-				createProofs[i] = libunlynx.CreateProof{Sigs: libunlynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
+				createProofs[i] = proof.CreateProof{Sigs: proof.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
 			}(i, v)
 		} else {
 			//input range validation proof
-			createProofs[i] = libunlynx.CreateProof{Sigs: libunlynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
+			createProofs[i] = proof.CreateProof{Sigs: proof.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
 		}
 
 	}

@@ -3,6 +3,7 @@ package encoding
 import (
 	"github.com/dedis/kyber"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/drynx/lib/proof"
 )
 
 // EncodeModelEvaluation encodes the R-score statistic at data providers
@@ -12,7 +13,7 @@ func EncodeModelEvaluation(input_y []int64, input_pred []int64, pubKey kyber.Poi
 }
 
 // EncodeModelEvaluationWithProofs encodes the R-score statistic at data providers with range proofs
-func EncodeModelEvaluationWithProofs(input_y []int64, input_pred []int64, pubKey kyber.Point, sigs [][]libunlynx.PublishSignature, ranges []*[]int64) ([]libunlynx.CipherText, []int64, []libunlynx.CreateProof) {
+func EncodeModelEvaluationWithProofs(input_y []int64, input_pred []int64, pubKey kyber.Point, sigs [][]proof.PublishSignature, ranges []*[]int64) ([]libunlynx.CipherText, []int64, []proof.CreateProof) {
 	//input_y is the list of true y values
 	//input_pred is the list of predictions
 
@@ -60,18 +61,18 @@ func EncodeModelEvaluationWithProofs(input_y []int64, input_pred []int64, pubKey
 	if sigs == nil {return Ciphertext_Tuple, []int64{0}, nil}
 
 	//input range validation proof
-	createRangeProof := make([]libunlynx.CreateProof, len(plaintext_values))
+	createRangeProof := make([]proof.CreateProof, len(plaintext_values))
 	wg := libunlynx.StartParallelize(len(createRangeProof))
 	for i, v := range plaintext_values {
 		if libunlynx.PARALLELIZE {
 			go func(i int, v int64) {
 				defer wg.Done()
 				//input range validation proof
-				createRangeProof[i] = libunlynx.CreateProof{Sigs: libunlynx.ReadColumn(sigs, int(i)), U: (*ranges[i])[0], L: (*ranges[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: Ciphertext_Tuple[i]}
+				createRangeProof[i] = proof.CreateProof{Sigs: proof.ReadColumn(sigs, int(i)), U: (*ranges[i])[0], L: (*ranges[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: Ciphertext_Tuple[i]}
 				}(i, v)
 		} else {
 			//input range validation proof
-			createRangeProof[i] = libunlynx.CreateProof{Sigs: libunlynx.ReadColumn(sigs, int(i)), U: (*ranges[i])[0], L: (*ranges[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: Ciphertext_Tuple[i]}
+			createRangeProof[i] = proof.CreateProof{Sigs: proof.ReadColumn(sigs, int(i)), U: (*ranges[i])[0], L: (*ranges[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: Ciphertext_Tuple[i]}
 		}
 	}
 	libunlynx.EndParallelize(wg)

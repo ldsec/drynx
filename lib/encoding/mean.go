@@ -3,6 +3,7 @@ package encoding
 import (
 	"github.com/dedis/kyber"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/drynx/lib/proof"
 )
 
 // EncodeMean computes the mean of query results
@@ -12,7 +13,7 @@ func EncodeMean(input []int64, pubKey kyber.Point) ([]libunlynx.CipherText, []in
 }
 
 // EncodeMeanWithProofs computes the mean of query results with the proof of range
-func EncodeMeanWithProofs(input []int64, pubKey kyber.Point, sigs [][]libunlynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libunlynx.CreateProof) {
+func EncodeMeanWithProofs(input []int64, pubKey kyber.Point, sigs [][]proof.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []proof.CreateProof) {
 	//sum the local DP's query results
 	sum := int64(0)
 	for _, el := range input {
@@ -40,18 +41,18 @@ func EncodeMeanWithProofs(input []int64, pubKey kyber.Point, sigs [][]libunlynx.
 		return result_encrypted, resultClear, nil
 	}
 
-	createProofs := make([]libunlynx.CreateProof, len(resultClear))
+	createProofs := make([]proof.CreateProof, len(resultClear))
 	wg1 := libunlynx.StartParallelize(len(resultClear))
 	for i, v := range resultClear {
 		if libunlynx.PARALLELIZE {
 			go func(i int, v int64) {
 				defer wg1.Done()
 				//input range validation proof
-				createProofs[i] = libunlynx.CreateProof{Sigs: libunlynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
+				createProofs[i] = proof.CreateProof{Sigs: proof.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
 			}(i, v)
 		} else {
 			//input range validation proof
-			createProofs[i] = libunlynx.CreateProof{Sigs: libunlynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
+			createProofs[i] = proof.CreateProof{Sigs: proof.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
 		}
 
 	}

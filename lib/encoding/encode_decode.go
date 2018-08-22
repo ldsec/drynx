@@ -4,20 +4,21 @@ import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/common"
+	"github.com/lca1/drynx/lib"
+	"github.com/lca1/drynx/lib/proof"
 )
 
-func Encode(datas [][]int64, pubKey kyber.Point, signatures [][]libunlynx.PublishSignature, ranges []*[]int64, operation common.Operation) ([]libunlynx.CipherText, []int64, []libunlynx.CreateProof) {
+func Encode(datas [][]int64, pubKey kyber.Point, signatures [][]proof.PublishSignature, ranges []*[]int64, operation lib.Operation) ([]libunlynx.CipherText, []int64, []proof.CreateProof) {
 
 	clearResponse := []int64{}
 	encryptedResponse := []libunlynx.CipherText{}
-	createPrf := []libunlynx.CreateProof{}
+	createPrf := []proof.CreateProof{}
 	withProofs := len(ranges) > 0 && len(signatures) > 0
 
 	switch operation.NameOp {
 	case "sum":
 		tmp_encryptedResponse := &libunlynx.CipherText{}
-		tmp_prf := []libunlynx.CreateProof{}
+		tmp_prf := []proof.CreateProof{}
 		if withProofs {
 			tmp_encryptedResponse, clearResponse, tmp_prf = EncodeSumWithProofs(datas[0], pubKey, signatures[0], (*ranges[0])[1], (*ranges[0])[0])
 		} else {
@@ -86,9 +87,9 @@ func Encode(datas [][]int64, pubKey kyber.Point, signatures [][]libunlynx.Publis
 		clear := int64(0)
 
 		if withProofs {
-			prf := libunlynx.CreateProof{}
+			prf := proof.CreateProof{}
 			cipher, clear, prf = EncodeBit_ANDWithProof(boolean_bit, pubKey, signatures[0], (*ranges[0])[1], (*ranges[0])[0])
-			createPrf = []libunlynx.CreateProof{prf}
+			createPrf = []proof.CreateProof{prf}
 		} else {
 			cipher, clear = EncodeBit_AND(boolean_bit, pubKey)
 		}
@@ -105,9 +106,9 @@ func Encode(datas [][]int64, pubKey kyber.Point, signatures [][]libunlynx.Publis
 		clear := int64(0)
 
 		if withProofs {
-			prf := libunlynx.CreateProof{}
+			prf := proof.CreateProof{}
 			cipher, clear, prf = EncodeBit_ORWithProof(boolean_bit, pubKey, signatures[0], (*ranges[0])[1], (*ranges[0])[0])
-			createPrf = []libunlynx.CreateProof{prf}
+			createPrf = []proof.CreateProof{prf}
 		} else {
 			cipher, clear = EncodeBit_OR(boolean_bit, pubKey)
 		}
@@ -155,7 +156,7 @@ func Encode(datas [][]int64, pubKey kyber.Point, signatures [][]libunlynx.Publis
 	return encryptedResponse, clearResponse, createPrf
 }
 
-func Decode(ciphers []libunlynx.CipherText, secKey kyber.Scalar, operation common.Operation) []float64 {
+func Decode(ciphers []libunlynx.CipherText, secKey kyber.Scalar, operation lib.Operation) []float64 {
 	switch operation.NameOp {
 	case "sum":
 		return []float64{float64(DecodeSum(ciphers[0], secKey))}
@@ -225,12 +226,12 @@ func Decode(ciphers []libunlynx.CipherText, secKey kyber.Scalar, operation commo
 	}
 }
 
-func EncodeForFloat(datas [][]float64, lrParameters common.LogisticRegressionParameters, pubKey kyber.Point,
-	signatures [][]libunlynx.PublishSignature, ranges []*[]int64, operation string) ([]libunlynx.CipherText, []int64, []libunlynx.CreateProof) {
+func EncodeForFloat(datas [][]float64, lrParameters lib.LogisticRegressionParameters, pubKey kyber.Point,
+	signatures [][]proof.PublishSignature, ranges []*[]int64, operation string) ([]libunlynx.CipherText, []int64, []proof.CreateProof) {
 
 	clearResponse := make([]int64, 0)
 	encryptedResponse := make([]libunlynx.CipherText, 0)
-	prf := make([]libunlynx.CreateProof, 0)
+	prf := make([]proof.CreateProof, 0)
 	withProofs := len(ranges) > 0
 
 	switch operation {

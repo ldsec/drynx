@@ -6,6 +6,7 @@ import (
 	"github.com/dedis/kyber"
 	"github.com/lca1/unlynx/lib"
 	"github.com/tonestuff/quadratic"
+	"github.com/lca1/drynx/lib/proof"
 )
 
 //EncodeLinearRegression_Dims implements a d-dimensional linear regression algorithm on the query results
@@ -15,7 +16,7 @@ func EncodeLinearRegression_Dims(input1 [][]int64, input2 []int64, pubKey kyber.
 }
 
 //EncodeLinearRegression_DimsWithProofs implements a d-dimensional linear regression algorithm on the query results with range proofs
-func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pubKey kyber.Point, sigs [][]libunlynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libunlynx.CreateProof) {
+func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pubKey kyber.Point, sigs [][]proof.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []proof.CreateProof) {
 	//sum the Xs and their squares, the Ys and the product of every pair of X and Y
 	sum_xj := int64(0)
 	sum_y := int64(0)
@@ -87,18 +88,18 @@ func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pub
 		return Ciphertext_Tuple, []int64{0}, nil
 	}
 	//input range validation proof
-	createProofs := make([]libunlynx.CreateProof, len(plaintext_values))
+	createProofs := make([]proof.CreateProof, len(plaintext_values))
 	wg := libunlynx.StartParallelize(len(plaintext_values))
 	for i, v := range plaintext_values {
 		if libunlynx.PARALLELIZE {
 			go func(i int, v int64) {
 				defer wg.Done()
 				//input range validation proof
-				createProofs[i] = libunlynx.CreateProof{Sigs: libunlynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: Ciphertext_Tuple[i]}
+				createProofs[i] = proof.CreateProof{Sigs: proof.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: Ciphertext_Tuple[i]}
 			}(i, v)
 		} else {
 			//input range validation proof
-			createProofs[i] = libunlynx.CreateProof{Sigs: libunlynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: Ciphertext_Tuple[i]}
+			createProofs[i] = proof.CreateProof{Sigs: proof.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: Ciphertext_Tuple[i]}
 		}
 	}
 	libunlynx.EndParallelize(wg)
