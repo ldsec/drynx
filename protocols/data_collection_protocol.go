@@ -17,7 +17,6 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/drynx/lib"
-	"github.com/lca1/drynx/lib/proof"
 	"github.com/lca1/drynx/services/data"
 )
 
@@ -187,11 +186,11 @@ func (p *DataCollectionProtocol) GenerateData() (lib.ResponseDPBytes, error) {
 	data.Groups = make([][]int64, 0)
 
 	// read the signatures needed to compute the range proofs
-	signatures := make([][]proof.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize1)
+	signatures := make([][]lib.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize1)
 	for i := 0; i < p.Survey.Query.IVSigs.InputValidationSize1; i++ {
-		signatures[i] = make([]proof.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize2)
+		signatures[i] = make([]lib.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize2)
 		for j := 0; j < p.Survey.Query.IVSigs.InputValidationSize2; j++ {
-			signatures[i][j] = proof.PublishSignatureBytesToPublishSignatures((*p.Survey.Query.IVSigs.InputValidationSigs[i])[j])
+			signatures[i][j] = lib.PublishSignatureBytesToPublishSignatures((*p.Survey.Query.IVSigs.InputValidationSigs[i])[j])
 		}
 	}
 
@@ -230,7 +229,7 @@ func (p *DataCollectionProtocol) GenerateData() (lib.ResponseDPBytes, error) {
 
 	// ------- START: ENCODING & ENCRYPTION -------
 	//encodeTime := libunlynx.StartTimer(p.Name() + "_DPencoding")
-	cprf := make([]proof.CreateProof, 0)
+	cprf := make([]lib.CreateProof, 0)
 
 	// compute response
 	queryResponse := make(map[string]libunlynx.CipherVector, 0)
@@ -261,29 +260,29 @@ func (p *DataCollectionProtocol) GenerateData() (lib.ResponseDPBytes, error) {
 		if p.Survey.Query.Proofs != 0 {
 			go func() {
 				startAllProofs := libunlynx.StartTimer(p.Name() + "_AllProofs")
-				rpl := proof.RangeProofList{}
+				rpl := lib.RangeProofList{}
 
 				//rangeProofCreation := libunlynx.StartTimer(p.Name() + "_RangeProofCreation")
 				// no range proofs (send only the ciphertexts)
 				if len(cprf) == 0 {
-					tmp := make([]proof.RangeProof, 0)
+					tmp := make([]lib.RangeProof, 0)
 					for _, ct := range queryResponse[v] {
-						tmp = append(tmp, proof.RangeProof{Commit: ct, RP: nil})
+						tmp = append(tmp, lib.RangeProof{Commit: ct, RP: nil})
 					}
-					rpl = proof.RangeProofList{Data: tmp}
+					rpl = lib.RangeProofList{Data: tmp}
 				} else { // if range proofs
-					rpl = proof.RangeProofList{Data: proof.CreatePredicateRangeProofListForAllServers(cprf)}
+					rpl = lib.RangeProofList{Data: lib.CreatePredicateRangeProofListForAllServers(cprf)}
 				}
 				// scaling for simulation purposes
 				if p.Survey.Query.CuttingFactor != 0 {
-					rplNew := proof.RangeProofList{}
-					rplNew.Data = make([]proof.RangeProof, len(rpl.Data)*p.Survey.Query.CuttingFactor)
+					rplNew := lib.RangeProofList{}
+					rplNew.Data = make([]lib.RangeProof, len(rpl.Data)*p.Survey.Query.CuttingFactor)
 					counter := 0
 					suitePair := bn256.NewSuite()
 					for j := 0; j < p.Survey.Query.CuttingFactor; j++ {
 						for _, v := range rpl.Data {
 
-							rplNew.Data[counter].RP = &proof.RangeProofData{}
+							rplNew.Data[counter].RP = &lib.RangeProofData{}
 							rplNew.Data[counter].RP.V = make([][]kyber.Point, len(v.RP.V))
 							for k, w := range v.RP.V {
 								rplNew.Data[counter].RP.V[k] = make([]kyber.Point, len(w))

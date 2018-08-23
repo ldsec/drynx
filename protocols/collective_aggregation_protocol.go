@@ -14,6 +14,7 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/drynx/lib"
 )
 
 // CollectiveAggregationProtocolName is the registered name for the collective aggregation protocol.
@@ -77,7 +78,7 @@ type CollectiveAggregationProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan libunlynx.CothorityAggregatedData
+	FeedbackChannel chan lib.CothorityAggregatedData
 
 	// Protocol communication channels
 	DataReferenceChannel chan dataReferenceStruct
@@ -92,7 +93,7 @@ type CollectiveAggregationProtocol struct {
 func NewCollectiveAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	pap := &CollectiveAggregationProtocol{
 		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan libunlynx.CothorityAggregatedData),
+		FeedbackChannel:  make(chan lib.CothorityAggregatedData),
 	}
 
 	err := pap.RegisterChannel(&pap.DataReferenceChannel)
@@ -137,7 +138,7 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 
 	// 3. Response reporting
 	if p.IsRoot() {
-		p.FeedbackChannel <- libunlynx.CothorityAggregatedData{GroupedData: *aggregatedData}
+		p.FeedbackChannel <- lib.CothorityAggregatedData{GroupedData: *aggregatedData}
 	}
 	return nil
 }

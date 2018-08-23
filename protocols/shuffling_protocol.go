@@ -23,8 +23,8 @@ import (
 const ShufflingProtocolName = "Shuffling"
 
 func init() {
-	network.RegisterMessage(libunlynx.ShufflingMessage{})
-	network.RegisterMessage(libunlynx.ShufflingBytesMessage{})
+	network.RegisterMessage(lib.ShufflingMessage{})
+	network.RegisterMessage(lib.ShufflingBytesMessage{})
 	network.RegisterMessage(SBLengthMessage{})
 	onet.GlobalProtocolRegister(ShufflingProtocolName, NewShufflingProtocol)
 }
@@ -46,13 +46,13 @@ type SBLengthMessage struct {
 // ShufflingStruct contains a shuffling message
 type shufflingStruct struct {
 	*onet.TreeNode
-	libunlynx.ShufflingMessage
+	lib.ShufflingMessage
 }
 
 // ShufflingBytesStruct contains a shuffling message in bytes
 type shufflingBytesStruct struct {
 	*onet.TreeNode
-	libunlynx.ShufflingBytesMessage
+	lib.ShufflingBytesMessage
 }
 
 // SbLengthStruct contains a length message
@@ -160,14 +160,14 @@ func (p *ShufflingProtocol) Start() error {
 		log.Lvl2("[SHUFFLING PROTOCOL] <LEMAL> Server", p.ServerIdentity(), " uses pre-computation in shuffling")
 	}
 
-	shuffledData, pi, beta := libunlynx.ShuffleSequence(shuffleTarget, nil, collectiveKey, p.Precomputed)
+	shuffledData, pi, beta := lib.ShuffleSequence(shuffleTarget, nil, collectiveKey, p.Precomputed)
 	libunlynx.EndTimer(roundShufflingStart)
 	roundShufflingStartProof := libunlynx.StartTimer(p.Name() + "_Shuffling(START-Proof)")
 
 	if p.Proofs != 0 {
 		go func() {
 			log.Lvl2("[SHUFFLING PROTOCOL] <LEMAL> Server", p.ServerIdentity(), "creates shuffling proof")
-			proof := libunlynx.ShufflingProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+			proof := lib.ShufflingProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
 
 			pi := p.MapPIs["shuffle/"+p.ServerIdentity().String()]
 			pi.(*ProofCollectionProtocol).Proof = lib.ProofRequest{ShuffleProof: lib.NewShuffleProofRequest(&proof, p.Query.SurveyID, p.ServerIdentity().String(), "", p.Query.Query.RosterVNs, p.Private(), nil)}
@@ -183,9 +183,9 @@ func (p *ShufflingProtocol) Start() error {
 	p.ExecTimeStart += time.Since(startT)
 	//sendingStart := lib.StartTimer(p.Name() + "_Sending")
 
-	message := libunlynx.ShufflingBytesMessage{}
+	message := lib.ShufflingBytesMessage{}
 	var cgaLength, eaaLength, egaLength int
-	message.Data, cgaLength, eaaLength, egaLength = (&libunlynx.ShufflingMessage{Data: shuffledData}).ToBytes()
+	message.Data, cgaLength, eaaLength, egaLength = (&lib.ShufflingMessage{Data: shuffledData}).ToBytes()
 
 	sendingStart := libunlynx.StartTimer(p.Name() + "_Sending")
 
@@ -208,7 +208,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 
 	libunlynx.EndTimer(receiving)
 
-	sm := libunlynx.ShufflingMessage{}
+	sm := lib.ShufflingMessage{}
 	sm.FromBytes(tmp.Data, shufflingLength.GacbLength, shufflingLength.AabLength, shufflingLength.PgaebLength)
 	shufflingTarget := sm.Data
 
@@ -234,7 +234,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 	if !p.IsRoot() {
 		roundShuffle := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH-noProof)")
 
-		shuffledData, pi, beta = libunlynx.ShuffleSequence(shufflingTarget, nil, collectiveKey, p.Precomputed)
+		shuffledData, pi, beta = lib.ShuffleSequence(shufflingTarget, nil, collectiveKey, p.Precomputed)
 
 		libunlynx.EndTimer(roundShuffle)
 		roundShuffleProof := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH-Proof)")
@@ -242,7 +242,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 		if p.Proofs != 0 {
 			go func(shufflingTarget []libunlynx.ProcessResponse, shuffledData []libunlynx.ProcessResponse) {
 				log.Lvl2("[SHUFFLING PROTOCOL] <LEMAL> Server", p.ServerIdentity(), "creates shuffling proof")
-				proof := libunlynx.ShufflingProofCreation(shufflingTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+				proof := lib.ShufflingProofCreation(shufflingTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
 
 				pi := p.MapPIs["shuffle/"+p.ServerIdentity().String()]
 				pi.(*ProofCollectionProtocol).Proof = lib.ProofRequest{ShuffleProof: lib.NewShuffleProofRequest(&proof, p.Query.SurveyID, p.ServerIdentity().String(), "", p.Query.Query.RosterVNs, p.Private(), nil)}
@@ -270,9 +270,9 @@ func (p *ShufflingProtocol) Dispatch() error {
 		p.ExecTime += time.Since(startT)
 		p.FeedbackChannel <- shufflingTarget
 	} else {
-		message := libunlynx.ShufflingBytesMessage{}
+		message := lib.ShufflingBytesMessage{}
 		var cgaLength, eaaLength, egaLength int
-		message.Data, cgaLength, eaaLength, egaLength = (&libunlynx.ShufflingMessage{Data: shuffledData}).ToBytes()
+		message.Data, cgaLength, eaaLength, egaLength = (&lib.ShufflingMessage{Data: shuffledData}).ToBytes()
 
 		sending := libunlynx.StartTimer(p.Name() + "_Sending")
 

@@ -10,13 +10,14 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/common"
-	"github.com/lca1/unlynx/services/lemal"
 	"github.com/stretchr/testify/assert"
+	"github.com/lca1/drynx/lib"
+	"github.com/lca1/drynx/protocols"
+	"github.com/dedis/kyber/pairing/bn256"
 )
 
-func ChooseOperation(operationName string, queryMin, queryMax, d int, cuttingFactor int) common.Operation {
-	operation := common.Operation{}
+func ChooseOperation(operationName string, queryMin, queryMax, d int, cuttingFactor int) lib.Operation {
+	operation := lib.Operation{}
 
 	operation.NameOp = operationName
 	operation.NbrInput = 0
@@ -66,18 +67,18 @@ func ChooseOperation(operationName string, queryMin, queryMax, d int, cuttingFac
 	return operation
 }
 
-func createTestQuery(aggregate kyber.Point, operationName string, proofs int, nbrRows int64, minGenerateData, maxGenerateData, dimensions int, cuttingFactor int) (lemal.SurveyToDP, error) {
-	var queryStatement lemal.SurveyToDP
-	var query common.Query
+func createTestQuery(aggregate kyber.Point, operationName string, proofs int, nbrRows int64, minGenerateData, maxGenerateData, dimensions int, cuttingFactor int) (protocols.SurveyToDP, error) {
+	var queryStatement protocols.SurveyToDP
+	var query lib.Query
 
 	queryStatement.SurveyID = "query_test"
 	queryStatement.Aggregate = aggregate
 
-	query.Operation = ChooseOperation(operationName, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
+	query.Operation = lib.ChooseOperation(operationName, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
 	query.Proofs = proofs
 
 	// define the number of groups for groupBy (1 per default)
-	dpData := common.QueryDPDataGen{GroupByValues: []int64{1}, GenerateRows: nbrRows, GenerateDataMin: int64(minGenerateData), GenerateDataMax: int64(maxGenerateData)}
+	dpData := lib.QueryDPDataGen{GroupByValues: []int64{1}, GenerateRows: nbrRows, GenerateDataMin: int64(minGenerateData), GenerateDataMax: int64(maxGenerateData)}
 	query.DPDataGen = dpData
 
 	queryStatement.Query = query
@@ -118,11 +119,11 @@ func createTestQuery(aggregate kyber.Point, operationName string, proofs int, nb
 	return queryStatement, nil
 }
 
-var query lemal.SurveyToDP
+var query protocols.SurveyToDP
 
 //TestCollectiveAggregation tests collective aggregation protocol
 func TestDataCollectionOperationsProtocol(t *testing.T) {
-	libunlynx.TIME = false
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	log.SetDebugVisible(2)
 
 	local := onet.NewLocalTest(libunlynx.SuiTe)
@@ -144,7 +145,7 @@ func TestDataCollectionOperationsProtocol(t *testing.T) {
 		if err != nil {
 			t.Fatal("Couldn't start protocol:", err)
 		}
-		protocol := rootInstance.(*lemal.DataCollectionProtocol)
+		protocol := rootInstance.(*protocols.DataCollectionProtocol)
 
 		//run protocol
 		go protocol.Start()
@@ -204,8 +205,8 @@ func TestDataCollectionOperationsProtocol(t *testing.T) {
 
 // NewDataCollectionTest is a test specific protocol instance constructor that injects test data.
 func NewDataCollectionTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
-	pi, err := lemal.NewDataCollectionProtocol(tni)
-	protocol := pi.(*lemal.DataCollectionProtocol)
+	pi, err := protocols.NewDataCollectionProtocol(tni)
+	protocol := pi.(*protocols.DataCollectionProtocol)
 
 	protocol.Survey = query
 	return protocol, err

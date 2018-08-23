@@ -5,13 +5,16 @@ import (
 	"github.com/alex-ant/gomath/rational"
 	"github.com/dedis/kyber"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/encoding"
+	"github.com/lca1/drynx/lib/encoding"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"github.com/dedis/kyber/pairing/bn256"
+	"github.com/lca1/drynx/lib"
 )
 
 //TestEncodeDecodeLinearRegressionDims tests EncodeLinearRegression_Dims and DecodeLinearRegression_Dims
 func TestEncodeDecodeLinearRegressionDims(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	//data
 	inputValues_x := [][]int64{{1, 2}, {0, 1}, {1, 0}, {2, 1}, {3, 5}}
 	inputValues_y := []int64{11, 5, 3, 9, 27}
@@ -126,6 +129,7 @@ func TestEncodeDecodeLinearRegressionDims(t *testing.T) {
 
 //TestEncodeDecodeLinearRegressionDimsWithProofs tests EncodeLinearRegression_DimsWithProofs and DecodeLinearRegression_DimsWithProofs
 func TestEncodeDecodeLinearRegressionDimsWithProofs(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	//data
 	inputValues_x := [][]int64{{1, 2}, {0, 1}, {1, 0}, {2, 1}, {3, 5}}
 	inputValues_y := []int64{11, 5, 3, 9, 27}
@@ -234,15 +238,15 @@ func TestEncodeDecodeLinearRegressionDimsWithProofs(t *testing.T) {
 		l2[i] = 8
 	}
 	ranges := make([]*[]int64, len_ciphertext)
-	ps := make([][]libunlynx.PublishSignature, 2)
-	ps[0] = make([]libunlynx.PublishSignature, len_ciphertext)
-	ps[1] = make([]libunlynx.PublishSignature, len_ciphertext)
+	ps := make([][]lib.PublishSignature, 2)
+	ps[0] = make([]lib.PublishSignature, len_ciphertext)
+	ps[1] = make([]lib.PublishSignature, len_ciphertext)
 	ys := make([][]kyber.Point, 2)
 	ys[0] = make([]kyber.Point, len_ciphertext)
 	ys[1] = make([]kyber.Point, len_ciphertext)
 	for i := range ps[0] {
-		ps[0][i] = libunlynx.PublishSignatureBytesToPublishSignatures(libunlynx.InitRangeProofSignature(u[i]))
-		ps[1][i] = libunlynx.PublishSignatureBytesToPublishSignatures(libunlynx.InitRangeProofSignature(u[i]))
+		ps[0][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u[i]))
+		ps[1][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u[i]))
 		ys[0][i] = ps[0][i].Public
 		ys[1][i] = ps[1][i].Public
 		ranges[i] = &[]int64{u[i], l2[i]}
@@ -269,6 +273,6 @@ func TestEncodeDecodeLinearRegressionDimsWithProofs(t *testing.T) {
 
 	for i := 0; i < len_ciphertext; i++ {
 		//Testing the correctness of the proofs
-		assert.True(t, libunlynx.RangeProofVerification(libunlynx.CreatePredicateRangeProofForAllServ(prf[i]), u[i], l2[i], yss[i], pubKey))
+		assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prf[i]), u[i], l2[i], yss[i], pubKey))
 	}
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
-	"github.com/lca1/drynx/lib/proof"
 	"github.com/lca1/drynx/lib"
 )
 
@@ -24,11 +23,11 @@ type API struct {
 //init of the network messages
 func init() {
 	network.RegisterMessage(lib.GetLatestBlock{})
-	network.RegisterMessage(proof.RangeProofListBytes{})
-	network.RegisterMessage(libunlynx.PublishedShufflingProofBytes{})
-	network.RegisterMessage(proof.PublishedKSListProofBytes{})
-	network.RegisterMessage(proof.PublishAggregationProofBytes{})
-	network.RegisterMessage(proof.PublishedListObfuscationProofBytes{})
+	network.RegisterMessage(lib.RangeProofListBytes{})
+	network.RegisterMessage(lib.PublishedShufflingProofBytes{})
+	network.RegisterMessage(lib.PublishedKSListProofBytes{})
+	network.RegisterMessage(lib.PublishAggregationProofBytes{})
+	network.RegisterMessage(lib.PublishedListObfuscationProofBytes{})
 
 }
 
@@ -53,7 +52,7 @@ func NewLeMalClient(entryPoint *network.ServerIdentity, clientID string) *API {
 // Send Query
 //______________________________________________________________________________________________________________________
 
-func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToServer map[string]*[]network.ServerIdentity, idToPublic map[string]kyber.Point, surveyID string, operation lib.Operation, ranges []*[]int64, ps []*[]proof.PublishSignatureBytes, proofs int, obfuscation bool, thresholds []float64, diffP lib.QueryDiffP, dpDataGen lib.QueryDPDataGen, cuttingFactor int) lib.SurveyQuery {
+func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToServer map[string]*[]network.ServerIdentity, idToPublic map[string]kyber.Point, surveyID string, operation lib.Operation, ranges []*[]int64, ps []*[]lib.PublishSignatureBytes, proofs int, obfuscation bool, thresholds []float64, diffP lib.QueryDiffP, dpDataGen lib.QueryDPDataGen, cuttingFactor int) lib.SurveyQuery {
 	size1 := 0
 	size2 := 0
 	if ps != nil {

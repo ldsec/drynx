@@ -10,7 +10,8 @@ import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/encoding"
+	"github.com/lca1/drynx/lib/encoding"
+	"github.com/dedis/kyber/pairing/bn256"
 )
 
 type MinimisationParameters struct {
@@ -410,6 +411,7 @@ var SPECTFpaperWeightsWithEncryption = []float64{
 	-1.123225, -0.036603, -0.394657, -0.485166, 0.421146}
 
 func TestFindMinimumWeightsForSPECTF(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	fmt.Println("Find minimum weights for SPECTF")
 	fmt.Println("-------------------------------")
 
@@ -420,6 +422,7 @@ func TestFindMinimumWeightsForSPECTF(t *testing.T) {
 }
 
 func TestFindMinimumWeightsWithEncryptionForSPECTF(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	fmt.Println("Find minimum weights with encryption for SPECTF")
 	fmt.Println("-----------------------------------------------")
 
@@ -443,6 +446,7 @@ func predictForSPECTF(weights []float64, withEncryption bool) {
 }
 
 func TestPredictForSPECTF(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	fmt.Println("Predict for SPECTF")
 	fmt.Println("------------------")
 
@@ -450,6 +454,7 @@ func TestPredictForSPECTF(t *testing.T) {
 }
 
 func TestPredictForSPECTFRandom(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	fmt.Println("Predict for SPECTF random")
 	fmt.Println("-------------------------")
 
@@ -465,6 +470,7 @@ func TestPredictForSPECTFRandom(t *testing.T) {
 }
 
 func TestPredictWithEncryptionForSPECTF(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	fmt.Println("Predict with encryption for SPECTF")
 	fmt.Println("----------------------------------")
 
@@ -472,6 +478,7 @@ func TestPredictWithEncryptionForSPECTF(t *testing.T) {
 }
 
 func TestPredictForSPECTFPaper(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	fmt.Println("Predict for SPECTF")
 	fmt.Println("------------------")
 
@@ -479,6 +486,7 @@ func TestPredictForSPECTFPaper(t *testing.T) {
 }
 
 func TestPredictWithEncryptionForSPECTFPaper(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	fmt.Println("Predict with encryption for SPECTF")
 	fmt.Println("----------------------------------")
 
@@ -486,6 +494,7 @@ func TestPredictWithEncryptionForSPECTFPaper(t *testing.T) {
 }
 
 func TestPredictForSPECTFWithGoml(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	parameters, _, SPECTFTraining, SPECTFTesting, _, _, _, _, _ := getParametersForSPECTF()
 	Xtrain, ytrain := encoding.LoadData("SPECTF", SPECTFTraining)
 	Xtest, ytest := encoding.LoadData("SPECTF", SPECTFTesting)
@@ -525,6 +534,7 @@ func TestPredictForSPECTFWithGoml(t *testing.T) {
 }
 
 func TestLPredictForSPECTFRandomWtihGoml(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	parameters, _, _, _, path, _, _, _, _ := getParametersForSPECTF()
 	X, y := encoding.LoadData("SPECTF", path)
 	predictGoml(X, y, 0.3, parameters, 1000, int64(5432109876))
@@ -568,6 +578,7 @@ var PimaPaperWeightsWithEncryption = []float64{
 	-0.618931, 0.272079, 0.687556, -0.164313, 0.23873, -0.078103, 0.426285, 0.215544, 0.085846}
 
 func TestFindMinimumWeightsForPima(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	fmt.Println("Find minimum weights for Pima")
 	fmt.Println("-----------------------------")
 
@@ -577,6 +588,7 @@ func TestFindMinimumWeightsForPima(t *testing.T) {
 }
 
 func TestFindMinimumWeightsWithEncryptionForPima(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	fmt.Println("Find minimum weights with encryption for PIMA")
 	fmt.Println("---------------------------------------------")
 
@@ -586,6 +598,7 @@ func TestFindMinimumWeightsWithEncryptionForPima(t *testing.T) {
 }
 
 func TestPredictForPima(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	fmt.Println("Predict for Pima")
 	fmt.Println("----------------")
 
@@ -629,6 +642,7 @@ func TestPredictForPimaPaper(t *testing.T) {
 }
 
 func TestPredictForPimaMatlab(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	fmt.Println("Predict for Pima")
 	fmt.Println("----------------")
 
@@ -647,6 +661,7 @@ func TestPredictForPimaMatlab(t *testing.T) {
 }
 
 func TestPredictWithEncryptionForPimaPaper(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	fmt.Println("Predict with encryption for Pima")
 	fmt.Println("--------------------------------")
 
@@ -661,6 +676,7 @@ func TestPredictWithEncryptionForPimaPaper(t *testing.T) {
 }
 
 func TestPredictForPimaWithGoml(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	parameters, ratio, _, path, _, _, _ := getParametersForPima()
 	X, y := encoding.LoadData("Pima", path)
 	predictGoml(X, y, ratio, parameters, 10, int64(5432109876))
@@ -690,6 +706,7 @@ func getParametersForPCS() (MinimisationParameters, float64, string, string, flo
 }
 
 func TestPredictForPCS(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	fmt.Println("Predict for PCS")
 	fmt.Println("---------------")
 
@@ -704,6 +721,7 @@ func TestPredictForPCS(t *testing.T) {
 }
 
 func TestPredictForPCSWithGoml(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	parameters, ratio, _, path, _, _, _ := getParametersForPCS()
 	X, y := encoding.LoadData("PCS", path)
 	predictGoml(X, y, ratio, parameters, 5, int64(5432109876))
@@ -734,6 +752,7 @@ func getParametersForLBW() (MinimisationParameters, float64, string, string, flo
 }
 
 func TestPredictForLBW(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	fmt.Println("Predict for LBW")
 	fmt.Println("---------------")
 
@@ -747,6 +766,7 @@ func TestPredictForLBW(t *testing.T) {
 }
 
 func TestPredictForLBWWithGoml(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	parameters, ratio, _, path, _, _, _ := getParametersForLBW()
 	X, y := encoding.LoadData("LBW", path)
 	predictGoml(X, y, ratio, parameters, 10, int64(5432109876))

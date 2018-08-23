@@ -1,0 +1,66 @@
+/--------------------------------------------------------------------------------/
+/--------------------------Instructions IC cluster (mininet)---------------------/
+/--------------------------------------------------------------------------------/
+
+- Access iccluster website:
+    http://install.iccluster.epfl.ch/Portal/
+
+- Request servers:
+    1. Reservations/Spot Reservations -> Make a reservation
+        a. select date
+        b. select number of machines
+        c. reserve
+
+- Setup servers:
+    1. MyServers/Setup tab
+        a. add servers to setup list
+        b. choose boot option: Ubuntu xenial amd64 installation via network
+        c. select password (Customization): you can choose
+        d. run setup
+
+    2. MyServers/List
+        a. Actions -> Power -> Power Cycle (for each server)
+
+- Run servers:
+    Important!
+    If you are using bn256 curve please add TAGS = “vartime” in your .toml file
+
+    0. Remove corresponding ssh keys from .ssh/know_hosts)
+
+    1. Build simul executable:
+        - Execute inside simul/:
+            go build (if using ed25519)
+            go build -tags vartime (if using bn256)
+
+    2. Run simulation:
+        ./simul -platform mininet [-debug 1] runfiles/xxxxx.toml
+
+    3. In your first run you will prompted with a series of configuration questions:
+        a. "Do you want to run mininet on ICCluster? [Yn]:" Y
+        b. "Please enter the space separated numbers of the servers [server1 server2 server3]:" 31 32 33
+            - each number represents the id of each iccluster server: e.g. iccluster031.iccluster.epfl.ch -> 31
+        c. You will be asked the password for each server
+        d. Just wait....
+
+    4. If you are monitoring time (libunlynx.TIME = true) a new .csv file will be generated/updated under /simul/test_data/
+
+- Notes:
+    * To access each server:
+        - remove iccluster servers' keys from .ssh/know_hosts
+        ssh root@iccluster026.iccluster.epfl.ch
+
+    * To reset/retry mininet instalation:
+        - remove iccluster servers' ssh keys from .ssh/know_hosts
+        - execute inside simul/:
+            rm server_list
+
+    * To clean mininet:
+        for a in 31 32 33; do ssh root@iccluster0$a.iccluster.epfl.ch mn -c; done
+
+    * If you get a port forwarding problem just reboot the servers
+
+    * To see cores execution (inside each server): htop
+
+    * To see network bandwidth (inside each server): nload
+
+    * You can check the log by accessing cat tmp/mininet.log

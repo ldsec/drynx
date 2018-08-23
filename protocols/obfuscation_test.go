@@ -7,9 +7,9 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/lemal"
 	"github.com/stretchr/testify/assert"
 	"github.com/dedis/onet/log"
+	"github.com/lca1/drynx/protocols"
 )
 
 //var obfuscation = true
@@ -29,7 +29,7 @@ func TestObfuscation(t *testing.T) {
 		t.Fatal("Couldn't start protocol:", err)
 	}
 	priv, pub := libunlynx.GenKey()
-	protocol := p.(*lemal.ObfuscationProtocol)
+	protocol := p.(*protocols.ObfuscationProtocol)
 	protocol.ToObfuscateData = *libunlynx.EncryptIntVector(pub,[]int64{0,1,2})
 	protocol.Proofs = 0
 
@@ -57,8 +57,8 @@ func TestObfuscation(t *testing.T) {
 // NewCollectiveAggregationTest is a test specific protocol instance constructor that injects test data.
 func NewObfuscationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 
-	pi, err := lemal.NewObfuscationProtocol(tni)
-	protocol := pi.(*lemal.ObfuscationProtocol)
+	pi, err := protocols.NewObfuscationProtocol(tni)
+	protocol := pi.(*protocols.ObfuscationProtocol)
 
 	protocol.Proofs = 0
 	//protocol.Obfuscation = obfuscation

@@ -15,9 +15,7 @@ import (
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
-	"github.com/lca1/unlynx/skip"
 	"github.com/lca1/drynx/lib"
-	"github.com/lca1/drynx/lib/proof"
 	"github.com/lca1/drynx/protocols"
 )
 
@@ -29,7 +27,7 @@ const gobFile = "pre_compute_multiplications.gob"
 // Survey represents a survey with the corresponding params
 type Survey struct {
 	SurveyQuery        lib.SurveyQuery
-	QueryResponseState libunlynx.ResponseAllDPs // QueryResponse keeps track of the response from the data providers, the aggregated data, and the final results
+	QueryResponseState lib.ResponseAllDPs // QueryResponse keeps track of the response from the data providers, the aggregated data, and the final results
 	Noises             libunlynx.CipherVector
 	ShufflePrecompute  []libunlynx.CipherVectorScalar
 	MapPIs             map[string]onet.ProtocolInstance
@@ -115,7 +113,7 @@ func init() {
 
 	network.RegisterMessage(&lib.EndVerificationRequest{})
 
-	network.RegisterMessage(skip.DataBlock{})
+	network.RegisterMessage(lib.DataBlock{})
 	network.RegisterMessage(&lib.GetLatestBlock{})
 	network.RegisterMessage(&lib.GetGenesis{})
 	network.RegisterMessage(&lib.GetBlock{})
@@ -434,18 +432,18 @@ func (s *ServiceLeMal) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 		}
 
 		// convert the result to fit the collective aggregation protocol
-		groupedData := libunlynx.ConvertToAggregationStruct(survey.QueryResponseState)
+		groupedData := lib.ConvertToAggregationStruct(survey.QueryResponseState)
 
 		if survey.SurveyQuery.Query.Proofs != 0 {
 			go func() {
 				log.Lvl2("SERVICE] <LEMAL> Server", s.ServerIdentity(), "creates local aggregation proof")
-				resultAggrLocal := libunlynx.ResponseAllDPs{}
+				resultAggrLocal := lib.ResponseAllDPs{}
 				for i, v := range groupedData {
-					resultAggrLocal.Data = append(resultAggrLocal.Data, libunlynx.ResponseDPOneGroup{Group: string(i), Data: v.AggregatingAttributes})
+					resultAggrLocal.Data = append(resultAggrLocal.Data, lib.ResponseDPOneGroup{Group: string(i), Data: v.AggregatingAttributes})
 				}
-				aggrLocalProof := proof.ServerAggregationProofCreation(survey.QueryResponseState, resultAggrLocal)
+				aggrLocalProof := lib.ServerAggregationProofCreation(survey.QueryResponseState, resultAggrLocal)
 				if survey.SurveyQuery.Query.Proofs == 2 {
-					aggrLocalProof.DPsData = libunlynx.ResponseAllDPs{}
+					aggrLocalProof.DPsData = lib.ResponseAllDPs{}
 				}
 
 				pi := survey.MapPIs["aggregation/"+s.ServerIdentity().String()]
@@ -493,7 +491,7 @@ func (s *ServiceLeMal) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 			if survey.SurveyQuery.Query.DiffP.Scale == 0 {
 				survey.SurveyQuery.Query.DiffP.Scale = 1
 			}
-			noiseArray := libunlynx.GenerateNoiseValuesScale(int64(survey.SurveyQuery.Query.DiffP.NoiseListSize), survey.SurveyQuery.Query.DiffP.LapMean, survey.SurveyQuery.Query.DiffP.LapScale, survey.SurveyQuery.Query.DiffP.Quanta, survey.SurveyQuery.Query.DiffP.Scale, survey.SurveyQuery.Query.DiffP.Limit)
+			noiseArray := lib.GenerateNoiseValuesScale(int64(survey.SurveyQuery.Query.DiffP.NoiseListSize), survey.SurveyQuery.Query.DiffP.LapMean, survey.SurveyQuery.Query.DiffP.LapScale, survey.SurveyQuery.Query.DiffP.Quanta, survey.SurveyQuery.Query.DiffP.Scale, survey.SurveyQuery.Query.DiffP.Limit)
 			for _, v := range noiseArray {
 				clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
 			}
@@ -616,9 +614,9 @@ func (s *ServiceLeMal) DataCollectionPhase(targetSurvey string) error {
 	// we convert the map into an object of [Group + CipherVector] to avoid later problems with protobuf
 	for key, value := range dataDPs {
 		if survey.SurveyQuery.Query.CuttingFactor != 0 {
-			survey.QueryResponseState.Data = append(survey.QueryResponseState.Data, libunlynx.ResponseDPOneGroup{Group: key, Data: value[:int(len(value)/survey.SurveyQuery.Query.CuttingFactor)]})
+			survey.QueryResponseState.Data = append(survey.QueryResponseState.Data, lib.ResponseDPOneGroup{Group: key, Data: value[:int(len(value)/survey.SurveyQuery.Query.CuttingFactor)]})
 		} else {
-			survey.QueryResponseState.Data = append(survey.QueryResponseState.Data, libunlynx.ResponseDPOneGroup{Group: key, Data: value})
+			survey.QueryResponseState.Data = append(survey.QueryResponseState.Data, lib.ResponseDPOneGroup{Group: key, Data: value})
 
 		}
 	}
@@ -636,7 +634,7 @@ func (s *ServiceLeMal) AggregationPhase(targetSurvey string) error {
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 
-	survey.QueryResponseState = *libunlynx.ConvertFromAggregationStruct(cothorityAggregatedData)
+	survey.QueryResponseState = *lib.ConvertFromAggregationStruct(cothorityAggregatedData)
 	s.Survey.Put(string(targetSurvey), survey)
 	return nil
 }
@@ -693,7 +691,7 @@ func (s *ServiceLeMal) KeySwitchingPhase(targetSurvey string) error {
 //______________________________________________________________________________________________________________________
 
 // these first four functions are used to adapat the existing protocols to the 'lemal' service structs
-func convertToCipherVector(ad *libunlynx.ResponseAllDPs) *libunlynx.CipherVector {
+func convertToCipherVector(ad *lib.ResponseAllDPs) *libunlynx.CipherVector {
 	cv := make(libunlynx.CipherVector, 0)
 	for _, response := range ad.Data {
 		cv = append(cv, response.Data...)
@@ -701,8 +699,8 @@ func convertToCipherVector(ad *libunlynx.ResponseAllDPs) *libunlynx.CipherVector
 	return &cv
 }
 
-func convertFromKeySwitchingStruct(cv libunlynx.CipherVector, dpResponses libunlynx.ResponseAllDPs) *libunlynx.ResponseAllDPs {
-	data := make([]libunlynx.ResponseDPOneGroup, 0)
+func convertFromKeySwitchingStruct(cv libunlynx.CipherVector, dpResponses lib.ResponseAllDPs) *lib.ResponseAllDPs {
+	data := make([]lib.ResponseDPOneGroup, 0)
 
 	length := len(dpResponses.Data[0].Data)
 	init := 0
@@ -711,11 +709,11 @@ func convertFromKeySwitchingStruct(cv libunlynx.CipherVector, dpResponses libunl
 		if i%length == 0 {
 			tmp := cv[init:i]
 			init = i
-			data = append(data, libunlynx.ResponseDPOneGroup{Group: dpResponses.Data[groupIndex].Group, Data: tmp})
+			data = append(data, lib.ResponseDPOneGroup{Group: dpResponses.Data[groupIndex].Group, Data: tmp})
 			groupIndex++
 		}
 	}
-	return &libunlynx.ResponseAllDPs{Data: data}
+	return &lib.ResponseAllDPs{Data: data}
 
 }
 
@@ -736,14 +734,14 @@ func generateDataCollectionRoster(root *network.ServerIdentity, serverToDP map[s
 	return nil
 }
 
-func recreateRangeSignatures(ivSigs lib.QueryIVSigs) []*[]proof.PublishSignatureBytes {
-	recreate := make([]*[]proof.PublishSignatureBytes, 0)
+func recreateRangeSignatures(ivSigs lib.QueryIVSigs) []*[]lib.PublishSignatureBytes {
+	recreate := make([]*[]lib.PublishSignatureBytes, 0)
 
 	// transform the one-dimensional array (because of protobuf) to the original two-dimensional array
 	indexInit := 0
 	for i := 1; i <= len(ivSigs.InputValidationSigs); i++ {
 		if i%ivSigs.InputValidationSize2 == 0 {
-			tmp := make([]proof.PublishSignatureBytes, ivSigs.InputValidationSize2)
+			tmp := make([]lib.PublishSignatureBytes, ivSigs.InputValidationSize2)
 			for j := range tmp {
 				tmp[j] = (*ivSigs.InputValidationSigs[indexInit])[0]
 				indexInit++

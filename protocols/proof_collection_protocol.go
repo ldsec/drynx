@@ -10,7 +10,6 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/fanliao/go-concurrentMap"
-	"github.com/lca1/unlynx/skip"
 	"github.com/lca1/drynx/lib"
 )
 
@@ -21,7 +20,7 @@ func init() {
 	network.RegisterMessage(AnnouncementPCMessage{})
 	network.RegisterMessage(ProofCollectionMessage{})
 	network.RegisterMessage(BitmapCollectionMessage{})
-	network.RegisterMessage(skip.BitMap{})
+	network.RegisterMessage(lib.BitMap{})
 	onet.GlobalProtocolRegister(ProofCollectionProtocolName, NewProofCollectionProtocol)
 }
 
@@ -339,7 +338,7 @@ func (p *ProofCollectionProtocol) storeProof(index int, typeProof, surveyID, sen
 		if proofsRemaining == 0 {
 			log.Lvl2("VN", p.ServerIdentity().String(), "received all expected proofs.")
 
-			mapByte, err := network.Marshal(&skip.BitMap{BitMap: CastToQueryInfo(p.Request.Get(string(surveyID))).Bitmap})
+			mapByte, err := network.Marshal(&lib.BitMap{BitMap: CastToQueryInfo(p.Request.Get(string(surveyID))).Bitmap})
 			if err != nil {
 				log.Fatal("Cannot marshalize map", err)
 			}

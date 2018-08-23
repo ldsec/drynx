@@ -15,7 +15,6 @@ import (
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/drynx/lib"
-	"github.com/lca1/drynx/lib/proof"
 )
 
 // KeySwitchingProtocolName is the registered name for the collective aggregation protocol.
@@ -165,12 +164,12 @@ func (p *KeySwitchingProtocol) Start() error {
 }
 
 func (p *KeySwitchingProtocol) keySwitching(pubKey, targetPubKey kyber.Point, rbs []kyber.Point, secretKey kyber.Scalar) libunlynx.CipherVector {
-	switchedCiphers := make(libunlynx.CipherVector, len(rbs))
-	ks2s, rBNegs, vis := switchedCiphers.NewKeySwitching(targetPubKey, rbs, secretKey)
+	//switchedCiphers := make(libunlynx.CipherVector, len(rbs))
+	switchedCiphers, ks2s, rBNegs, vis := lib.NewKeySwitching(targetPubKey, rbs, secretKey)
 
 	if p.Proofs != 0 {
 		go func() {
-			proof := proof.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, len(rbs), ks2s, rBNegs, vis)
+			proof := lib.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, len(rbs), ks2s, rBNegs, vis)
 			pi := p.MapPIs["keyswitch/"+p.ServerIdentity().String()]
 			pi.(*ProofCollectionProtocol).Proof = lib.ProofRequest{KeySwitchProof: lib.NewKeySwitchProofRequest(&proof, p.Query.SurveyID, p.ServerIdentity().String(), "", p.Query.Query.RosterVNs, p.Private(), nil)}
 			go pi.Dispatch()

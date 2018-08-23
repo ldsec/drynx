@@ -12,8 +12,6 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/skip"
-	"github.com/lca1/drynx/lib/proof"
 )
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -96,7 +94,7 @@ type KeySwitchProofRequest struct {
 //______________________________________________________________________________________________________________________
 
 // NewRangeProofRequest creates a RangeProofRequest to be used in the ProofsCollectionProtocol
-func NewRangeProofRequest(proof *proof.RangeProofList, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *RangeProofRequest {
+func NewRangeProofRequest(proof *RangeProofList, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *RangeProofRequest {
 	proofBytes := proof.ToBytes()
 	dataToSend, err := network.Marshal(&proofBytes)
 	if err != nil {
@@ -133,7 +131,7 @@ func (rpr *RangeProofRequest) VerifyProof(source network.ServerIdentity, sq Surv
 		defer wg.Done()
 		err = VerifyProofSignature(sq.IDtoPublic[rpr.SenderID], rpr.Data, rpr.Signature)
 		if err != nil {
-			verifSign = skip.PROOF_FALSE_SIGN
+			verifSign = PROOF_FALSE_SIGN
 		}
 	}()
 	verif := verifyRangeProofList(rpr.Data, sq.Threshold, sq.Query.Ranges, sq.Query.IVSigs.InputValidationSigs, sq.RosterServers.Aggregate, sq.RangeProofThreshold)
@@ -146,8 +144,8 @@ func (rpr *RangeProofRequest) VerifyProof(source network.ServerIdentity, sq Surv
 	return verif, err
 }
 
-func verifyRangeProofList(data []byte, sample float64, ranges []*[]int64, psb []*[]proof.PublishSignatureBytes, p kyber.Point, verifThresold float64) int64 {
-	bmInt := skip.PROOF_RECEIVED
+func verifyRangeProofList(data []byte, sample float64, ranges []*[]int64, psb []*[]PublishSignatureBytes, p kyber.Point, verifThresold float64) int64 {
+	bmInt := PROOF_RECEIVED
 	rando := rand.Float64()
 	if rando <= sample {
 		// we check the proof
@@ -156,17 +154,17 @@ func verifyRangeProofList(data []byte, sample float64, ranges []*[]int64, psb []
 			log.Fatal("Error unmarshalling RangeProofBytes message")
 		}
 
-		toVerify := &proof.RangeProofList{}
-		toVerify.FromBytes(*proofs.(*proof.RangeProofListBytes))
+		toVerify := &RangeProofList{}
+		toVerify.FromBytes(*proofs.(*RangeProofListBytes))
 		log.Lvl2("size of range proof ", len(toVerify.Data))
-		result := proof.RangeProofListVerification(*toVerify, ranges, psb, p, verifThresold)
+		result := RangeProofListVerification(*toVerify, ranges, psb, p, verifThresold)
 		if result {
-			bmInt = skip.PROOF_TRUE
+			bmInt = PROOF_TRUE
 		} else {
-			bmInt = skip.PROOF_FALSE
+			bmInt = PROOF_FALSE
 		}
 	} else {
-		bmInt = skip.PROOF_RECEIVED
+		bmInt = PROOF_RECEIVED
 	}
 
 	return bmInt
@@ -176,7 +174,7 @@ func verifyRangeProofList(data []byte, sample float64, ranges []*[]int64, psb []
 //______________________________________________________________________________________________________________________
 
 // NewAggregationProofRequest creates a AggregationProofRequest to be used in the ProofsCollectionProtocol
-func NewAggregationProofRequest(proofs *proof.PublishAggregationProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *AggregationProofRequest {
+func NewAggregationProofRequest(proofs *PublishAggregationProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *AggregationProofRequest {
 	proofBytes := proofs.ToBytes()
 	dataToSend, err := network.Marshal(&proofBytes)
 	if err != nil {
@@ -212,7 +210,7 @@ func (apr *AggregationProofRequest) VerifyProof(source network.ServerIdentity, s
 		defer wg.Done()
 		err = VerifyProofSignature(sq.IDtoPublic[apr.SenderID], apr.Data, apr.Signature)
 		if err != nil {
-			verifSign = skip.PROOF_FALSE_SIGN
+			verifSign = PROOF_FALSE_SIGN
 		}
 	}()
 
@@ -227,23 +225,23 @@ func (apr *AggregationProofRequest) VerifyProof(source network.ServerIdentity, s
 }
 
 func verifyAggregation(data []byte, sample float64) int64 {
-	bmInt := skip.PROOF_RECEIVED
+	bmInt := PROOF_RECEIVED
 	if rand.Float64() <= sample {
 		_, proofs, err := network.Unmarshal(data, libunlynx.SuiTe)
-		toVerify := &proof.PublishAggregationProof{}
-		toVerify.FromBytes(*proofs.(*proof.PublishAggregationProofBytes))
+		toVerify := &PublishAggregationProof{}
+		toVerify.FromBytes(*proofs.(*PublishAggregationProofBytes))
 		if err != nil {
 			log.Fatal("Error in unmarshalling data from Aggregation request ", err)
 		}
 
-		result := proof.ServerAggregationProofVerification(*toVerify)
+		result := ServerAggregationProofVerification(*toVerify)
 		if result {
-			bmInt = skip.PROOF_TRUE
+			bmInt = PROOF_TRUE
 		} else {
-			bmInt = skip.PROOF_FALSE
+			bmInt = PROOF_FALSE
 		}
 	} else {
-		bmInt = skip.PROOF_RECEIVED
+		bmInt = PROOF_RECEIVED
 	}
 
 	return bmInt
@@ -253,7 +251,7 @@ func verifyAggregation(data []byte, sample float64) int64 {
 //______________________________________________________________________________________________________________________
 
 // NewObfuscationProofRequest creates a AggregationProofRequest to be used in the ProofsCollectionProtocol
-func NewObfuscationProofRequest(proof *proof.PublishedListObfuscationProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *ObfuscationProofRequest {
+func NewObfuscationProofRequest(proof *PublishedListObfuscationProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *ObfuscationProofRequest {
 	proofBytes := proof.ToBytes()
 	dataToSend, err := network.Marshal(&proofBytes)
 	if err != nil {
@@ -289,7 +287,7 @@ func (apr *ObfuscationProofRequest) VerifyProof(source network.ServerIdentity, s
 		defer wg.Done()
 		err = VerifyProofSignature(sq.IDtoPublic[apr.SenderID], apr.Data, apr.Signature)
 		if err != nil {
-			verifSign = skip.PROOF_FALSE_SIGN
+			verifSign = PROOF_FALSE_SIGN
 		}
 	}()
 
@@ -304,23 +302,23 @@ func (apr *ObfuscationProofRequest) VerifyProof(source network.ServerIdentity, s
 }
 
 func verifyObfuscation(data []byte, insideProofThresold, sample float64) int64 {
-	bmInt := skip.PROOF_RECEIVED
+	bmInt := PROOF_RECEIVED
 	if rand.Float64() <= sample {
 		_, proof, err := network.Unmarshal(data, libunlynx.SuiTe)
-		toVerify := &libunlynx.PublishedListObfuscationProof{}
-		toVerify.FromBytes(*proof.(*libunlynx.PublishedListObfuscationProofBytes))
+		toVerify := &PublishedListObfuscationProof{}
+		toVerify.FromBytes(*proof.(*PublishedListObfuscationProofBytes))
 		if err != nil {
 			log.Fatal("Error in unmarshalling data from Obfuscation request ", err)
 		}
 
-		result := libunlynx.ObfuscationListProofVerification(*toVerify, insideProofThresold)
+		result := ObfuscationListProofVerification(*toVerify, insideProofThresold)
 		if result {
-			bmInt = skip.PROOF_TRUE
+			bmInt = PROOF_TRUE
 		} else {
-			bmInt = skip.PROOF_FALSE
+			bmInt = PROOF_FALSE
 		}
 	} else {
-		bmInt = skip.PROOF_RECEIVED
+		bmInt = PROOF_RECEIVED
 	}
 
 	return bmInt
@@ -330,7 +328,7 @@ func verifyObfuscation(data []byte, insideProofThresold, sample float64) int64 {
 //______________________________________________________________________________________________________________________
 
 // NewShuffleProofRequest creates a ShuffleProofRequest to be used in the ProofsCollectionProtocol
-func NewShuffleProofRequest(proof *libunlynx.PublishedShufflingProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *ShuffleProofRequest {
+func NewShuffleProofRequest(proof *PublishedShufflingProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *ShuffleProofRequest {
 	psp := proof.ToBytes()
 	dataToSend, err := network.Marshal(&psp)
 	if err != nil {
@@ -365,7 +363,7 @@ func (spr *ShuffleProofRequest) VerifyProof(source network.ServerIdentity, sq Su
 		defer wg.Done()
 		err = VerifyProofSignature(sq.IDtoPublic[spr.SenderID], spr.Data, spr.Signature)
 		if err != nil {
-			verifSign = skip.PROOF_FALSE_SIGN
+			verifSign = PROOF_FALSE_SIGN
 		}
 	}()
 
@@ -381,24 +379,24 @@ func (spr *ShuffleProofRequest) VerifyProof(source network.ServerIdentity, sq Su
 
 // verifyShuffle verifies a shuffle proof with a given probability
 func verifyShuffle(data []byte, sample float64, roster onet.Roster) int64 {
-	bmInt := skip.PROOF_RECEIVED
+	bmInt := PROOF_RECEIVED
 	if rand.Float64() <= sample {
 		_, proofs, err := network.Unmarshal(data, libunlynx.SuiTe)
 		if err != nil {
 			log.Fatal("Error unmarshalling PublishShufflingProofBytes message")
 		}
 
-		toVerify := &libunlynx.PublishedShufflingProof{}
-		toVerify.FromBytes(*proofs.(*libunlynx.PublishedShufflingProofBytes))
-		result := libunlynx.ShufflingProofVerification(*toVerify, roster.Aggregate)
+		toVerify := &PublishedShufflingProof{}
+		toVerify.FromBytes(*proofs.(*PublishedShufflingProofBytes))
+		result := ShufflingProofVerification(*toVerify, roster.Aggregate)
 
 		if result {
-			bmInt = skip.PROOF_TRUE
+			bmInt = PROOF_TRUE
 		} else {
-			bmInt = skip.PROOF_FALSE
+			bmInt = PROOF_FALSE
 		}
 	} else {
-		bmInt = skip.PROOF_RECEIVED
+		bmInt = PROOF_RECEIVED
 	}
 
 	return bmInt
@@ -408,7 +406,7 @@ func verifyShuffle(data []byte, sample float64, roster onet.Roster) int64 {
 //______________________________________________________________________________________________________________________
 
 // NewKeySwitchProofRequest creates a KeySwitchProofRequest to be used in the ProofsCollectionProtocol
-func NewKeySwitchProofRequest(proof *proof.PublishedKSListProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *KeySwitchProofRequest {
+func NewKeySwitchProofRequest(proof *PublishedKSListProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *KeySwitchProofRequest {
 	proofBytes := proof.ToBytes()
 	dataToSend, err := network.Marshal(&proofBytes)
 	if err != nil {
@@ -443,7 +441,7 @@ func (kpr *KeySwitchProofRequest) VerifyProof(source network.ServerIdentity, sq 
 		defer wg.Done()
 		err = VerifyProofSignature(sq.IDtoPublic[kpr.SenderID], kpr.Data, kpr.Signature)
 		if err != nil {
-			verifSign = skip.PROOF_FALSE_SIGN
+			verifSign = PROOF_FALSE_SIGN
 		}
 	}()
 
@@ -458,7 +456,7 @@ func (kpr *KeySwitchProofRequest) VerifyProof(source network.ServerIdentity, sq 
 }
 
 func verifyKeySwitch(data []byte, insideProofThresold, sample float64) int64 {
-	bmInt := skip.PROOF_RECEIVED
+	bmInt := PROOF_RECEIVED
 	if rand.Float64() <= sample {
 		// we check the proof
 		_, proofs, err := network.Unmarshal(data, libunlynx.SuiTe)
@@ -466,17 +464,17 @@ func verifyKeySwitch(data []byte, insideProofThresold, sample float64) int64 {
 			log.Fatal("Error unmarshalling SwitchKeyListCVProofBytes message")
 		}
 
-		toVerify := &proof.PublishedKSListProof{}
-		toVerify.FromBytes(*proofs.(*proof.PublishedKSListProofBytes))
+		toVerify := &PublishedKSListProof{}
+		toVerify.FromBytes(*proofs.(*PublishedKSListProofBytes))
 
-		result := proof.KeySwitchListProofVerification(*toVerify, insideProofThresold)
+		result := KeySwitchListProofVerification(*toVerify, insideProofThresold)
 		if result {
-			bmInt = skip.PROOF_TRUE
+			bmInt = PROOF_TRUE
 		} else {
-			bmInt = skip.PROOF_FALSE
+			bmInt = PROOF_FALSE
 		}
 	} else {
-		bmInt = skip.PROOF_RECEIVED
+		bmInt = PROOF_RECEIVED
 	}
 
 	return bmInt

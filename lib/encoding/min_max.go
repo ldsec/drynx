@@ -3,13 +3,13 @@ package encoding
 import (
 	"github.com/dedis/kyber"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/drynx/lib/proof"
+	"github.com/lca1/drynx/lib"
 )
 
 //Note: min and max are such that all values are in the range [min, max], i.e. max (min) is the largest (smallest) possible value the attribute in question can take
 
 //EncodeMinWithProofs encodes the local min
-func EncodeMinWithProofs(input []int64, max int64, min int64, pubKey kyber.Point,  sigs [][]proof.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []proof.CreateProof) {
+func EncodeMinWithProofs(input []int64, max int64, min int64, pubKey kyber.Point,  sigs [][]lib.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []lib.CreateProof) {
 	//compute the local min
 	local_min := input[0]
 	for _, v := range input {
@@ -21,7 +21,7 @@ func EncodeMinWithProofs(input []int64, max int64, min int64, pubKey kyber.Point
 	//encode (and encrypt) under OR operation all the bits of min_vector
 	Ciphertext_Tuple := make([]libunlynx.CipherText, max-min+1)
 	Cleartext_Tuple := make([]int64, max-min+1)
-	Proofs_Tuple := make([]proof.CreateProof, max-min+1)
+	Proofs_Tuple := make([]lib.CreateProof, max-min+1)
 	wg := libunlynx.StartParallelize(int(max-min+1))
 	for i := min; i <= max; i++ {
 		go func(i int64) {
@@ -32,7 +32,7 @@ func EncodeMinWithProofs(input []int64, max int64, min int64, pubKey kyber.Point
 			}
 			tmp := &libunlynx.CipherText{}
 			if sigs != nil {
-				tmp, Cleartext_Tuple[i-min], Proofs_Tuple[i-min] = EncodeBit_ORWithProof(val, pubKey, proof.ReadColumn(sigs, int(i-min)),(*lu[i-min])[1], (*lu[i-min])[0])
+				tmp, Cleartext_Tuple[i-min], Proofs_Tuple[i-min] = EncodeBit_ORWithProof(val, pubKey, lib.ReadColumn(sigs, int(i-min)),(*lu[i-min])[1], (*lu[i-min])[0])
 			} else {
 				tmp, Cleartext_Tuple[i-min] = EncodeBit_OR(val, pubKey)
 			}
@@ -82,7 +82,7 @@ func EncodeMax(input []int64, max int64, min int64, pubKey kyber.Point) ([]libun
 	return ciphers, clears
 }
 //EncodeMaxWithProofs encodes the local max
-func EncodeMaxWithProofs(input []int64, max int64, min int64, pubKey kyber.Point,  sigs [][]proof.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []proof.CreateProof) {
+func EncodeMaxWithProofs(input []int64, max int64, min int64, pubKey kyber.Point,  sigs [][]lib.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []lib.CreateProof) {
 	//compute the local max
 	local_max := input[0]
 	for _, v := range input {
@@ -93,7 +93,7 @@ func EncodeMaxWithProofs(input []int64, max int64, min int64, pubKey kyber.Point
 
 	//encode (and encrypt) under OR operation all the bits of min_vector
 	Cleartext_Tuple := make([]int64, max-min+1)
-	Proofs_Tuple := make([]proof.CreateProof, max-min+1)
+	Proofs_Tuple := make([]lib.CreateProof, max-min+1)
 	Ciphertext_Tuple := make([]libunlynx.CipherText, max-min+1)
 	wg := libunlynx.StartParallelize(int(max-min+1))
 	for i := min; i <= max; i++ {
@@ -105,7 +105,7 @@ func EncodeMaxWithProofs(input []int64, max int64, min int64, pubKey kyber.Point
 			}
 			tmp := &libunlynx.CipherText{}
 			if sigs != nil {
-				tmp, Cleartext_Tuple[i-min], Proofs_Tuple[i-min] = EncodeBit_ANDWithProof(val, pubKey, proof.ReadColumn(sigs, int(i-min)),(*lu[i-min])[1], (*lu[i-min])[0])
+				tmp, Cleartext_Tuple[i-min], Proofs_Tuple[i-min] = EncodeBit_ANDWithProof(val, pubKey, lib.ReadColumn(sigs, int(i-min)),(*lu[i-min])[1], (*lu[i-min])[0])
 			} else {
 				tmp, Cleartext_Tuple[i-min] = EncodeBit_AND(val, pubKey)
 			}

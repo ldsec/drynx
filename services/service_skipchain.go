@@ -13,7 +13,6 @@ import (
 	"github.com/dedis/onet/network"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/skip"
 	"gopkg.in/satori/go.uuid.v1"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/protocols"
@@ -99,7 +98,7 @@ func (s *ServiceLeMal) HandleSurveyQueryToVN(recq *lib.SurveyQueryToVN) (network
 			startBI := libunlynx.StartTimer("BI")
 
 			//Create the data structure that will be inserted in the block
-			dataBlock := new(skip.DataBlock)
+			dataBlock := new(lib.DataBlock)
 			dataBlock.Sample = 0.4
 			dataBlock.SurveyID = recq.SQ.SurveyID
 			dataBlock.Time = time.Now()
@@ -385,7 +384,7 @@ func (s *ServiceLeMal) verifyFuncBitmap(newID []byte, newSB *skipchain.SkipBlock
 	}
 
 	//Get bitmap that was inserted in newBlock
-	blockData := msg.(*skip.DataBlock)
+	blockData := msg.(*lib.DataBlock)
 	bitMap := blockData.Proofs
 	bitMapFromServ := make(map[string]int64)
 
@@ -397,7 +396,7 @@ func (s *ServiceLeMal) verifyFuncBitmap(newID []byte, newSB *skipchain.SkipBlock
 		}
 		v := b.Get([]byte(blockData.SurveyID + "/map"))
 		_, message, _ := network.Unmarshal(v, libunlynx.SuiTe)
-		result := message.(*skip.BitMap)
+		result := message.(*lib.BitMap)
 		bitMapFromServ = result.BitMap
 		return nil
 	})

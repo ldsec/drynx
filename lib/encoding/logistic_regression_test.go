@@ -4,7 +4,7 @@ import (
 	"github.com/cdipaolo/goml/base"
 	"github.com/cdipaolo/goml/linear"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/encoding"
+	"github.com/lca1/drynx/lib/encoding"
 	"github.com/stretchr/testify/assert"
 	"gonum.org/v1/gonum/stat/combin"
 
@@ -13,11 +13,13 @@ import (
 	"testing"
 
 	"github.com/dedis/onet/log"
-	"github.com/lca1/unlynx/services/common"
 	"github.com/dedis/kyber"
+	"github.com/lca1/drynx/lib"
+	"github.com/dedis/kyber/pairing/bn256"
 )
 
 func TestComputeApproxCoefficients(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	X := []float64{0, 1, 2, 3, 4}
 	y := int64(1)
 	k := 1
@@ -72,6 +74,7 @@ func TestComputeApproxCoefficients(t *testing.T) {
 }
 
 func TestComputeEncryptedApproxCoefficients(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	X := []float64{0, 1, 2, 3, 4}
 	y := int64(1)
 	k := 1
@@ -108,6 +111,7 @@ func TestComputeEncryptedApproxCoefficients(t *testing.T) {
 }
 
 func TestCombinationsWithRepetitionEfficient(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	//tests correctness and efficiency
 	//int64 : -9223372036854775808 to 9223372036854775807
 
@@ -180,6 +184,7 @@ func TestCombinationsWithRepetitionEfficient(t *testing.T) {
 }
 
 func TestAggregateEncryptedApproxCoefficients(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	// data providers data
 	X := [][]float64{{0, 1, 2, 3, 4}, {0, 1, 2, 3, 4}}
 	y := []int64{1, 1}
@@ -210,6 +215,7 @@ func TestAggregateEncryptedApproxCoefficients(t *testing.T) {
 }
 
 func TestPredictWithInt(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	// integer weights
 	X := []float64{0, 1, 2, 3, 4}
 	privKey, pubKey := libunlynx.GenKey()
@@ -223,6 +229,7 @@ func TestPredictWithInt(t *testing.T) {
 }
 
 func TestPredictWithFloat(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	X := []float64{0, 1, 2, 3, 4}
 	privKey, pubKey := libunlynx.GenKey()
 	encryptedData := libunlynx.EncryptIntVector(pubKey, encoding.Float64ToInt641DArray(X))
@@ -262,6 +269,7 @@ func TestPredictWithFloat(t *testing.T) {
 }
 
 func TestPredictWithIntHomomorphic(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	// integer weights
 	X := []float64{0, 1, 2, 3, 4}
 	privKey, pubKey := libunlynx.GenKey()
@@ -275,6 +283,7 @@ func TestPredictWithIntHomomorphic(t *testing.T) {
 }
 
 func TestPredictWithFloatHomomorphic(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	X := []float64{1, 2, 6, 5, 5}
 	privKey, pubKey := libunlynx.GenKey()
 	encryptedData := libunlynx.EncryptIntVector(pubKey, encoding.Float64ToInt641DArray(X))
@@ -323,6 +332,7 @@ func showDetails(expected float64, actual float64, epsilon float64) {
 }
 
 func TestInt64ToFloat641DArray(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	arrayInt64 := []int64{0, 1, 2, 3, 4}
 	expected := []float64{0.0, 1.0, 2.0, 3.0, 4.0}
 	actual := encoding.Int64ToFloat641DArray(arrayInt64)
@@ -330,6 +340,7 @@ func TestInt64ToFloat641DArray(t *testing.T) {
 }
 
 func TestInt64ToFloat642DArray(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	arrayInt64 := [][]int64{{0, 1, 2, 3, 4}, {5, 6, 7, 8, 9}}
 	expected := [][]float64{{0.0, 1.0, 2.0, 3.0, 4.0}, {5.0, 6.0, 7.0, 8.0, 9.0}}
 	actual := encoding.Int64ToFloat642DArray(arrayInt64)
@@ -337,6 +348,7 @@ func TestInt64ToFloat642DArray(t *testing.T) {
 }
 
 func TestGradient(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	X := [][]float64{{1, 2, 3, 4, 5}}
 	y := []int64{1}
 	k := 1
@@ -380,6 +392,7 @@ func TestGradient(t *testing.T) {
 }
 
 func TestCost(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	X := [][]float64{{1, 0, 1, 2, 3, 4}}
 	y := []int64{1}
 	k := 1
@@ -413,6 +426,7 @@ func TestCost(t *testing.T) {
 }
 
 func TestLogisticCost(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	X := [][]float64{{1.0, 0.0, 1.0, 2.0, 3.0, 4.0}}
 	y := []int64{1}
 	N := int64(1)
@@ -426,6 +440,7 @@ func TestLogisticCost(t *testing.T) {
 }
 
 func TestFindMinimumWeightsDegreeOne(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	X := [][]float64{{1, 0, 1, 2, 3, 4}}
 	y := []int64{1}
 	k := 1
@@ -478,6 +493,7 @@ func TestFindMinimumWeightsDegreeOne(t *testing.T) {
 }
 
 func TestFindMinimumWeights(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	X := [][]float64{{1, 0, 1, 2, 3, 4}}
 	y := []int64{1}
 	k := 2
@@ -521,6 +537,7 @@ func TestFindMinimumWeights(t *testing.T) {
 }
 
 func TestRange(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	expected := []int64{0, 1, 2, 3, 4, 5}
 	actual := encoding.Range(0, 6)
 	assert.Equal(t, expected, actual)
@@ -531,11 +548,13 @@ func TestRange(t *testing.T) {
 }
 
 func TestCombinations(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	result := combin.Cartesian(nil, [][]float64{{1, 2, 3}, {1, 2, 3}, {1, 2, 3}})
 	fmt.Println(result)
 }
 
 func TestCartesianProduct(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	start := int64(0)
 	end := int64(2)
 	dim := 3
@@ -552,6 +571,7 @@ func TestCartesianProduct(t *testing.T) {
 }
 
 func TestAddSub(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	privKey, pubKey := libunlynx.GenKey()
 
 	ct := libunlynx.NewCipherText()
@@ -566,6 +586,7 @@ func TestAddSub(t *testing.T) {
 }
 
 func TestEncodeDecodeLogisticRegression(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	// data
 	data := [][]float64{{0, 1.3, 5.0, 3.4, 3.2},
 		{1, 2.0, 4.4, 4.2, 3.3},
@@ -613,7 +634,7 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 	initialWeights = []float64{0.1, 0.2, 0.3, 0.4, 0.5} // FindMinimumWeights modifies the initial weights...
 
 
-	lrParameters := common.LogisticRegressionParameters{FilePath: "", NbrRecords: N_64, NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
+	lrParameters := lib.LogisticRegressionParameters{FilePath: "", NbrRecords: N_64, NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
 		InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
 
 	resultEncrypted, _ := encoding.EncodeLogisticRegression(data, lrParameters, pubKey)
@@ -629,6 +650,7 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 }
 
 func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	// data
 	data := [][]float64{{0, 1.3, 5.0, 3.4, 3.2},
 		{1, 2.0, 4.4, 4.2, 3.3},
@@ -676,23 +698,23 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 	initialWeights = []float64{0.1, 0.2, 0.3, 0.4, 0.5} // FindMinimumWeights modifies the initial weights...
 
 
-	lrParameters := common.LogisticRegressionParameters{FilePath: "", NbrRecords: N_64, NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
+	lrParameters := lib.LogisticRegressionParameters{FilePath: "", NbrRecords: N_64, NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
 		InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
 
 	//signatures needed to check the proof; create signatures for 2 servers and all DPs outputs
 	u := int64(2)
 	l := int64(10)
-	ps := make([][]libunlynx.PublishSignature, 2)
+	ps := make([][]lib.PublishSignature, 2)
 
 	ranges := make([]*[]int64, 30)
-	ps[0] = make([]libunlynx.PublishSignature, 30)
-	ps[1] = make([]libunlynx.PublishSignature, 30)
+	ps[0] = make([]lib.PublishSignature, 30)
+	ps[1] = make([]lib.PublishSignature, 30)
 	ys := make([][]kyber.Point, 2)
 	ys[0] = make([]kyber.Point, 30)
 	ys[1] = make([]kyber.Point, 30)
 	for i := range ps[0] {
-		ps[0][i] = libunlynx.PublishSignatureBytesToPublishSignatures(libunlynx.InitRangeProofSignature(u))
-		ps[1][i] = libunlynx.PublishSignatureBytesToPublishSignatures(libunlynx.InitRangeProofSignature(u))
+		ps[0][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u))
+		ps[1][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u))
 		ys[0][i] = ps[0][i].Public
 		ys[1][i] = ps[1][i].Public
 		ranges[i] = &[]int64{u, l}
@@ -714,7 +736,7 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 
 	for i := 0; i < 30; i++ {
 		log.LLvl1(clear[i])
-		log.LLvl1(libunlynx.RangeProofVerification(libunlynx.CreatePredicateRangeProofForAllServ(prf[i]), (*ranges[i])[0], (*ranges[i])[1], yss[i], pubKey))
+		log.LLvl1(lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prf[i]), (*ranges[i])[0], (*ranges[i])[1], yss[i], pubKey))
 	}
 	// no equality because expected weights were computed in clear
 	// todo: consider computed weights using encrypted approx coefficients
@@ -726,6 +748,7 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 }
 
 func TestStandardise(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	X := [][]float64{
 		{1.3, 5.0, 3.4, 3.2},
 		{2.0, 4.4, 4.2, 3.3},

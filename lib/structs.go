@@ -6,8 +6,8 @@ import (
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/skip"
 	"time"
+	"sync"
 )
 
 // QueryInfo is a structure used in the service to store information about a query in the concurrent map.
@@ -66,15 +66,15 @@ var tab1 = []int64{1, 2, 3, 6}
 var tab2 = []int64{2, 4, 8, 6}
 
 //CreateRandomGoodTestData only creates valid proofs
-func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]libunlynx.PublishSignatureBytes, ranges []*[]int64, nbrProofs int) skip.DataToVerify {
+func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]PublishSignatureBytes, ranges []*[]int64, nbrProofs int) DataToVerify {
 	//var cipherOne = *libunlynx.EncryptInt(roster.Aggregate, 10)
 
-	result := skip.DataToVerify{}
-	result.ProofsKeySwitch = make([]*libunlynx.PublishedKSListProof, nbrProofs)
-	result.ProofsRange = make([]*libunlynx.RangeProofList, nbrProofs)
-	result.ProofsAggregation = make([]*libunlynx.PublishAggregationProof, nbrProofs)
-	result.ProofsObfuscation = make([]*libunlynx.PublishedListObfuscationProof, nbrProofs)
-	result.ProofShuffle = make([]*libunlynx.PublishedShufflingProof, nbrProofs)
+	result := DataToVerify{}
+	result.ProofsKeySwitch = make([]*PublishedKSListProof, nbrProofs)
+	result.ProofsRange = make([]*RangeProofList, nbrProofs)
+	result.ProofsAggregation = make([]*PublishAggregationProof, nbrProofs)
+	result.ProofsObfuscation = make([]*PublishedListObfuscationProof, nbrProofs)
+	result.ProofShuffle = make([]*PublishedShufflingProof, nbrProofs)
 
 	//Fill Aggregation with good proofs
 
@@ -82,15 +82,15 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]libu
 		tab := []int64{1, 2, 3, 4, 5}
 		ev := libunlynx.EncryptIntVector(roster.Aggregate, tab)
 
-		dpResponse1 := libunlynx.ResponseDPOneGroup{Group: "1", Data: *ev}
-		dpResponse2 := libunlynx.ResponseDPOneGroup{Group: "2", Data: *ev}
+		dpResponse1 := ResponseDPOneGroup{Group: "1", Data: *ev}
+		dpResponse2 := ResponseDPOneGroup{Group: "2", Data: *ev}
 		evresult := libunlynx.NewCipherVector(len(*ev))
 		evresult.Add(*ev, *ev)
-		dpResponseResult1 := libunlynx.ResponseDPOneGroup{Group: "1", Data: *evresult}
-		dpResponseResult2 := libunlynx.ResponseDPOneGroup{Group: "2", Data: *evresult}
-		dpAggregated := libunlynx.ResponseAllDPs{Data: []libunlynx.ResponseDPOneGroup{dpResponseResult1, dpResponseResult2}}
-		dpResponses := libunlynx.ResponseAllDPs{Data: []libunlynx.ResponseDPOneGroup{dpResponse1, dpResponse1, dpResponse2, dpResponse2}}
-		proof := libunlynx.ServerAggregationProofCreation(dpResponses, dpAggregated)
+		dpResponseResult1 := ResponseDPOneGroup{Group: "1", Data: *evresult}
+		dpResponseResult2 := ResponseDPOneGroup{Group: "2", Data: *evresult}
+		dpAggregated := ResponseAllDPs{Data: []ResponseDPOneGroup{dpResponseResult1, dpResponseResult2}}
+		dpResponses := ResponseAllDPs{Data: []ResponseDPOneGroup{dpResponse1, dpResponse1, dpResponse2, dpResponse2}}
+		proof := ServerAggregationProofCreation(dpResponses, dpAggregated)
 		result.ProofsAggregation[i] = &proof
 	}
 
@@ -102,7 +102,7 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]libu
 		newE1.MulCipherTextbyScalar((*e)[0], obfFactor)
 		newE2 := libunlynx.CipherText{}
 		newE2.MulCipherTextbyScalar((*e)[1], obfFactor)
-		proof := libunlynx.ObfuscationListProofCreation(*e, libunlynx.CipherVector{newE1, newE2}, []kyber.Scalar{obfFactor, obfFactor})
+		proof := ObfuscationListProofCreation(*e, libunlynx.CipherVector{newE1, newE2}, []kyber.Scalar{obfFactor, obfFactor})
 		result.ProofsObfuscation[i] = &proof
 	}
 
@@ -116,8 +116,8 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]libu
 		responses[1] = libunlynx.ProcessResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 		responses[2] = libunlynx.ProcessResponse{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}
 
-		responsesShuffled, pi, beta := libunlynx.ShuffleSequence(responses, libunlynx.SuiTe.Point().Base(), roster.Aggregate, nil)
-		prf := libunlynx.ShufflingProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), roster.Aggregate, beta, pi)
+		responsesShuffled, pi, beta := ShuffleSequence(responses, libunlynx.SuiTe.Point().Base(), roster.Aggregate, nil)
+		prf := ShufflingProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), roster.Aggregate, beta, pi)
 		result.ProofShuffle[i] = &prf
 	}
 
@@ -129,31 +129,31 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]libu
 			initialTab[i] = v.K
 		}
 
-		switchedVect := libunlynx.NewCipherVector(length)
-		ks2s, rBNegs, vis := switchedVect.NewKeySwitching(pub, initialTab, secKey)
+		//switchedVect := libunlynx.NewCipherVector(length)
+		_, ks2s, rBNegs, vis := NewKeySwitching(pub, initialTab, secKey)
 
-		pkslp := libunlynx.KeySwitchListProofCreation(entityPub, pub, secKey, length, ks2s, rBNegs, vis)
+		pkslp := KeySwitchListProofCreation(entityPub, pub, secKey, length, ks2s, rBNegs, vis)
 
 		result.ProofsKeySwitch[i] = &pkslp
 	}
 
 	for i := range result.ProofsRange {
 
-		encryption, r := libunlynx.EncryptIntGetR(roster.Aggregate, int64(25))
+		encryption, r := EncryptIntGetR(roster.Aggregate, int64(25))
 
 		// read the signatures needed to compute the range proofs
-		signatures := make([][]libunlynx.PublishSignature, len(roster.List))
+		signatures := make([][]PublishSignature, len(roster.List))
 		for i := 0; i < len(roster.List); i++ {
-			signatures[i] = make([]libunlynx.PublishSignature, len(ranges))
+			signatures[i] = make([]PublishSignature, len(ranges))
 			for j := 0; j < len(ranges); j++ {
-				signatures[i][j] = libunlynx.PublishSignatureBytesToPublishSignatures((*ps[i])[j])
+				signatures[i][j] = PublishSignatureBytesToPublishSignatures((*ps[i])[j])
 			}
 		}
 
-		cp := libunlynx.CreateProof{Sigs: libunlynx.ReadColumn(signatures, 0), U: 16, L: 16, Secret: int64(25), R: r, CaPub: roster.Aggregate, Cipher: *encryption}
-		cp1 := libunlynx.CreateProof{Sigs: libunlynx.ReadColumn(signatures, 1), U: 16, L: 16, Secret: int64(25), R: r, CaPub: roster.Aggregate, Cipher: *encryption}
-		cps := []libunlynx.CreateProof{cp, cp1}
-		rps := libunlynx.RangeProofList{Data: libunlynx.CreatePredicateRangeProofListForAllServers(cps)}
+		cp := CreateProof{Sigs: ReadColumn(signatures, 0), U: 16, L: 16, Secret: int64(25), R: r, CaPub: roster.Aggregate, Cipher: *encryption}
+		cp1 := CreateProof{Sigs: ReadColumn(signatures, 1), U: 16, L: 16, Secret: int64(25), R: r, CaPub: roster.Aggregate, Cipher: *encryption}
+		cps := []CreateProof{cp, cp1}
+		rps := RangeProofList{Data: CreatePredicateRangeProofListForAllServers(cps)}
 		result.ProofsRange[i] = &rps
 	}
 
@@ -162,11 +162,11 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]libu
 
 //DataToVerify contains the proofs to be verified by the skipchain CA
 type DataToVerify struct {
-	ProofsRange       []*libunlynx.RangeProofList
-	ProofsAggregation []*libunlynx.PublishAggregationProof
-	ProofsObfuscation []*libunlynx.PublishedListObfuscationProof
-	ProofsKeySwitch   []*libunlynx.PublishedKSListProof
-	ProofShuffle      []*libunlynx.PublishedShufflingProof
+	ProofsRange       []*RangeProofList
+	ProofsAggregation []*PublishAggregationProof
+	ProofsObfuscation []*PublishedListObfuscationProof
+	ProofsKeySwitch   []*PublishedKSListProof
+	ProofShuffle      []*PublishedShufflingProof
 }
 
 //PublishRangeProofByte is structure to send with array of point as byte as it cannot be converted
@@ -308,4 +308,113 @@ func (rad *ResponseAllDPs) FromBytes(radb ResponseAllDPsBytes) {
 
 	}
 	libunlynx.EndParallelize(wg)
+}
+
+func ConvertToAggregationStruct(dp ResponseAllDPs) map[libunlynx.GroupingKey]libunlynx.FilteredResponse {
+	convertedData := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
+	for _, val := range dp.Data {
+		tmpCv := libunlynx.NewCipherVector(len(val.Data))
+		if _, ok := convertedData[libunlynx.GroupingKey(val.Group)]; ok {
+			tmpCv.Add(convertedData[libunlynx.GroupingKey(val.Group)].AggregatingAttributes, val.Data)
+		} else {
+			tmpCv = &val.Data
+		}
+		convertedData[libunlynx.GroupingKey(val.Group)] = libunlynx.FilteredResponse{AggregatingAttributes: *tmpCv}
+	}
+	return convertedData
+}
+
+func ConvertFromAggregationStruct(cad CothorityAggregatedData) *ResponseAllDPs {
+	response := make([]ResponseDPOneGroup, 0)
+	for k, v := range cad.GroupedData {
+		response = append(response, ResponseDPOneGroup{Group: string(k), Data: v.AggregatingAttributes})
+	}
+
+	return &ResponseAllDPs{response}
+}
+
+// WhereQueryAttributeClear is the name and value of a where attribute in the query
+type WhereQueryAttributeClear struct {
+	Name  string
+	Value string
+}
+
+// ShufflingMessage represents a message containing data to shuffle
+type ShufflingMessage struct {
+	Data []libunlynx.ProcessResponse
+}
+
+// ShufflingBytesMessage represents a shuffling message in bytes
+type ShufflingBytesMessage struct {
+	Data *[]byte
+}
+
+// ToBytes converts a ShufflingMessage to a byte array
+func (sm *ShufflingMessage) ToBytes() (*[]byte, int, int, int) {
+	b := make([]byte, 0)
+	bb := make([][]byte, len((*sm).Data))
+
+	var gacbLength int
+	var aabLength int
+	var pgaebLength int
+
+	wg := libunlynx.StartParallelize(len((*sm).Data))
+	var mutexD sync.Mutex
+	for i := range (*sm).Data {
+		if libunlynx.PARALLELIZE {
+			go func(i int) {
+				defer wg.Done()
+
+				mutexD.Lock()
+				data := (*sm).Data[i]
+				mutexD.Unlock()
+
+				aux, gacbAux, aabAux, pgaebAux := data.ToBytes()
+
+				mutexD.Lock()
+				bb[i] = aux
+				gacbLength = gacbAux
+				aabLength = aabAux
+				pgaebLength = pgaebAux
+				mutexD.Unlock()
+			}(i)
+		} else {
+			bb[i], gacbLength, aabLength, pgaebLength = (*sm).Data[i].ToBytes()
+		}
+
+	}
+	libunlynx.EndParallelize(wg)
+
+	for _, el := range bb {
+		b = append(b, el...)
+	}
+
+	return &b, gacbLength, aabLength, pgaebLength
+}
+
+// FromBytes converts a byte array to a ShufflingMessage. Note that you need to create the (empty) object beforehand.
+func (sm *ShufflingMessage) FromBytes(data *[]byte, gacbLength, aabLength, pgaebLength int) {
+	var nbrData int
+	cipherLength := libunlynx.SuiTe.PointLen() * 2
+	elementLength := (gacbLength*cipherLength + aabLength*cipherLength + pgaebLength*cipherLength) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
+	if elementLength != 0 {
+
+		nbrData = len(*data) / elementLength
+
+		(*sm).Data = make([]libunlynx.ProcessResponse, nbrData)
+		wg := libunlynx.StartParallelize(nbrData)
+		for i := 0; i < nbrData; i++ {
+			v := (*data)[i*elementLength : i*elementLength+elementLength]
+			if libunlynx.PARALLELIZE {
+				go func(v []byte, i int) {
+					defer wg.Done()
+					(*sm).Data[i].FromBytes(v, gacbLength, aabLength, pgaebLength)
+				}(v, i)
+			} else {
+				(*sm).Data[i].FromBytes(v, gacbLength, aabLength, pgaebLength)
+			}
+
+		}
+		libunlynx.EndParallelize(wg)
+	}
 }

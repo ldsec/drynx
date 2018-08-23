@@ -1,4 +1,4 @@
-package protocols_test
+package protocols
 
 import (
 	"testing"
@@ -16,11 +16,9 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/common"
-	"github.com/lca1/unlynx/services/lemal"
-	"github.com/lca1/unlynx/skip"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/satori/go.uuid.v1"
+	"github.com/lca1/drynx/lib"
 )
 
 type nodeTools struct {
@@ -32,13 +30,12 @@ type nodeTools struct {
 }
 
 var nodeToolsMap map[string]*nodeTools
-var testSQ common.SurveyQuery
+var testSQ lib.SurveyQuery
 var sharedBMChannel chan map[string]int64
 var sharedBMChannelToTerminate chan struct{}
 
 //TestProofCollectionProtocol tests collective aggregation protocol
 func TestProofCollectionProtocol(t *testing.T) {
-	libunlynx.TIME = false
 	log.SetDebugVisible(1)
 
 	nbrProofs := 2
@@ -64,11 +61,11 @@ func TestProofCollectionProtocol(t *testing.T) {
 	idToPublic[senderID] = pub
 
 	// generate query
-	ps := make([]*[]libunlynx.PublishSignatureBytes, len(el.List))
+	ps := make([]*[]lib.PublishSignatureBytes, len(el.List))
 	for i := range el.List {
-		temp := make([]libunlynx.PublishSignatureBytes, nbrProofs)
+		temp := make([]lib.PublishSignatureBytes, nbrProofs)
 		for j := 0; j < 2; j++ {
-			temp[j] = libunlynx.InitRangeProofSignature(16) // u is the first elem
+			temp[j] = lib.InitRangeProofSignature(16) // u is the first elem
 		}
 		ps[i] = &temp
 	}
@@ -92,7 +89,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 		sizeQuery = append(sizeQuery, nbrProofs)
 		sizeQuery = append(sizeQuery, nbrProofs)
 
-		request.Put(surveyID, &lemal.QueryInfo{Bitmap: make(map[string]int64), TotalNbrProofs: sizeQuery, Query: &testSQ, EndVerificationChannel: make(chan skipchain.SkipBlock, 100)})
+		request.Put(surveyID, &lib.QueryInfo{Bitmap: make(map[string]int64), TotalNbrProofs: sizeQuery, Query: &testSQ, EndVerificationChannel: make(chan skipchain.SkipBlock, 100)})
 
 		dbPath := "test" + strconv.FormatInt(int64(i), 10)
 		db, err := bolt.Open(dbPath, 0600, nil)
@@ -105,7 +102,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 	}
 
 	// generate test proofs
-	testProofs := lemal.CreateRandomGoodTestData(el, pub, ps, ranges, nbrProofs)
+	testProofs := lib.CreateRandomGoodTestData(el, pub, ps, ranges, nbrProofs)
 
 	// 5 is the number of different proofs
 	totalNbrProofs := nbrProofs * 5
@@ -119,9 +116,9 @@ func TestProofCollectionProtocol(t *testing.T) {
 			if err != nil {
 				t.Fatal("Couldn't start protocol:", err)
 			}
-			protocol := rootInstance.(*lemal.ProofCollectionProtocol)
+			protocol := rootInstance.(*ProofCollectionProtocol)
 
-			protocol.Proof = lemal.ProofRequest{RangeProof: lemal.NewRangeProofRequest(testProofs.ProofsRange[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
+			protocol.Proof = lib.ProofRequest{RangeProof: lib.NewRangeProofRequest(testProofs.ProofsRange[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
 
 			//run protocol
 			go protocol.Start()
@@ -129,7 +126,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			//check if all proofs are true
 			for _, v := range res.Bitmap {
-				assert.Equal(t, skip.PROOF_TRUE, v, "There are some false range proofs")
+				assert.Equal(t, lib.PROOF_TRUE, v, "There are some false range proofs")
 			}
 		}(i)
 	}
@@ -147,9 +144,9 @@ func TestProofCollectionProtocol(t *testing.T) {
 			if err != nil {
 				t.Fatal("Couldn't start protocol:", err)
 			}
-			protocol := rootInstance.(*lemal.ProofCollectionProtocol)
+			protocol := rootInstance.(*ProofCollectionProtocol)
 
-			protocol.Proof = lemal.ProofRequest{AggregationProof: lemal.NewAggregationProofRequest(testProofs.ProofsAggregation[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
+			protocol.Proof = lib.ProofRequest{AggregationProof: lib.NewAggregationProofRequest(testProofs.ProofsAggregation[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
 
 			//run protocol
 			go protocol.Start()
@@ -157,7 +154,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			//check if all proofs are true
 			for _, v := range res.Bitmap {
-				assert.Equal(t, skip.PROOF_TRUE, v, "There are some false aggregation proofs")
+				assert.Equal(t, lib.PROOF_TRUE, v, "There are some false aggregation proofs")
 			}
 
 		}(i)
@@ -176,9 +173,9 @@ func TestProofCollectionProtocol(t *testing.T) {
 			if err != nil {
 				t.Fatal("Couldn't start protocol:", err)
 			}
-			protocol := rootInstance.(*lemal.ProofCollectionProtocol)
+			protocol := rootInstance.(*ProofCollectionProtocol)
 
-			protocol.Proof = lemal.ProofRequest{ObfuscationProof: lemal.NewObfuscationProofRequest(testProofs.ProofsObfuscation[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
+			protocol.Proof = lib.ProofRequest{ObfuscationProof: lib.NewObfuscationProofRequest(testProofs.ProofsObfuscation[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
 
 			//run protocol
 			go protocol.Start()
@@ -186,7 +183,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			//check if all proofs are true
 			for _, v := range res.Bitmap {
-				assert.Equal(t, skip.PROOF_TRUE, v, "There are some false obfuscation proofs")
+				assert.Equal(t, lib.PROOF_TRUE, v, "There are some false obfuscation proofs")
 			}
 
 		}(i)
@@ -205,9 +202,9 @@ func TestProofCollectionProtocol(t *testing.T) {
 			if err != nil {
 				t.Fatal("Couldn't start protocol:", err)
 			}
-			protocol := rootInstance.(*lemal.ProofCollectionProtocol)
+			protocol := rootInstance.(*ProofCollectionProtocol)
 
-			protocol.Proof = lemal.ProofRequest{ShuffleProof: lemal.NewShuffleProofRequest(testProofs.ProofShuffle[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
+			protocol.Proof = lib.ProofRequest{ShuffleProof: lib.NewShuffleProofRequest(testProofs.ProofShuffle[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
 
 			//run protocol
 			go protocol.Start()
@@ -215,7 +212,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			//check if all proofs are true
 			for _, v := range res.Bitmap {
-				assert.Equal(t, skip.PROOF_TRUE, v, "There are some false shuffle proofs")
+				assert.Equal(t, lib.PROOF_TRUE, v, "There are some false shuffle proofs")
 			}
 		}(i)
 	}
@@ -233,9 +230,9 @@ func TestProofCollectionProtocol(t *testing.T) {
 			if err != nil {
 				t.Fatal("Couldn't start protocol:", err)
 			}
-			protocol := rootInstance.(*lemal.ProofCollectionProtocol)
+			protocol := rootInstance.(*ProofCollectionProtocol)
 
-			protocol.Proof = lemal.ProofRequest{KeySwitchProof: lemal.NewKeySwitchProofRequest(testProofs.ProofsKeySwitch[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
+			protocol.Proof = lib.ProofRequest{KeySwitchProof: lib.NewKeySwitchProofRequest(testProofs.ProofsKeySwitch[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
 
 			//run protocol
 			go protocol.Start()
@@ -243,7 +240,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			//check if all proofs are true
 			for _, v := range res.Bitmap {
-				assert.Equal(t, skip.PROOF_TRUE, v, "There are some false key switch proofs")
+				assert.Equal(t, lib.PROOF_TRUE, v, "There are some false key switch proofs")
 			}
 		}(i)
 	}
@@ -282,20 +279,20 @@ func TestProofCollectionProtocol(t *testing.T) {
 	}
 }
 
-func generateTestSurveyQuery(surveyID string, el *onet.Roster, idToPublic map[string]kyber.Point, ps []*[]libunlynx.PublishSignatureBytes, ranges []*[]int64) common.SurveyQuery {
-	diffP := common.QueryDiffP{Scale: 1.0, Quanta: 1.0, NoiseListSize: 1, Limit: 1.0, LapMean: 1.0, LapScale: 1.0}
+func generateTestSurveyQuery(surveyID string, el *onet.Roster, idToPublic map[string]kyber.Point, ps []*[]lib.PublishSignatureBytes, ranges []*[]int64) lib.SurveyQuery {
+	diffP := lib.QueryDiffP{Scale: 1.0, Quanta: 1.0, NoiseListSize: 1, Limit: 1.0, LapMean: 1.0, LapScale: 1.0}
 
-	iVSigs := common.QueryIVSigs{InputValidationSigs: ps, InputValidationSize1: len(el.List), InputValidationSize2: len(ranges)}
-	query := common.Query{DiffP: diffP, Operation: common.Operation{NbrInput: 1, NbrOutput: 1}, Ranges: ranges, IVSigs: iVSigs, Proofs: 1}
-	sq := common.SurveyQuery{RosterServers: *el, SurveyID: surveyID, Query: query, ClientPubKey: nil, ServerToDP: nil, IDtoPublic: idToPublic, Threshold: 1.0, RangeProofThreshold: 1.0, ObfuscationProofThreshold: 1.0, KeySwitchingProofThreshold: 1.0}
+	iVSigs := lib.QueryIVSigs{InputValidationSigs: ps, InputValidationSize1: len(el.List), InputValidationSize2: len(ranges)}
+	query := lib.Query{DiffP: diffP, Operation: lib.Operation{NbrInput: 1, NbrOutput: 1}, Ranges: ranges, IVSigs: iVSigs, Proofs: 1}
+	sq := lib.SurveyQuery{RosterServers: *el, SurveyID: surveyID, Query: query, ClientPubKey: nil, ServerToDP: nil, IDtoPublic: idToPublic, Threshold: 1.0, RangeProofThreshold: 1.0, ObfuscationProofThreshold: 1.0, KeySwitchingProofThreshold: 1.0}
 
 	return sq
 }
 
 // NewProofCollectionTest is a test specific protocol instance constructor that injects test data.
 func NewProofCollectionTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
-	pi, err := lemal.NewProofCollectionProtocol(tni)
-	protocol := pi.(*lemal.ProofCollectionProtocol)
+	pi, err := NewProofCollectionProtocol(tni)
+	protocol := pi.(*ProofCollectionProtocol)
 
 	if !tni.IsRoot() {
 		protocol.SQ = testSQ

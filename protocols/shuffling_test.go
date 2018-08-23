@@ -10,7 +10,7 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/lemal"
+	"github.com/lca1/drynx/protocols"
 )
 
 var nbrNodes = 5
@@ -44,7 +44,7 @@ func TestShuffling(t *testing.T) {
 	defer local.CloseAll()
 
 	rootInstance, _ := local.CreateProtocol("ShufflingTest", tree)
-	protocol := rootInstance.(*lemal.ShufflingProtocol)
+	protocol := rootInstance.(*protocols.ShufflingProtocol)
 
 	//create data
 	testCipherVect := make(libunlynx.CipherVector, 1)
@@ -114,8 +114,8 @@ func TestShuffling(t *testing.T) {
 
 // NewShufflingTest is a special purpose protocol constructor specific to tests.
 func NewShufflingTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
-	pi, err := lemal.NewShufflingProtocol(tni)
-	protocol := pi.(*lemal.ShufflingProtocol)
+	pi, err := protocols.NewShufflingProtocol(tni)
+	protocol := pi.(*protocols.ShufflingProtocol)
 	protocol.CollectiveKey = groupPub
 	protocol.Precomputed = precomputes[tni.Index()]
 	protocol.Proofs = 0

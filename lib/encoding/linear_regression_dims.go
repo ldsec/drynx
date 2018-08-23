@@ -6,7 +6,7 @@ import (
 	"github.com/dedis/kyber"
 	"github.com/lca1/unlynx/lib"
 	"github.com/tonestuff/quadratic"
-	"github.com/lca1/drynx/lib/proof"
+	"github.com/lca1/drynx/lib"
 )
 
 //EncodeLinearRegression_Dims implements a d-dimensional linear regression algorithm on the query results
@@ -16,7 +16,7 @@ func EncodeLinearRegression_Dims(input1 [][]int64, input2 []int64, pubKey kyber.
 }
 
 //EncodeLinearRegression_DimsWithProofs implements a d-dimensional linear regression algorithm on the query results with range proofs
-func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pubKey kyber.Point, sigs [][]proof.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []proof.CreateProof) {
+func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pubKey kyber.Point, sigs [][]lib.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []lib.CreateProof) {
 	//sum the Xs and their squares, the Ys and the product of every pair of X and Y
 	sum_xj := int64(0)
 	sum_y := int64(0)
@@ -33,7 +33,7 @@ func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pub
 
 	var Ciphertext_Tuple []libunlynx.CipherText
 	//Encrypt the number of data records considered
-	N_Encrypted, r_0 := libunlynx.EncryptIntGetR(pubKey, int64(N))
+	N_Encrypted, r_0 := lib.EncryptIntGetR(pubKey, int64(N))
 	Ciphertext_Tuple = append(Ciphertext_Tuple, *N_Encrypted)
 	plaintext_values = append(plaintext_values, int64(N))
 	r = append(r, r_0)
@@ -49,7 +49,7 @@ func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pub
 			sum_xj += x
 			sum_xj_y += input2[i] * x
 		}
-		sum_xj_Encrypted, r_temp := libunlynx.EncryptIntGetR(pubKey, sum_xj)
+		sum_xj_Encrypted, r_temp := lib.EncryptIntGetR(pubKey, sum_xj)
 		Ciphertext_Tuple = append(Ciphertext_Tuple, *sum_xj_Encrypted)
 		plaintext_values = append(plaintext_values, sum_xj)
 		r = append(r, r_temp)
@@ -62,7 +62,7 @@ func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pub
 			for i := 0; i < N; i++ {
 				sum_xj_xk += input1[i][j] * input1[i][k]
 			}
-			sum_xj_xk_Encrypted, r_temp := libunlynx.EncryptIntGetR(pubKey, sum_xj_xk)
+			sum_xj_xk_Encrypted, r_temp := lib.EncryptIntGetR(pubKey, sum_xj_xk)
 			Ciphertext_Tuple = append(Ciphertext_Tuple, *sum_xj_xk_Encrypted)
 			plaintext_values = append(plaintext_values, sum_xj_xk)
 			r = append(r, r_temp)
@@ -72,13 +72,13 @@ func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pub
 	for _, el := range input2 {
 		sum_y += el
 	}
-	sum_y_Encrypted, r_y := libunlynx.EncryptIntGetR(pubKey, sum_y)
+	sum_y_Encrypted, r_y := lib.EncryptIntGetR(pubKey, sum_y)
 	Ciphertext_Tuple = append(Ciphertext_Tuple, *sum_y_Encrypted)
 	plaintext_values = append(plaintext_values, sum_y)
 	r = append(r, r_y)
 
 	for j := 0; j < len(StoredVals); j++ {
-		sum_xj_y_Encrypted, r_temp := libunlynx.EncryptIntGetR(pubKey, StoredVals[j])
+		sum_xj_y_Encrypted, r_temp := lib.EncryptIntGetR(pubKey, StoredVals[j])
 		Ciphertext_Tuple = append(Ciphertext_Tuple, *sum_xj_y_Encrypted)
 		plaintext_values = append(plaintext_values, StoredVals[j])
 		r = append(r, r_temp)
@@ -88,18 +88,18 @@ func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pub
 		return Ciphertext_Tuple, []int64{0}, nil
 	}
 	//input range validation proof
-	createProofs := make([]proof.CreateProof, len(plaintext_values))
+	createProofs := make([]lib.CreateProof, len(plaintext_values))
 	wg := libunlynx.StartParallelize(len(plaintext_values))
 	for i, v := range plaintext_values {
 		if libunlynx.PARALLELIZE {
 			go func(i int, v int64) {
 				defer wg.Done()
 				//input range validation proof
-				createProofs[i] = proof.CreateProof{Sigs: proof.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: Ciphertext_Tuple[i]}
+				createProofs[i] = lib.CreateProof{Sigs: lib.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: Ciphertext_Tuple[i]}
 			}(i, v)
 		} else {
 			//input range validation proof
-			createProofs[i] = proof.CreateProof{Sigs: proof.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: Ciphertext_Tuple[i]}
+			createProofs[i] = lib.CreateProof{Sigs: lib.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: Ciphertext_Tuple[i]}
 		}
 	}
 	libunlynx.EndParallelize(wg)

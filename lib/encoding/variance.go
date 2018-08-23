@@ -3,7 +3,7 @@ package encoding
 import (
 	"github.com/dedis/kyber"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/drynx/lib/proof"
+	"github.com/lca1/drynx/lib"
 )
 
 // EncodeVariance computes the variance of query results
@@ -13,7 +13,7 @@ func EncodeVariance(input []int64, pubKey kyber.Point) ([]libunlynx.CipherText, 
 }
 
 // EncodeVarianceWithProofs computes the variance of query results with the proof of range
-func EncodeVarianceWithProofs(input []int64, pubKey kyber.Point, sigs [][]proof.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []proof.CreateProof) {
+func EncodeVarianceWithProofs(input []int64, pubKey kyber.Point, sigs [][]lib.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []lib.CreateProof) {
 	//sum the local DP's query results, and their squares as well
 	sum := int64(0)
 	sum_squares := int64(0)
@@ -32,7 +32,7 @@ func EncodeVarianceWithProofs(input []int64, pubKey kyber.Point, sigs [][]proof.
 	for i, v := range resultClear {
 		go func(i int, v int64) {
 			defer wg.Done()
-			tmp, r := libunlynx.EncryptIntGetR(pubKey, v)
+			tmp, r := lib.EncryptIntGetR(pubKey, v)
 			result_encrypted[i] = *tmp
 			result_randomR[i] = r
 		}(i,v)
@@ -43,18 +43,18 @@ func EncodeVarianceWithProofs(input []int64, pubKey kyber.Point, sigs [][]proof.
 		return result_encrypted, resultClear, nil
 	}
 
-	createProofs := make([]proof.CreateProof, len(resultClear))
+	createProofs := make([]lib.CreateProof, len(resultClear))
 	wg1 := libunlynx.StartParallelize(len(resultClear))
 	for i, v := range resultClear {
 		if libunlynx.PARALLELIZE {
 			go func(i int, v int64) {
 				defer wg1.Done()
 				//input range validation proof
-				createProofs[i] = proof.CreateProof{Sigs: proof.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
+				createProofs[i] = lib.CreateProof{Sigs: lib.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
 			}(i, v)
 		} else {
 			//input range validation proof
-			createProofs[i] = proof.CreateProof{Sigs: proof.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
+			createProofs[i] = lib.CreateProof{Sigs: lib.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
 		}
 
 	}

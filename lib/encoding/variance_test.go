@@ -3,15 +3,17 @@ package encoding_test
 import (
 	"github.com/dedis/kyber"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/encoding"
+	"github.com/lca1/drynx/lib/encoding"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/drynx/lib"
+	"github.com/dedis/kyber/pairing/bn256"
 )
 
 //TestEncodeDecodeVariance tests EncodeVariance and DecodeVariance
 func TestEncodeDecodeVariance(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	// key
 	secKey, pubKey := libunlynx.GenKey()
 
@@ -44,6 +46,7 @@ func TestEncodeDecodeVariance(t *testing.T) {
 
 // TestEncodeDecodeVarianceWithProofs tests EncodeVariance and DecodeVariance with input range validation
 func TestEncodeDecodeVarianceWithProofs(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	//data
 	inputValues := []int64{0, 10, 9, 1, 11}
 
@@ -72,15 +75,15 @@ func TestEncodeDecodeVarianceWithProofs(t *testing.T) {
 	l := []int64{5, 3, 9}
 
 	ranges := make([]*[]int64, 3)
-	ps := make([][]libunlynx.PublishSignature, 2)
-	ps[0] = make([]libunlynx.PublishSignature, 3)
-	ps[1] = make([]libunlynx.PublishSignature, 3)
+	ps := make([][]lib.PublishSignature, 2)
+	ps[0] = make([]lib.PublishSignature, 3)
+	ps[1] = make([]lib.PublishSignature, 3)
 	ys := make([][]kyber.Point, 2)
 	ys[0] = make([]kyber.Point, 3)
 	ys[1] = make([]kyber.Point, 3)
 	for i := range ps[0] {
-		ps[0][i] = libunlynx.PublishSignatureBytesToPublishSignatures(libunlynx.InitRangeProofSignature(u[i]))
-		ps[1][i] = libunlynx.PublishSignatureBytesToPublishSignatures(libunlynx.InitRangeProofSignature(u[i]))
+		ps[0][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u[i]))
+		ps[1][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u[i]))
 		ys[0][i] = ps[0][i].Public
 		ys[1][i] = ps[1][i].Public
 		ranges[i] = &[]int64{u[i], l[i]}
@@ -98,8 +101,8 @@ func TestEncodeDecodeVarianceWithProofs(t *testing.T) {
 	resultEncrypted, _, prf := encoding.EncodeVarianceWithProofs(inputValues, pubKey, ps, ranges)
 	result := encoding.DecodeVariance(resultEncrypted, secKey)
 
-	assert.True(t, libunlynx.RangeProofVerification(libunlynx.CreatePredicateRangeProofForAllServ(prf[0]), u[0], l[0], yss[0], pubKey))
-	assert.True(t, libunlynx.RangeProofVerification(libunlynx.CreatePredicateRangeProofForAllServ(prf[1]), u[1], l[1], yss[1], pubKey))
-	assert.True(t, libunlynx.RangeProofVerification(libunlynx.CreatePredicateRangeProofForAllServ(prf[2]), u[2], l[2], yss[2], pubKey))
+	assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prf[0]), u[0], l[0], yss[0], pubKey))
+	assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prf[1]), u[1], l[1], yss[1], pubKey))
+	assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prf[2]), u[2], l[2], yss[2], pubKey))
 	assert.Equal(t, expect, result)
 }

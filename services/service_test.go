@@ -20,7 +20,7 @@ import (
 	"github.com/dedis/cothority/skipchain"
 	"github.com/stretchr/testify/assert"
 	"github.com/lca1/drynx/lib"
-	"github.com/lca1/drynx/lib/proof"
+	"github.com/dedis/kyber/pairing/bn256"
 )
 
 func generateNodes(local *onet.LocalTest, nbrServers int, nbrDPs int, nbrVNs int) (*onet.Roster, *onet.Roster, *onet.Roster) {
@@ -65,10 +65,10 @@ func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 //______________________________________________________________________________________________________________________
 /// Test service LeMal for all operations
 func TestServiceLeMal(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	log.SetDebugVisible(2)
 
 	//------SET PARAMS--------
-	libunlynx.TIME = true
 
 	proofs := 1 // 0 is not proof, 1 is proofs, 2 is optimized proofs
 	rangeProofs := true
@@ -183,19 +183,19 @@ func TestServiceLeMal(t *testing.T) {
 		}
 
 		// DPs signatures for Input Range Validation
-		ps := make([]*[]proof.PublishSignatureBytes, len(elServers.List))
+		ps := make([]*[]lib.PublishSignatureBytes, len(elServers.List))
 		//var modulo int
 		//if cuttingFactor != 0 {
 		//	modulo = operation.NbrOutput / cuttingFactor
 		//}
 		if ranges != nil && u != int64(0) && l != int64(0) {
 			for i := range elServers.List {
-				temp := make([]proof.PublishSignatureBytes, len(ranges))
+				temp := make([]lib.PublishSignatureBytes, len(ranges))
 				for j := 0; j < len(ranges); j++ {
 					if cuttingFactor != 0 {
-						temp[j] = proof.InitRangeProofSignatureDeterministic((*ranges[j])[0])
+						temp[j] = lib.InitRangeProofSignatureDeterministic((*ranges[j])[0])
 					} else {
-						temp[j] = proof.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+						temp[j] = lib.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
 					}
 				}
 				ps[i] = &temp
@@ -350,7 +350,6 @@ func TestServiceLeMal(t *testing.T) {
 
 func TestServiceLeMalLogisticRegressionForSPECTF(t *testing.T) {
 	os.Remove("pre_compute_multiplications.gob")
-	libunlynx.TIME = true
 
 	// these nodes act as both servers and data providers
 	local := onet.NewLocalTest(libunlynx.SuiTe)
@@ -461,7 +460,7 @@ func TestServiceLeMalLogisticRegressionForSPECTF(t *testing.T) {
 		l := int64(6)
 
 		ranges := make([]*[]int64, operation.NbrOutput)
-		ps := make([]*[]proof.PublishSignatureBytes, len(el.List))
+		ps := make([]*[]lib.PublishSignatureBytes, len(el.List))
 		for i := range ranges {
 			ranges[i] = &[]int64{u, l}
 		}
@@ -471,9 +470,9 @@ func TestServiceLeMalLogisticRegressionForSPECTF(t *testing.T) {
 		// signatures for Input Validation
 		if !(ranges == nil) {
 			for i := range el.List {
-				temp := make([]proof.PublishSignatureBytes, len(ranges))
+				temp := make([]lib.PublishSignatureBytes, len(ranges))
 				for j := 0; j < len(ranges); j++ {
-					temp[j] = proof.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+					temp[j] = lib.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
 				}
 				ps[i] = &temp
 			}
@@ -558,7 +557,6 @@ func TestServiceLeMalLogisticRegressionForSPECTF(t *testing.T) {
 
 func TestServiceLeMalLogisticRegression(t *testing.T) {
 	os.Remove("pre_compute_multiplications.gob")
-	libunlynx.TIME = false
 
 	// these nodes act as both servers and data providers
 	local := onet.NewLocalTest(libunlynx.SuiTe)
@@ -726,7 +724,7 @@ func TestServiceLeMalLogisticRegression(t *testing.T) {
 		l := int64(6)
 
 		ranges := make([]*[]int64, operation.NbrOutput)
-		ps := make([]*[]proof.PublishSignatureBytes, len(el.List))
+		ps := make([]*[]lib.PublishSignatureBytes, len(el.List))
 		for i := range ranges {
 			ranges[i] = &[]int64{u, l}
 		}
@@ -736,9 +734,9 @@ func TestServiceLeMalLogisticRegression(t *testing.T) {
 		// signatures for Input Validation
 		if !(ranges == nil) {
 			for i := range el.List {
-				temp := make([]proof.PublishSignatureBytes, len(ranges))
+				temp := make([]lib.PublishSignatureBytes, len(ranges))
 				for j := 0; j < len(ranges); j++ {
-					temp[j] = proof.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+					temp[j] = lib.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
 				}
 				ps[i] = &temp
 			}

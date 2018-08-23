@@ -1,4 +1,5 @@
-package protocols_test
+package protocols
+
 import (
 	"reflect"
 	"testing"
@@ -9,14 +10,15 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/lemal"
 	"github.com/stretchr/testify/assert"
+	"github.com/dedis/kyber/pairing/bn256"
 )
 
-var clientPrivate = libunlynx.SuiTe.Scalar().Pick(random.New())
-var clientPublic = libunlynx.SuiTe.Point().Mul(clientPrivate, libunlynx.SuiTe.Point().Base())
-var grpattr1 = libunlynx.DeterministCipherText{Point: libunlynx.SuiTe.Point().Base()}
-var grpattr2 = libunlynx.DeterministCipherText{Point: libunlynx.SuiTe.Point().Null()}
+
+var clientPrivate = bn256.NewSuiteG1().Scalar().Pick(random.New())
+var clientPublic = bn256.NewSuiteG1().Point().Mul(clientPrivate, bn256.NewSuiteG1().Point().Base())
+var grpattr1 = libunlynx.DeterministCipherText{Point: bn256.NewSuiteG1().Point().Base()}
+var grpattr2 = libunlynx.DeterministCipherText{Point: bn256.NewSuiteG1().Point().Null()}
 var groupingAttrA = libunlynx.DeterministCipherVector{grpattr1, grpattr1}
 var groupingAttrAkey = groupingAttrA.Key()
 var groupingAttrB = libunlynx.DeterministCipherVector{grpattr2, grpattr2}
@@ -28,6 +30,7 @@ var groupingAttrCkey = groupingAttrC.Key()
 
 //TestCollectiveAggregation tests collective aggregation protocol
 func TestCollectiveAggregation(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// You must register this protocol before creating the servers
@@ -39,7 +42,7 @@ func TestCollectiveAggregation(t *testing.T) {
 	if err != nil {
 		t.Fatal("Couldn't start protocol:", err)
 	}
-	protocol := p.(*lemal.CollectiveAggregationProtocol)
+	protocol := p.(*CollectiveAggregationProtocol)
 
 	//run protocol
 	go protocol.Start()
@@ -84,9 +87,9 @@ func TestCollectiveAggregation(t *testing.T) {
 
 // NewCollectiveAggregationTest is a test specific protocol instance constructor that injects test data.
 func NewCollectiveAggregationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
-
-	pi, err := lemal.NewCollectiveAggregationProtocol(tni)
-	protocol := pi.(*lemal.CollectiveAggregationProtocol)
+	libunlynx.SuiTe = bn256.NewSuiteG1()
+	pi, err := NewCollectiveAggregationProtocol(tni)
+	protocol := pi.(*CollectiveAggregationProtocol)
 
 	testCVMap := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 

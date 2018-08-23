@@ -7,13 +7,25 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/drynx/lib/proof"
 )
 
 // ResponseDP contains the data provider's response to be sent to the server.
 type ResponseDP struct {
 	Data map[string]libunlynx.CipherVector // group -> value(s)
 }
+
+//PublishSignature contains points signed with a private key and the public key associated to verify the signatures.
+type PublishSignature struct {
+	Public    kyber.Point   // y
+	Signature []kyber.Point // A_i
+}
+
+//PublishSignatureBytes is the same as PublishSignature but the signatures are in bytes
+type PublishSignatureBytes struct { //need this because of G2 in protobuf not working
+	Public    kyber.Point // y
+	Signature []byte      // A_i
+}
+
 
 type QueryDiffP struct {
 	LapMean       float64
@@ -36,14 +48,14 @@ type QueryDPDataGen struct {
 }
 
 type QueryIVSigs struct {
-	InputValidationSigs  []*[]proof.PublishSignatureBytes
+	InputValidationSigs  []*[]PublishSignatureBytes
 	InputValidationSize1 int
 	InputValidationSize2 int
 }
 
 type QuerySQL struct {
 	Select    []string
-	Where     []libunlynx.WhereQueryAttributeClear
+	Where     []WhereQueryAttributeClear
 	Predicate string
 	GroupBy   []string
 }

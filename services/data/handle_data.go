@@ -12,6 +12,7 @@ import (
 
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/JoaoAndreSa/MedCo/lib"
 )
 
 // Group identifies all different groups to be added to the test data file
@@ -276,8 +277,8 @@ func joinMaps(a, b map[string]int64) map[string]int64 {
 }
 
 // ClearExpectedResult clears the map so that there are no where attributes
-func ClearExpectedResult(expectedResult []libunlynx.DpClearResponse) []libunlynx.DpClearResponse {
-	clearExpectedResult := make([]libunlynx.DpClearResponse, len(expectedResult))
+func ClearExpectedResult(expectedResult []lib.DpClearResponse) []lib.DpClearResponse {
+	clearExpectedResult := make([]lib.DpClearResponse, len(expectedResult))
 
 	for i, elem := range expectedResult {
 		elem.WhereClear = map[string]int64{}
@@ -294,8 +295,8 @@ func ClearExpectedResult(expectedResult []libunlynx.DpClearResponse) []libunlynx
 }
 
 // ComputeExpectedResult computes the expected results from the test_data (we can then compare with the result obtained by service UnLynx)
-func ComputeExpectedResult(testData map[string][]libunlynx.DpClearResponse, dataRepetitions int, clear bool) []libunlynx.DpClearResponse {
-	allData := make([]libunlynx.DpClearResponse, 0)
+func ComputeExpectedResult(testData map[string][]lib.DpClearResponse, dataRepetitions int, clear bool) []lib.DpClearResponse {
+	allData := make([]lib.DpClearResponse, 0)
 
 	for _, v := range testData {
 		for _, elem := range v {
@@ -313,7 +314,7 @@ func ComputeExpectedResult(testData map[string][]libunlynx.DpClearResponse, data
 			allData = append(allData, elem)
 		}
 	}
-	expectedResult := libunlynx.AddInClear(allData)
+	expectedResult := lib.AddInClear(allData)
 
 	// Toggle the clearing function (necessary for the service simulation)
 	if clear {

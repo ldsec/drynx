@@ -16,7 +16,6 @@ import (
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/drynx/lib"
-	"github.com/lca1/drynx/lib/proof"
 )
 
 // CollectiveAggregationProtocolName is the registered name for the collective aggregation protocol.
@@ -220,7 +219,7 @@ func (p *ObfuscationProtocol) ascendingObfuscationPhase() libunlynx.CipherVector
 
 	if p.Proofs == 1 {
 		go func() {
-			proof := proof.ObfuscationListProofCreation(proofsCs, proofsCos, proofsSs)
+			proof := lib.ObfuscationListProofCreation(proofsCs, proofsCos, proofsSs)
 			pi := p.MapPIs["obfuscation/"+p.ServerIdentity().String()]
 			pi.(*ProofCollectionProtocol).Proof = lib.ProofRequest{ObfuscationProof: lib.NewObfuscationProofRequest(&proof, p.Query.SurveyID, p.ServerIdentity().String(), "", p.Query.Query.RosterVNs, p.Private(), nil)}
 

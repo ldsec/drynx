@@ -11,10 +11,12 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/lemal"
+	"github.com/lca1/drynx/protocols"
+	"github.com/dedis/kyber/pairing/bn256"
 )
 
 func TestCtks(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	onet.GlobalProtocolRegister("CtksTest", NewCtksTest)
 	_, entityList, tree := local.GenTree(5, true)
@@ -26,7 +28,7 @@ func TestCtks(t *testing.T) {
 		t.Fatal("Couldn't start protocol:", err)
 	}
 
-	protocol := rootInstance.(*lemal.KeySwitchingProtocol)
+	protocol := rootInstance.(*protocols.KeySwitchingProtocol)
 	aggregateKey := entityList.Aggregate
 	log.LLvl1("AGGREGATE ", aggregateKey)
 
@@ -82,8 +84,8 @@ func TestCtks(t *testing.T) {
 
 // NewKeySwitchingTest is a special purpose protocol constructor specific to tests.
 func NewCtksTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
-	pi, err := lemal.NewKeySwitchingProtocol(tni)
-	protocol := pi.(*lemal.KeySwitchingProtocol)
+	pi, err := protocols.NewKeySwitchingProtocol(tni)
+	protocol := pi.(*protocols.KeySwitchingProtocol)
 	protocol.Proofs = 0
 
 	return protocol, err
