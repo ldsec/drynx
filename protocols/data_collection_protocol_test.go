@@ -13,11 +13,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/protocols"
-	"github.com/dedis/kyber/pairing/bn256"
 )
 
-func ChooseOperation(operationName string, queryMin, queryMax, d int, cuttingFactor int) lib.Operation {
-	operation := lib.Operation{}
+func ChooseOperation(operationName string, queryMin, queryMax, d int, cuttingFactor int) libdrynx.Operation {
+	operation := libdrynx.Operation{}
 
 	operation.NameOp = operationName
 	operation.NbrInput = 0
@@ -69,16 +68,16 @@ func ChooseOperation(operationName string, queryMin, queryMax, d int, cuttingFac
 
 func createTestQuery(aggregate kyber.Point, operationName string, proofs int, nbrRows int64, minGenerateData, maxGenerateData, dimensions int, cuttingFactor int) (protocols.SurveyToDP, error) {
 	var queryStatement protocols.SurveyToDP
-	var query lib.Query
+	var query libdrynx.Query
 
 	queryStatement.SurveyID = "query_test"
 	queryStatement.Aggregate = aggregate
 
-	query.Operation = lib.ChooseOperation(operationName, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
+	query.Operation = libdrynx.ChooseOperation(operationName, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
 	query.Proofs = proofs
 
 	// define the number of groups for groupBy (1 per default)
-	dpData := lib.QueryDPDataGen{GroupByValues: []int64{1}, GenerateRows: nbrRows, GenerateDataMin: int64(minGenerateData), GenerateDataMax: int64(maxGenerateData)}
+	dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateRows: nbrRows, GenerateDataMin: int64(minGenerateData), GenerateDataMax: int64(maxGenerateData)}
 	query.DPDataGen = dpData
 
 	queryStatement.Query = query
@@ -123,7 +122,6 @@ var query protocols.SurveyToDP
 
 //TestCollectiveAggregation tests collective aggregation protocol
 func TestDataCollectionOperationsProtocol(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	log.SetDebugVisible(2)
 
 	local := onet.NewLocalTest(libunlynx.SuiTe)

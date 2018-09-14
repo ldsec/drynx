@@ -1,16 +1,13 @@
-package lib
+package libdrynx
 
 import (
 	"github.com/dedis/onet/log"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"github.com/lca1/unlynx/lib"
-	"github.com/dedis/kyber/pairing/bn256"
 )
 
 // TestAddRmProof tests the generation of the noise values for the differential privacy
 func TestGenerateNoiseValues(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	aux := GenerateNoiseValues(0, 0, 1, 0.005, 0)
 	assert.Empty(t, aux)
 

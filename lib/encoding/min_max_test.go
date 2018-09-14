@@ -7,12 +7,10 @@ import (
 	"testing"
 	"github.com/dedis/kyber"
 	"github.com/lca1/drynx/lib"
-	"github.com/dedis/kyber/pairing/bn256"
 )
 
 //TestEncodeDecodeMinMax tests EncodeMin and DecodeMin
 func TestEncodeDecodeMinMax(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	//data
 	inputValues := []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 3, 2, 15, 6, 17, 2, -5, 72, -20, 100, -190, 200}
 	// key
@@ -47,7 +45,6 @@ func TestEncodeDecodeMinMax(t *testing.T) {
 }
 
 func TestEncodeDecodeMinMaxWithProofs(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	//data
 	inputValues := []int64{1, 2, 10}
 	// key
@@ -75,17 +72,17 @@ func TestEncodeDecodeMinMaxWithProofs(t *testing.T) {
 	u := int64(2)
 	l := int64(1)
 
-	ps := make([][]lib.PublishSignature, 2)
+	ps := make([][]libdrynx.PublishSignature, 2)
 
 	ranges := make([]*[]int64, global_max-global_min+1)
-	ps[0] = make([]lib.PublishSignature, global_max-global_min+1)
-	ps[1] = make([]lib.PublishSignature, global_max-global_min+1)
+	ps[0] = make([]libdrynx.PublishSignature, global_max-global_min+1)
+	ps[1] = make([]libdrynx.PublishSignature, global_max-global_min+1)
 	ys := make([][]kyber.Point, 2)
 	ys[0] = make([]kyber.Point, global_max-global_min+1)
 	ys[1] = make([]kyber.Point, global_max-global_min+1)
 	for i := range ps[0] {
-		ps[0][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u))
-		ps[1][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u))
+		ps[0][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u))
+		ps[1][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u))
 		ys[0][i] = ps[0][i].Public
 		ys[1][i] = ps[1][i].Public
 		ranges[i] = &[]int64{u, l}
@@ -108,8 +105,8 @@ func TestEncodeDecodeMinMaxWithProofs(t *testing.T) {
 	assert.Equal(t, expected_max, resultMax)
 
 	for i,v := range prfMin{
-		assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(v), u, l, yss[i], pubKey))
-		assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prfMax[i]), u, l, yss[i], pubKey))
+		assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(v), u, l, yss[i], pubKey))
+		assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prfMax[i]), u, l, yss[i], pubKey))
 	}
 
 }

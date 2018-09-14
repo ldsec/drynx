@@ -20,7 +20,7 @@ func init() {
 	network.RegisterMessage(AnnouncementPCMessage{})
 	network.RegisterMessage(ProofCollectionMessage{})
 	network.RegisterMessage(BitmapCollectionMessage{})
-	network.RegisterMessage(lib.BitMap{})
+	network.RegisterMessage(libdrynx.BitMap{})
 	onet.GlobalProtocolRegister(ProofCollectionProtocolName, NewProofCollectionProtocol)
 }
 
@@ -29,7 +29,7 @@ func init() {
 
 // AnnouncementPCMessage message sent (with the query) to trigger a proof collection protocol.
 type AnnouncementPCMessage struct {
-	Proof lib.ProofRequest
+	Proof libdrynx.ProofRequest
 }
 
 // ProofCollectionMessage message is used to signal root node that the proof was processed by all verifying nodes
@@ -101,21 +101,21 @@ type ProofCollectionProtocol struct {
 	SharedBMChannelToTerminate chan struct{}
 
 	// proof statement
-	Proof lib.ProofRequest // the proof must be sent to each node before the protocol can start
+	Proof libdrynx.ProofRequest // the proof must be sent to each node before the protocol can start
 
 	// query statement
-	SQ lib.SurveyQuery
+	SQ libdrynx.SurveyQuery
 }
 
 //CastToQueryInfo get in the concurrent map the queryInfo
-func CastToQueryInfo(object interface{}, err error) *lib.QueryInfo {
+func CastToQueryInfo(object interface{}, err error) *libdrynx.QueryInfo {
 	if err != nil {
 		log.Fatal("Error reading map")
 	}
 	if object == nil {
 		return nil
 	}
-	return object.(*lib.QueryInfo)
+	return object.(*libdrynx.QueryInfo)
 }
 
 // NewProofCollectionProtocol constructs a ProofCollection protocol instance.
@@ -316,7 +316,7 @@ func (p *ProofCollectionProtocol) storeProof(index int, typeProof, surveyID, sen
 		//TODO: append signature to data
 
 		if typeProof != "shuffle" {
-			lib.UpdateDB(p.DB, surveyID+"/"+typeProof, nameOfProof, data)
+			libdrynx.UpdateDB(p.DB, surveyID+"/"+typeProof, nameOfProof, data)
 		}
 
 		//Decrease size of proof expected for this type by 1
@@ -338,12 +338,12 @@ func (p *ProofCollectionProtocol) storeProof(index int, typeProof, surveyID, sen
 		if proofsRemaining == 0 {
 			log.Lvl2("VN", p.ServerIdentity().String(), "received all expected proofs.")
 
-			mapByte, err := network.Marshal(&lib.BitMap{BitMap: CastToQueryInfo(p.Request.Get(string(surveyID))).Bitmap})
+			mapByte, err := network.Marshal(&libdrynx.BitMap{BitMap: CastToQueryInfo(p.Request.Get(string(surveyID))).Bitmap})
 			if err != nil {
 				log.Fatal("Cannot marshalize map", err)
 			}
 
-			lib.UpdateDB(p.DB, p.ServerIdentity().Address.String(), surveyID+"/map", mapByte)
+			libdrynx.UpdateDB(p.DB, p.ServerIdentity().Address.String(), surveyID+"/map", mapByte)
 
 			//If not root, send bitmap
 			if !rootVN {

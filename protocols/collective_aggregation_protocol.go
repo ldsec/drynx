@@ -78,7 +78,7 @@ type CollectiveAggregationProtocol struct {
 	*onet.TreeNodeInstance
 
 	// Protocol feedback channel
-	FeedbackChannel chan lib.CothorityAggregatedData
+	FeedbackChannel chan libdrynx.CothorityAggregatedData
 
 	// Protocol communication channels
 	DataReferenceChannel chan dataReferenceStruct
@@ -93,7 +93,7 @@ type CollectiveAggregationProtocol struct {
 func NewCollectiveAggregationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	pap := &CollectiveAggregationProtocol{
 		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan lib.CothorityAggregatedData),
+		FeedbackChannel:  make(chan libdrynx.CothorityAggregatedData),
 	}
 
 	err := pap.RegisterChannel(&pap.DataReferenceChannel)
@@ -138,7 +138,7 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 
 	// 3. Response reporting
 	if p.IsRoot() {
-		p.FeedbackChannel <- lib.CothorityAggregatedData{GroupedData: *aggregatedData}
+		p.FeedbackChannel <- libdrynx.CothorityAggregatedData{GroupedData: *aggregatedData}
 	}
 	return nil
 }

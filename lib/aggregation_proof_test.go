@@ -1,15 +1,13 @@
-package lib
+package libdrynx
 
 import (
 	"testing"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"github.com/dedis/onet/log"
-	"github.com/dedis/kyber/pairing/bn256"
 )
 
 func TestServerAggregationProofVerification(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	sec, pub := libunlynx.GenKey()
 	tab := []int64{1, 2, 3, 4, 5}
 	ev := libunlynx.EncryptIntVector(pub, tab)

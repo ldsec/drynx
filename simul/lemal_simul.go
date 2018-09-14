@@ -17,7 +17,6 @@ import (
 	"gopkg.in/satori/go.uuid.v1"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/services"
-	"github.com/lca1/drynx/lib/proof"
 )
 
 func init() {
@@ -100,8 +99,8 @@ func (sim *SimulationLeMal) Run(config *onet.SimulationConfig) error {
 	os.Remove("pre_compute_multiplications.gob")
 
 	// has to be set here because cannot be in toml file
-	dpData := lib.QueryDPDataGen{GroupByValues: sim.GroupByValues, GenerateRows: int64(sim.DPRows), GenerateDataMin: sim.MinData, GenerateDataMax: sim.MaxData}
-	diffP := lib.QueryDiffP{LapMean: sim.DiffPEpsilon, LapScale: sim.DiffPDelta, Quanta: sim.DiffPQuanta, NoiseListSize: sim.DiffPSize, Scale: sim.DiffPScale, Limit: sim.DiffPLimit}
+	dpData := libdrynx.QueryDPDataGen{GroupByValues: sim.GroupByValues, GenerateRows: int64(sim.DPRows), GenerateDataMin: sim.MinData, GenerateDataMax: sim.MaxData}
+	diffP := libdrynx.QueryDiffP{LapMean: sim.DiffPEpsilon, LapScale: sim.DiffPDelta, Quanta: sim.DiffPQuanta, NoiseListSize: sim.DiffPSize, Scale: sim.DiffPScale, Limit: sim.DiffPLimit}
 
 	//logistic regression
 	m := int64(sim.DPRows) - 1
@@ -111,7 +110,7 @@ func (sim *SimulationLeMal) Run(config *onet.SimulationConfig) error {
 		stds[i] = 100
 	}
 
-	lrParameters := lib.LogisticRegressionParameters{
+	lrParameters := libdrynx.LogisticRegressionParameters{
 		FilePath:           "",
 		NbrRecords:         int64(sim.NbrRecords),
 		NbrFeatures:        m,
@@ -126,7 +125,7 @@ func (sim *SimulationLeMal) Run(config *onet.SimulationConfig) error {
 	}
 
 	// operation
-	operation := lib.Operation{NameOp: sim.OperationName, NbrInput: sim.NbrInput, NbrOutput: sim.NbrOutput, QueryMin: sim.MinData, QueryMax: sim.MaxData, LRParameters: lrParameters}
+	operation := libdrynx.Operation{NameOp: sim.OperationName, NbrInput: sim.NbrInput, NbrOutput: sim.NbrOutput, QueryMin: sim.MinData, QueryMax: sim.MaxData, LRParameters: lrParameters}
 
 	// create the ranges for input validation
 	ranges := make([]*[]int64, operation.NbrOutput)
@@ -275,18 +274,18 @@ func (sim *SimulationLeMal) Run(config *onet.SimulationConfig) error {
 	}
 	log.LLvl1(sim.CuttingFactor, len(ranges))
 	// signatures for Input Validation
-	ps := make([]*[]proof.PublishSignatureBytes, sim.NbrServers)
+	ps := make([]*[]libdrynx.PublishSignatureBytes, sim.NbrServers)
 	if !(ranges == nil) && sim.Ranges != 0 {
 		wg := libunlynx.StartParallelize(sim.NbrServers)
 		for i := 0; i < sim.NbrServers; i++ {
 			go func(index int) {
 				defer wg.Done()
-				temp := make([]proof.PublishSignatureBytes, len(ranges))
+				temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
 				for j := 0; j < len(ranges); j++ {
 					if sim.CuttingFactor != 0 {
-						temp[j] = proof.InitRangeProofSignatureDeterministic((*ranges[j])[0])
+						temp[j] = libdrynx.InitRangeProofSignatureDeterministic((*ranges[j])[0])
 					} else {
-						temp[j] = proof.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+						temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
 					}
 				}
 				ps[index] = &temp
@@ -355,11 +354,11 @@ func (sim *SimulationLeMal) Run(config *onet.SimulationConfig) error {
 	log.LLvl1("GENERATE SURVEY")
 	sq := client.GenerateSurveyQuery(rosterServers, rosterVNs, dpToServers, idToPublic, surveyID, operation, ranges, ps, sim.Proofs, sim.Obfuscation, thresholdEntityProofsVerif, diffP, dpData, sim.CuttingFactor)
 	if diffP.NoiseListSize > 0 {
-		if !lib.CheckParameters(sq, true) {
+		if !libdrynx.CheckParameters(sq, true) {
 			log.Fatal("Oups!")
 		}
 	} else {
-		if !lib.CheckParameters(sq, false) {
+		if !libdrynx.CheckParameters(sq, false) {
 			log.Fatal("Oups!")
 		}
 	}
@@ -417,7 +416,7 @@ func (sim *SimulationLeMal) Run(config *onet.SimulationConfig) error {
 	if sim.Proofs != 0 {
 		libunlynx.EndParallelize(wg)
 		// close DB
-		clientSkip.SendCloseDB(rosterVNs, &lib.CloseDB{Close: 1})
+		clientSkip.SendCloseDB(rosterVNs, &libdrynx.CloseDB{Close: 1})
 	}
 
 	retrieveBlock := time.Now()

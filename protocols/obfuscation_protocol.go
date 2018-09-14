@@ -103,7 +103,7 @@ type ObfuscationProtocol struct {
 	// Protocol state data
 	ToObfuscateData libunlynx.CipherVector
 	Proofs          int
-	Query           *lib.SurveyQuery
+	Query           *libdrynx.SurveyQuery
 
 	// Protocol proof data
 	MapPIs map[string]onet.ProtocolInstance
@@ -219,9 +219,9 @@ func (p *ObfuscationProtocol) ascendingObfuscationPhase() libunlynx.CipherVector
 
 	if p.Proofs == 1 {
 		go func() {
-			proof := lib.ObfuscationListProofCreation(proofsCs, proofsCos, proofsSs)
+			proof := libdrynx.ObfuscationListProofCreation(proofsCs, proofsCos, proofsSs)
 			pi := p.MapPIs["obfuscation/"+p.ServerIdentity().String()]
-			pi.(*ProofCollectionProtocol).Proof = lib.ProofRequest{ObfuscationProof: lib.NewObfuscationProofRequest(&proof, p.Query.SurveyID, p.ServerIdentity().String(), "", p.Query.Query.RosterVNs, p.Private(), nil)}
+			pi.(*ProofCollectionProtocol).Proof = libdrynx.ProofRequest{ObfuscationProof: libdrynx.NewObfuscationProofRequest(&proof, p.Query.SurveyID, p.ServerIdentity().String(), "", p.Query.Query.RosterVNs, p.Private(), nil)}
 
 			go pi.Dispatch()
 			go pi.Start()

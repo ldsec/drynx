@@ -1,4 +1,4 @@
-package lib
+package libdrynx
 
 import (
 	"github.com/dedis/kyber"

@@ -1,1 +1,1 @@
-package lib_test
+package libdrynx_test

@@ -35,7 +35,7 @@ var NUM_DPS = 10
 // -------------------------
 
 // EncodeLogisticRegression computes and encrypts the data provider's coefficients for logistic regression
-func EncodeLogisticRegression(data [][]float64, lrParameters lib.LogisticRegressionParameters, pubKey kyber.Point) ([]libunlynx.CipherText, []int64) {
+func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point) ([]libunlynx.CipherText, []int64) {
 
 	d := lrParameters.NbrFeatures
 	n := getTotalNumberApproxCoefficients(d, lrParameters.K)
@@ -113,7 +113,7 @@ type CipherAndRandom struct {
 }
 
 // EncodeLogisticRegressionWithProofs computes and encrypts the data provider's coefficients for logistic regression with range proofs
-func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters lib.LogisticRegressionParameters, pubKey kyber.Point, sigs [][]lib.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []lib.CreateProof) {
+func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
 
 	d := lrParameters.NbrFeatures
 	n := getTotalNumberApproxCoefficients(d, lrParameters.K)
@@ -185,18 +185,18 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters lib.Logis
 	log.LLvl1("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
 	log.LLvl1("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
 
-	createRangeProof := make([]lib.CreateProof, len(aggregatedApproxCoefficientsIntPacked))
+	createRangeProof := make([]libdrynx.CreateProof, len(aggregatedApproxCoefficientsIntPacked))
 	wg1 := libunlynx.StartParallelize(len(aggregatedApproxCoefficientsIntPacked))
 	for i, v := range aggregatedApproxCoefficientsIntPacked {
 		if libunlynx.PARALLELIZE {
 			go func(i int, v int64) {
 				defer wg1.Done()
 				//input range validation proof
-				createRangeProof[i] = lib.CreateProof{Sigs: lib.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: encryptedAggregatedApproxCoefficients[i].r, CaPub: pubKey, Cipher: encryptedAggregatedApproxCoefficients[i].C}
+				createRangeProof[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: encryptedAggregatedApproxCoefficients[i].r, CaPub: pubKey, Cipher: encryptedAggregatedApproxCoefficients[i].C}
 			}(i, v)
 		} else {
 			//input range validation proof
-			createRangeProof[i] = lib.CreateProof{Sigs: lib.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: encryptedAggregatedApproxCoefficients[i].r, CaPub: pubKey, Cipher: encryptedAggregatedApproxCoefficients[i].C}
+			createRangeProof[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: encryptedAggregatedApproxCoefficients[i].r, CaPub: pubKey, Cipher: encryptedAggregatedApproxCoefficients[i].C}
 		}
 	}
 	libunlynx.EndParallelize(wg1)
@@ -206,7 +206,7 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters lib.Logis
 
 // DecodeLogisticRegression decodes the logistic regression approximation coefficients (querier side)
 func DecodeLogisticRegression(result []libunlynx.CipherText, privKey kyber.Scalar,
-	lrParameters lib.LogisticRegressionParameters) []float64 {
+	lrParameters libdrynx.LogisticRegressionParameters) []float64 {
 
 	N := lrParameters.NbrRecords
 	d := lrParameters.NbrFeatures
@@ -408,7 +408,7 @@ func ComputeEncryptedApproxCoefficients(approxCoefficients [][]int64, pubKey kyb
 					log.Fatalf("Error: %d exceeds %d", approxCoefficients[i][j], libunlynx.MaxHomomorphicInt)
 				}
 			}
-			tmpCv, tmpRs := lib.EncryptIntVectorGetRs(pubKey, approxCoefficients[j])
+			tmpCv, tmpRs := libdrynx.EncryptIntVectorGetRs(pubKey, approxCoefficients[j])
 			encryptedApproxCoefficients[j] = tmpCv
 			encryptedApproxCoefficientsRs[j] = tmpRs
 		}(j)

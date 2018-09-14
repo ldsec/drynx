@@ -1,4 +1,4 @@
-package lib
+package libdrynx
 
 
 //PublishAggregationProof is an aggregation proof

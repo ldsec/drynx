@@ -11,10 +11,9 @@ import (
 // Query Handlers
 //______________________________________________________________________________________________________________________
 
-func (s *ServiceLeMal) HandleSurveyQueryToDP(recq *lib.SurveyQueryToDP) (network.Message, error) {
+func (s *ServiceLeMal) HandleSurveyQueryToDP(recq *libdrynx.SurveyQueryToDP) (network.Message, error) {
 
 	recq.SQ.Query.IVSigs.InputValidationSigs = recreateRangeSignatures(recq.SQ.Query.IVSigs)
-
 	// only generate ProofCollection protocol instances if proofs is enabled
 	var mapPIs map[string]onet.ProtocolInstance
 	if recq.SQ.Query.Proofs != 0 {
@@ -31,6 +30,7 @@ func (s *ServiceLeMal) HandleSurveyQueryToDP(recq *lib.SurveyQueryToDP) (network
 	if err != nil {
 		log.Error("[SERVICE] <LEMAL> Server, broadcasting [DPdataFinished] error ", err)
 	}
+	log.LLvl1("fais tourner les serviettes")
 
 	return nil, nil
 }
@@ -38,7 +38,7 @@ func (s *ServiceLeMal) HandleSurveyQueryToDP(recq *lib.SurveyQueryToDP) (network
 // Support Functions
 //______________________________________________________________________________________________________________________
 
-func (s *ServiceLeMal) generateRangePI(query *lib.SurveyQueryToDP) map[string]onet.ProtocolInstance {
+func (s *ServiceLeMal) generateRangePI(query *libdrynx.SurveyQueryToDP) map[string]onet.ProtocolInstance {
 	mapPIs := make(map[string]onet.ProtocolInstance)
 	for _, dp := range *query.SQ.ServerToDP[query.Root.String()] {
 		if dp.String() == s.ServerIdentity().String() {

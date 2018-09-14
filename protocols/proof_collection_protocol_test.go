@@ -30,7 +30,7 @@ type nodeTools struct {
 }
 
 var nodeToolsMap map[string]*nodeTools
-var testSQ lib.SurveyQuery
+var testSQ libdrynx.SurveyQuery
 var sharedBMChannel chan map[string]int64
 var sharedBMChannelToTerminate chan struct{}
 
@@ -61,11 +61,11 @@ func TestProofCollectionProtocol(t *testing.T) {
 	idToPublic[senderID] = pub
 
 	// generate query
-	ps := make([]*[]lib.PublishSignatureBytes, len(el.List))
+	ps := make([]*[]libdrynx.PublishSignatureBytes, len(el.List))
 	for i := range el.List {
-		temp := make([]lib.PublishSignatureBytes, nbrProofs)
+		temp := make([]libdrynx.PublishSignatureBytes, nbrProofs)
 		for j := 0; j < 2; j++ {
-			temp[j] = lib.InitRangeProofSignature(16) // u is the first elem
+			temp[j] = libdrynx.InitRangeProofSignature(16) // u is the first elem
 		}
 		ps[i] = &temp
 	}
@@ -89,7 +89,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 		sizeQuery = append(sizeQuery, nbrProofs)
 		sizeQuery = append(sizeQuery, nbrProofs)
 
-		request.Put(surveyID, &lib.QueryInfo{Bitmap: make(map[string]int64), TotalNbrProofs: sizeQuery, Query: &testSQ, EndVerificationChannel: make(chan skipchain.SkipBlock, 100)})
+		request.Put(surveyID, &libdrynx.QueryInfo{Bitmap: make(map[string]int64), TotalNbrProofs: sizeQuery, Query: &testSQ, EndVerificationChannel: make(chan skipchain.SkipBlock, 100)})
 
 		dbPath := "test" + strconv.FormatInt(int64(i), 10)
 		db, err := bolt.Open(dbPath, 0600, nil)
@@ -102,7 +102,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 	}
 
 	// generate test proofs
-	testProofs := lib.CreateRandomGoodTestData(el, pub, ps, ranges, nbrProofs)
+	testProofs := libdrynx.CreateRandomGoodTestData(el, pub, ps, ranges, nbrProofs)
 
 	// 5 is the number of different proofs
 	totalNbrProofs := nbrProofs * 5
@@ -118,7 +118,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 			}
 			protocol := rootInstance.(*ProofCollectionProtocol)
 
-			protocol.Proof = lib.ProofRequest{RangeProof: lib.NewRangeProofRequest(testProofs.ProofsRange[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
+			protocol.Proof = libdrynx.ProofRequest{RangeProof: libdrynx.NewRangeProofRequest(testProofs.ProofsRange[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
 
 			//run protocol
 			go protocol.Start()
@@ -126,7 +126,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			//check if all proofs are true
 			for _, v := range res.Bitmap {
-				assert.Equal(t, lib.PROOF_TRUE, v, "There are some false range proofs")
+				assert.Equal(t, libdrynx.PROOF_TRUE, v, "There are some false range proofs")
 			}
 		}(i)
 	}
@@ -146,7 +146,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 			}
 			protocol := rootInstance.(*ProofCollectionProtocol)
 
-			protocol.Proof = lib.ProofRequest{AggregationProof: lib.NewAggregationProofRequest(testProofs.ProofsAggregation[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
+			protocol.Proof = libdrynx.ProofRequest{AggregationProof: libdrynx.NewAggregationProofRequest(testProofs.ProofsAggregation[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
 
 			//run protocol
 			go protocol.Start()
@@ -154,7 +154,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			//check if all proofs are true
 			for _, v := range res.Bitmap {
-				assert.Equal(t, lib.PROOF_TRUE, v, "There are some false aggregation proofs")
+				assert.Equal(t, libdrynx.PROOF_TRUE, v, "There are some false aggregation proofs")
 			}
 
 		}(i)
@@ -175,7 +175,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 			}
 			protocol := rootInstance.(*ProofCollectionProtocol)
 
-			protocol.Proof = lib.ProofRequest{ObfuscationProof: lib.NewObfuscationProofRequest(testProofs.ProofsObfuscation[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
+			protocol.Proof = libdrynx.ProofRequest{ObfuscationProof: libdrynx.NewObfuscationProofRequest(testProofs.ProofsObfuscation[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
 
 			//run protocol
 			go protocol.Start()
@@ -183,7 +183,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			//check if all proofs are true
 			for _, v := range res.Bitmap {
-				assert.Equal(t, lib.PROOF_TRUE, v, "There are some false obfuscation proofs")
+				assert.Equal(t, libdrynx.PROOF_TRUE, v, "There are some false obfuscation proofs")
 			}
 
 		}(i)
@@ -204,7 +204,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 			}
 			protocol := rootInstance.(*ProofCollectionProtocol)
 
-			protocol.Proof = lib.ProofRequest{ShuffleProof: lib.NewShuffleProofRequest(testProofs.ProofShuffle[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
+			protocol.Proof = libdrynx.ProofRequest{ShuffleProof: libdrynx.NewShuffleProofRequest(testProofs.ProofShuffle[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
 
 			//run protocol
 			go protocol.Start()
@@ -212,7 +212,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			//check if all proofs are true
 			for _, v := range res.Bitmap {
-				assert.Equal(t, lib.PROOF_TRUE, v, "There are some false shuffle proofs")
+				assert.Equal(t, libdrynx.PROOF_TRUE, v, "There are some false shuffle proofs")
 			}
 		}(i)
 	}
@@ -232,7 +232,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 			}
 			protocol := rootInstance.(*ProofCollectionProtocol)
 
-			protocol.Proof = lib.ProofRequest{KeySwitchProof: lib.NewKeySwitchProofRequest(testProofs.ProofsKeySwitch[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
+			protocol.Proof = libdrynx.ProofRequest{KeySwitchProof: libdrynx.NewKeySwitchProofRequest(testProofs.ProofsKeySwitch[index], surveyID, senderID, strconv.FormatInt(int64(index), 10), el, priv, nil)}
 
 			//run protocol
 			go protocol.Start()
@@ -240,7 +240,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			//check if all proofs are true
 			for _, v := range res.Bitmap {
-				assert.Equal(t, lib.PROOF_TRUE, v, "There are some false key switch proofs")
+				assert.Equal(t, libdrynx.PROOF_TRUE, v, "There are some false key switch proofs")
 			}
 		}(i)
 	}
@@ -279,12 +279,12 @@ func TestProofCollectionProtocol(t *testing.T) {
 	}
 }
 
-func generateTestSurveyQuery(surveyID string, el *onet.Roster, idToPublic map[string]kyber.Point, ps []*[]lib.PublishSignatureBytes, ranges []*[]int64) lib.SurveyQuery {
-	diffP := lib.QueryDiffP{Scale: 1.0, Quanta: 1.0, NoiseListSize: 1, Limit: 1.0, LapMean: 1.0, LapScale: 1.0}
+func generateTestSurveyQuery(surveyID string, el *onet.Roster, idToPublic map[string]kyber.Point, ps []*[]libdrynx.PublishSignatureBytes, ranges []*[]int64) libdrynx.SurveyQuery {
+	diffP := libdrynx.QueryDiffP{Scale: 1.0, Quanta: 1.0, NoiseListSize: 1, Limit: 1.0, LapMean: 1.0, LapScale: 1.0}
 
-	iVSigs := lib.QueryIVSigs{InputValidationSigs: ps, InputValidationSize1: len(el.List), InputValidationSize2: len(ranges)}
-	query := lib.Query{DiffP: diffP, Operation: lib.Operation{NbrInput: 1, NbrOutput: 1}, Ranges: ranges, IVSigs: iVSigs, Proofs: 1}
-	sq := lib.SurveyQuery{RosterServers: *el, SurveyID: surveyID, Query: query, ClientPubKey: nil, ServerToDP: nil, IDtoPublic: idToPublic, Threshold: 1.0, RangeProofThreshold: 1.0, ObfuscationProofThreshold: 1.0, KeySwitchingProofThreshold: 1.0}
+	iVSigs := libdrynx.QueryIVSigs{InputValidationSigs: ps, InputValidationSize1: len(el.List), InputValidationSize2: len(ranges)}
+	query := libdrynx.Query{DiffP: diffP, Operation: libdrynx.Operation{NbrInput: 1, NbrOutput: 1}, Ranges: ranges, IVSigs: iVSigs, Proofs: 1}
+	sq := libdrynx.SurveyQuery{RosterServers: *el, SurveyID: surveyID, Query: query, ClientPubKey: nil, ServerToDP: nil, IDtoPublic: idToPublic, Threshold: 1.0, RangeProofThreshold: 1.0, ObfuscationProofThreshold: 1.0, KeySwitchingProofThreshold: 1.0}
 
 	return sq
 }

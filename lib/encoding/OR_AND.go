@@ -19,18 +19,18 @@ func EncodeBit_OR(input bool, pubKey kyber.Point) (*libunlynx.CipherText, int64)
 }
 
 //EncodeBit_ORWithProof computes the encoding of bit Xi, under the OR operation with range proofs
-func EncodeBit_ORWithProof(input bool, pubKey kyber.Point, sigs []lib.PublishSignature, l int64, u int64) (*libunlynx.CipherText, int64, lib.CreateProof) {
+func EncodeBit_ORWithProof(input bool, pubKey kyber.Point, sigs []libdrynx.PublishSignature, l int64, u int64) (*libunlynx.CipherText, int64, libdrynx.CreateProof) {
 	cipher := libunlynx.CipherText{}
 	toEncrypt := int64(0)
-	cp := lib.CreateProof{}
+	cp := libdrynx.CreateProof{}
 	if sigs != nil {
 		if input {
 			toEncrypt = int64(1)
 		}
-		tmp,r := lib.EncryptIntGetR(pubKey, toEncrypt)
+		tmp,r := libdrynx.EncryptIntGetR(pubKey, toEncrypt)
 		cipher = *tmp
 		//input range validation proof
-		cp = lib.CreateProof{Sigs: sigs, U: u, L: l, Secret: toEncrypt, R: r, CaPub: pubKey, Cipher: cipher}
+		cp = libdrynx.CreateProof{Sigs: sigs, U: u, L: l, Secret: toEncrypt, R: r, CaPub: pubKey, Cipher: cipher}
 
 	} else {
 		Random_Scalar := libunlynx.SuiTe.Scalar().Zero()
@@ -72,18 +72,18 @@ func EncodeBit_AND(input bool, pubKey kyber.Point) (*libunlynx.CipherText, int64
 }
 
 //EncodeBit_AND computes the encoding of bit Xi, under the AND operation with range proofs
-func EncodeBit_ANDWithProof(input bool, pubKey kyber.Point, sigs []lib.PublishSignature, l int64, u int64) (*libunlynx.CipherText, int64, lib.CreateProof) {
+func EncodeBit_ANDWithProof(input bool, pubKey kyber.Point, sigs []libdrynx.PublishSignature, l int64, u int64) (*libunlynx.CipherText, int64, libdrynx.CreateProof) {
 	cipher := libunlynx.CipherText{}
 	toEncrypt := int64(1)
-	cp := lib.CreateProof{}
+	cp := libdrynx.CreateProof{}
 	if sigs != nil {
 		if input {
 			toEncrypt = int64(0)
 		}
-		tmp,r := lib.EncryptIntGetR(pubKey, toEncrypt)
+		tmp,r := libdrynx.EncryptIntGetR(pubKey, toEncrypt)
 		cipher = *tmp
 		//input range validation proof
-		cp = lib.CreateProof{Sigs: sigs, U: u, L: l, Secret: toEncrypt, R: r, CaPub: pubKey, Cipher: cipher}
+		cp = libdrynx.CreateProof{Sigs: sigs, U: u, L: l, Secret: toEncrypt, R: r, CaPub: pubKey, Cipher: cipher}
 
 	} else {
 		Random_Scalar := libunlynx.SuiTe.Scalar().Zero()

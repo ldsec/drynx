@@ -30,7 +30,6 @@ var groupingAttrCkey = groupingAttrC.Key()
 
 //TestCollectiveAggregation tests collective aggregation protocol
 func TestCollectiveAggregation(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// You must register this protocol before creating the servers
@@ -87,7 +86,6 @@ func TestCollectiveAggregation(t *testing.T) {
 
 // NewCollectiveAggregationTest is a test specific protocol instance constructor that injects test data.
 func NewCollectiveAggregationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	pi, err := NewCollectiveAggregationProtocol(tni)
 	protocol := pi.(*CollectiveAggregationProtocol)
 

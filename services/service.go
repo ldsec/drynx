@@ -26,8 +26,8 @@ const gobFile = "pre_compute_multiplications.gob"
 
 // Survey represents a survey with the corresponding params
 type Survey struct {
-	SurveyQuery        lib.SurveyQuery
-	QueryResponseState lib.ResponseAllDPs // QueryResponse keeps track of the response from the data providers, the aggregated data, and the final results
+	SurveyQuery        libdrynx.SurveyQuery
+	QueryResponseState libdrynx.ResponseAllDPs // QueryResponse keeps track of the response from the data providers, the aggregated data, and the final results
 	Noises             libunlynx.CipherVector
 	ShufflePrecompute  []libunlynx.CipherVectorScalar
 	MapPIs             map[string]onet.ProtocolInstance
@@ -102,23 +102,23 @@ var msgTypes = MsgTypes{}
 func init() {
 	onet.RegisterNewService(ServiceName, NewService)
 
-	msgTypes.msgSurveyQuery = network.RegisterMessage(&lib.SurveyQuery{})
-	msgTypes.msgSurveyQueryToDP = network.RegisterMessage(&lib.SurveyQueryToDP{})
+	msgTypes.msgSurveyQuery = network.RegisterMessage(&libdrynx.SurveyQuery{})
+	msgTypes.msgSurveyQueryToDP = network.RegisterMessage(&libdrynx.SurveyQueryToDP{})
 	msgTypes.msgDPqueryReceived = network.RegisterMessage(&DPqueryReceived{})
 	msgTypes.msgSyncDCP = network.RegisterMessage(&SyncDCP{})
 	msgTypes.msgDPdataFinished = network.RegisterMessage(&DPdataFinished{})
 
-	network.RegisterMessage(&lib.SurveyQueryToVN{})
-	network.RegisterMessage(&lib.ResponseDP{})
+	network.RegisterMessage(&libdrynx.SurveyQueryToVN{})
+	network.RegisterMessage(&libdrynx.ResponseDP{})
 
-	network.RegisterMessage(&lib.EndVerificationRequest{})
+	network.RegisterMessage(&libdrynx.EndVerificationRequest{})
 
-	network.RegisterMessage(lib.DataBlock{})
-	network.RegisterMessage(&lib.GetLatestBlock{})
-	network.RegisterMessage(&lib.GetGenesis{})
-	network.RegisterMessage(&lib.GetBlock{})
-	network.RegisterMessage(&lib.GetProofs{})
-	network.RegisterMessage(&lib.CloseDB{})
+	network.RegisterMessage(libdrynx.DataBlock{})
+	network.RegisterMessage(&libdrynx.GetLatestBlock{})
+	network.RegisterMessage(&libdrynx.GetGenesis{})
+	network.RegisterMessage(&libdrynx.GetBlock{})
+	network.RegisterMessage(&libdrynx.GetProofs{})
+	network.RegisterMessage(&libdrynx.CloseDB{})
 }
 
 // NewService constructor which registers the needed messages.
@@ -183,10 +183,10 @@ func NewService(c *onet.Context) (onet.Service, error) {
 // Process implements the processor interface and is used to recognize messages broadcasted between servers
 func (s *ServiceLeMal) Process(msg *network.Envelope) {
 	if msg.MsgType.Equal(msgTypes.msgSurveyQuery) {
-		tmp := (msg.Msg).(*lib.SurveyQuery)
+		tmp := (msg.Msg).(*libdrynx.SurveyQuery)
 		s.HandleSurveyQuery(tmp)
 	} else if msg.MsgType.Equal(msgTypes.msgSurveyQueryToDP) {
-		tmp := (msg.Msg).(*lib.SurveyQueryToDP)
+		tmp := (msg.Msg).(*libdrynx.SurveyQueryToDP)
 		s.HandleSurveyQueryToDP(tmp)
 	} else if msg.MsgType.Equal(msgTypes.msgDPqueryReceived) {
 		tmp := (msg.Msg).(*DPqueryReceived)
@@ -258,7 +258,7 @@ func (s *ServiceLeMal) HandleDPdataFinished(recq *DPdataFinished) (network.Messa
 }
 
 // HandleSurveyQuery handles the reception of a survey creation query by instantiating the corresponding survey.
-func (s *ServiceLeMal) HandleSurveyQuery(recq *lib.SurveyQuery) (network.Message, error) {
+func (s *ServiceLeMal) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Message, error) {
 
 	log.Lvl2("[SERVICE] <LEMAL> Server", s.ServerIdentity().String(), "received a Survey Query")
 
@@ -308,17 +308,18 @@ func (s *ServiceLeMal) HandleSurveyQuery(recq *lib.SurveyQuery) (network.Message
 	// to the DPs
 	listDPs := generateDataCollectionRoster(s.ServerIdentity(), recq.ServerToDP)
 	if listDPs != nil {
-		err := libunlynx.SendISMOthers(s.ServiceProcessor, listDPs, &lib.SurveyQueryToDP{SQ: *recq, Root: s.ServerIdentity()})
+		err := libunlynx.SendISMOthers(s.ServiceProcessor, listDPs, &libdrynx.SurveyQueryToDP{SQ: *recq, Root: s.ServerIdentity()})
 		if err != nil {
 			log.Error("[SERVICE] <LEMAL> Server, broadcasting [SurveyQuery] error ", err)
 		}
 	}
 
+
 	// DRO Phase
 	if recq.IntraMessage == false {
 		go func() {
 			//diffPTimer := libunlynx.StartTimer(s.ServerIdentity().String() + "_DiffPPhase")
-			if lib.AddDiffP(castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.Query.DiffP) {
+			if libdrynx.AddDiffP(castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.Query.DiffP) {
 				s.DROPhase(castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.SurveyID)
 			}
 			//libunlynx.EndTimer(diffPTimer)
@@ -432,22 +433,22 @@ func (s *ServiceLeMal) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 		}
 
 		// convert the result to fit the collective aggregation protocol
-		groupedData := lib.ConvertToAggregationStruct(survey.QueryResponseState)
+		groupedData := libdrynx.ConvertToAggregationStruct(survey.QueryResponseState)
 
 		if survey.SurveyQuery.Query.Proofs != 0 {
 			go func() {
 				log.Lvl2("SERVICE] <LEMAL> Server", s.ServerIdentity(), "creates local aggregation proof")
-				resultAggrLocal := lib.ResponseAllDPs{}
+				resultAggrLocal := libdrynx.ResponseAllDPs{}
 				for i, v := range groupedData {
-					resultAggrLocal.Data = append(resultAggrLocal.Data, lib.ResponseDPOneGroup{Group: string(i), Data: v.AggregatingAttributes})
+					resultAggrLocal.Data = append(resultAggrLocal.Data, libdrynx.ResponseDPOneGroup{Group: string(i), Data: v.AggregatingAttributes})
 				}
-				aggrLocalProof := lib.ServerAggregationProofCreation(survey.QueryResponseState, resultAggrLocal)
+				aggrLocalProof := libdrynx.ServerAggregationProofCreation(survey.QueryResponseState, resultAggrLocal)
 				if survey.SurveyQuery.Query.Proofs == 2 {
-					aggrLocalProof.DPsData = lib.ResponseAllDPs{}
+					aggrLocalProof.DPsData = libdrynx.ResponseAllDPs{}
 				}
 
 				pi := survey.MapPIs["aggregation/"+s.ServerIdentity().String()]
-				pi.(*protocols.ProofCollectionProtocol).Proof = lib.ProofRequest{AggregationProof: lib.NewAggregationProofRequest(&aggrLocalProof, target, s.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, tn.Private(), nil)}
+				pi.(*protocols.ProofCollectionProtocol).Proof = libdrynx.ProofRequest{AggregationProof: libdrynx.NewAggregationProofRequest(&aggrLocalProof, target, s.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, tn.Private(), nil)}
 				go pi.Dispatch()
 				go pi.Start()
 				<-pi.(*protocols.ProofCollectionProtocol).FeedbackChannel
@@ -491,7 +492,7 @@ func (s *ServiceLeMal) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 			if survey.SurveyQuery.Query.DiffP.Scale == 0 {
 				survey.SurveyQuery.Query.DiffP.Scale = 1
 			}
-			noiseArray := lib.GenerateNoiseValuesScale(int64(survey.SurveyQuery.Query.DiffP.NoiseListSize), survey.SurveyQuery.Query.DiffP.LapMean, survey.SurveyQuery.Query.DiffP.LapScale, survey.SurveyQuery.Query.DiffP.Quanta, survey.SurveyQuery.Query.DiffP.Scale, survey.SurveyQuery.Query.DiffP.Limit)
+			noiseArray := libdrynx.GenerateNoiseValuesScale(int64(survey.SurveyQuery.Query.DiffP.NoiseListSize), survey.SurveyQuery.Query.DiffP.LapMean, survey.SurveyQuery.Query.DiffP.LapScale, survey.SurveyQuery.Query.DiffP.Quanta, survey.SurveyQuery.Query.DiffP.Scale, survey.SurveyQuery.Query.DiffP.Limit)
 			for _, v := range noiseArray {
 				clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
 			}
@@ -511,7 +512,7 @@ func (s *ServiceLeMal) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 		keySwitch.MapPIs = survey.MapPIs
 
 		if tn.IsRoot() {
-			if lib.AddDiffP(survey.SurveyQuery.Query.DiffP) {
+			if libdrynx.AddDiffP(survey.SurveyQuery.Query.DiffP) {
 				for i, v := range survey.QueryResponseState.Data {
 					survey.QueryResponseState.Data[i].Data.Add(v.Data, survey.Noises[:len(v.Data)])
 				}
@@ -588,7 +589,7 @@ func (s *ServiceLeMal) StartService(targetSurvey string) error {
 	}
 
 	// DRO Phase
-	if lib.AddDiffP(target.SurveyQuery.Query.DiffP) {
+	if libdrynx.AddDiffP(target.SurveyQuery.Query.DiffP) {
 		<-target.DiffPChannel
 	}
 
@@ -614,9 +615,9 @@ func (s *ServiceLeMal) DataCollectionPhase(targetSurvey string) error {
 	// we convert the map into an object of [Group + CipherVector] to avoid later problems with protobuf
 	for key, value := range dataDPs {
 		if survey.SurveyQuery.Query.CuttingFactor != 0 {
-			survey.QueryResponseState.Data = append(survey.QueryResponseState.Data, lib.ResponseDPOneGroup{Group: key, Data: value[:int(len(value)/survey.SurveyQuery.Query.CuttingFactor)]})
+			survey.QueryResponseState.Data = append(survey.QueryResponseState.Data, libdrynx.ResponseDPOneGroup{Group: key, Data: value[:int(len(value)/survey.SurveyQuery.Query.CuttingFactor)]})
 		} else {
-			survey.QueryResponseState.Data = append(survey.QueryResponseState.Data, lib.ResponseDPOneGroup{Group: key, Data: value})
+			survey.QueryResponseState.Data = append(survey.QueryResponseState.Data, libdrynx.ResponseDPOneGroup{Group: key, Data: value})
 
 		}
 	}
@@ -634,7 +635,7 @@ func (s *ServiceLeMal) AggregationPhase(targetSurvey string) error {
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 
-	survey.QueryResponseState = *lib.ConvertFromAggregationStruct(cothorityAggregatedData)
+	survey.QueryResponseState = *libdrynx.ConvertFromAggregationStruct(cothorityAggregatedData)
 	s.Survey.Put(string(targetSurvey), survey)
 	return nil
 }
@@ -691,7 +692,7 @@ func (s *ServiceLeMal) KeySwitchingPhase(targetSurvey string) error {
 //______________________________________________________________________________________________________________________
 
 // these first four functions are used to adapat the existing protocols to the 'lemal' service structs
-func convertToCipherVector(ad *lib.ResponseAllDPs) *libunlynx.CipherVector {
+func convertToCipherVector(ad *libdrynx.ResponseAllDPs) *libunlynx.CipherVector {
 	cv := make(libunlynx.CipherVector, 0)
 	for _, response := range ad.Data {
 		cv = append(cv, response.Data...)
@@ -699,8 +700,8 @@ func convertToCipherVector(ad *lib.ResponseAllDPs) *libunlynx.CipherVector {
 	return &cv
 }
 
-func convertFromKeySwitchingStruct(cv libunlynx.CipherVector, dpResponses lib.ResponseAllDPs) *lib.ResponseAllDPs {
-	data := make([]lib.ResponseDPOneGroup, 0)
+func convertFromKeySwitchingStruct(cv libunlynx.CipherVector, dpResponses libdrynx.ResponseAllDPs) *libdrynx.ResponseAllDPs {
+	data := make([]libdrynx.ResponseDPOneGroup, 0)
 
 	length := len(dpResponses.Data[0].Data)
 	init := 0
@@ -709,11 +710,11 @@ func convertFromKeySwitchingStruct(cv libunlynx.CipherVector, dpResponses lib.Re
 		if i%length == 0 {
 			tmp := cv[init:i]
 			init = i
-			data = append(data, lib.ResponseDPOneGroup{Group: dpResponses.Data[groupIndex].Group, Data: tmp})
+			data = append(data, libdrynx.ResponseDPOneGroup{Group: dpResponses.Data[groupIndex].Group, Data: tmp})
 			groupIndex++
 		}
 	}
-	return &lib.ResponseAllDPs{Data: data}
+	return &libdrynx.ResponseAllDPs{Data: data}
 
 }
 
@@ -734,14 +735,14 @@ func generateDataCollectionRoster(root *network.ServerIdentity, serverToDP map[s
 	return nil
 }
 
-func recreateRangeSignatures(ivSigs lib.QueryIVSigs) []*[]lib.PublishSignatureBytes {
-	recreate := make([]*[]lib.PublishSignatureBytes, 0)
+func recreateRangeSignatures(ivSigs libdrynx.QueryIVSigs) []*[]libdrynx.PublishSignatureBytes {
+	recreate := make([]*[]libdrynx.PublishSignatureBytes, 0)
 
 	// transform the one-dimensional array (because of protobuf) to the original two-dimensional array
 	indexInit := 0
 	for i := 1; i <= len(ivSigs.InputValidationSigs); i++ {
 		if i%ivSigs.InputValidationSize2 == 0 {
-			tmp := make([]lib.PublishSignatureBytes, ivSigs.InputValidationSize2)
+			tmp := make([]libdrynx.PublishSignatureBytes, ivSigs.InputValidationSize2)
 			for j := range tmp {
 				tmp[j] = (*ivSigs.InputValidationSigs[indexInit])[0]
 				indexInit++

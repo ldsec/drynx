@@ -15,7 +15,7 @@ func EncodeCosim(rijs, riks []int64, pubKey kyber.Point) ([]libunlynx.CipherText
 }
 
 // EncodeCosimWithProofs computes the elements needed to compute cosine similarity with the proof of range
-func EncodeCosimWithProofs(rijs, riks []int64, pubKey kyber.Point, sigs [][]lib.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []lib.CreateProof) {
+func EncodeCosimWithProofs(rijs, riks []int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
 	//sum the rijs
 	rijs_sum := int64(0)
 	riks_sum := int64(0)
@@ -40,7 +40,7 @@ func EncodeCosimWithProofs(rijs, riks []int64, pubKey kyber.Point, sigs [][]lib.
 	for i, v := range resultClear {
 		go func(i int, v int64) {
 			defer wg.Done()
-			tmp, r := lib.EncryptIntGetR(pubKey, v)
+			tmp, r := libdrynx.EncryptIntGetR(pubKey, v)
 			result_encrypted[i] = *tmp
 			result_randomR[i] = r
 		}(i, v)
@@ -52,18 +52,18 @@ func EncodeCosimWithProofs(rijs, riks []int64, pubKey kyber.Point, sigs [][]lib.
 		return result_encrypted, resultClear, nil
 	}
 
-	createProofs := make([]lib.CreateProof, len(resultClear))
+	createProofs := make([]libdrynx.CreateProof, len(resultClear))
 	wg = libunlynx.StartParallelize(len(resultClear))
 	for i, v := range resultClear {
 		if libunlynx.PARALLELIZE {
 			go func(i int, v int64) {
 				defer wg.Done()
 				//input range validation proof
-				createProofs[i] = lib.CreateProof{Sigs: lib.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
+				createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
 			}(i, v)
 		} else {
 			//input range validation proof
-			createProofs[i] = lib.CreateProof{Sigs: lib.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
+			createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
 		}
 
 	}

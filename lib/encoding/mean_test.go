@@ -7,12 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"github.com/lca1/drynx/lib"
-	"github.com/dedis/kyber/pairing/bn256"
 )
 
 // TestEncodeDecodeMean tests EncodeMean and DecodeMean
 func TestEncodeDecodeMean(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	//data
 	inputValues := []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -120}
 	// key
@@ -32,7 +30,6 @@ func TestEncodeDecodeMean(t *testing.T) {
 
 // TestEncodeDecodeMeanWithProofs tests EncodeMean and DecodeMean with input range validation
 func TestEncodeDecodeMeanWithProofs(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	//data
 	inputValues := []int64{0, 10, 9, 1, 11}
 	// key
@@ -48,17 +45,17 @@ func TestEncodeDecodeMeanWithProofs(t *testing.T) {
 	u := []int64{2, 2}
 	l := []int64{5, 3}
 
-	ps := make([][]lib.PublishSignature, 2)
+	ps := make([][]libdrynx.PublishSignature, 2)
 
 	ranges := make([]*[]int64, 2)
-	ps[0] = make([]lib.PublishSignature, 2)
-	ps[1] = make([]lib.PublishSignature, 2)
+	ps[0] = make([]libdrynx.PublishSignature, 2)
+	ps[1] = make([]libdrynx.PublishSignature, 2)
 	ys := make([][]kyber.Point, 2)
 	ys[0] = make([]kyber.Point, 2)
 	ys[1] = make([]kyber.Point, 2)
 	for i := range ps[0] {
-		ps[0][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u[i]))
-		ps[1][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u[i]))
+		ps[0][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u[i]))
+		ps[1][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u[i]))
 		ys[0][i] = ps[0][i].Public
 		ys[1][i] = ps[1][i].Public
 		ranges[i] = &[]int64{u[i], l[i]}
@@ -76,7 +73,7 @@ func TestEncodeDecodeMeanWithProofs(t *testing.T) {
 	resultEncrypted, _, prf := encoding.EncodeMeanWithProofs(inputValues, pubKey, ps, ranges)
 	result := encoding.DecodeMean(resultEncrypted, secKey)
 
-	assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prf[0]), u[0], l[0], yss[0], pubKey))
-	assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prf[1]), u[1], l[1], yss[1], pubKey))
+	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[0]), u[0], l[0], yss[0], pubKey))
+	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[1]), u[1], l[1], yss[1], pubKey))
 	assert.Equal(t, expect, result)
 }

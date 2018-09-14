@@ -1,15 +1,13 @@
-package lib
+package libdrynx
 
 import (
 	"testing"
 	"github.com/lca1/unlynx/lib"
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet/log"
-	"github.com/dedis/kyber/pairing/bn256"
 )
 
 func TestRangeProofVerification(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	if !CurvePairingTest() {
 		t.Skip("no pairing")
 	}
@@ -37,7 +35,6 @@ func TestRangeProofVerification(t *testing.T) {
 }
 
 func TestOptimizedRangeProofVerification(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	//aScalar := libunlynx.SuiTe
 	//chimera := libunlynx.ChimeraSuite{}
 	log.LLvl1(libunlynx.SuiTe.String())
@@ -56,19 +53,21 @@ func TestOptimizedRangeProofVerification(t *testing.T) {
 		//publishArgsFalse := lib.CreatePredicateRangeProof(sig[i],u,l,int64(65),P)
 
 	}
-	cp := CreateProof{Sigs: sig, U: u, L: l, Secret: int64(25), R: r, CaPub: P, Cipher: *encryption}
+	cp := CreateProof{Sigs: sig, U: u, L: l, Secret: int64(1), R: r, CaPub: P, Cipher: *encryption}
 	publishArgs := CreatePredicateRangeProofForAllServ(cp)
 	//check when no proof --> u = 0 & l = 0
 	// test bytes conversion
 	publishArgsbytes := publishArgs.ToBytes()
+
 	tmpProof := RangeProof{}
 	tmpProof.FromBytes(publishArgsbytes)
+
 
 	ys := make([]kyber.Point, 5)
 	for i := 0; i < 5; i++ {
 		ys[i] = sig[i].Public
 	}
 
-	log.LLvl1(RangeProofVerification(tmpProof, u, l, ys, P))
+	log.LLvl1(RangeProofVerification(publishArgs, u, l, ys, P))
 
 }

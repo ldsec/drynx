@@ -45,7 +45,6 @@ func TestEncodeDecodeUnionInter(t *testing.T) {
 }
 
 func TestEncodeDecodeUnionInterWithProofs(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	//data
 	inputValues := []int64{1, 2, 3, 1, 5, 1, 2, 3}
 	// key
@@ -71,17 +70,17 @@ func TestEncodeDecodeUnionInterWithProofs(t *testing.T) {
 	u := int64(2)
 	l := int64(1)
 
-	ps := make([][]lib.PublishSignature, 2)
+	ps := make([][]libdrynx.PublishSignature, 2)
 
 	ranges := make([]*[]int64, max-min+1)
-	ps[0] = make([]lib.PublishSignature, max-min+1)
-	ps[1] = make([]lib.PublishSignature, max-min+1)
+	ps[0] = make([]libdrynx.PublishSignature, max-min+1)
+	ps[1] = make([]libdrynx.PublishSignature, max-min+1)
 	ys := make([][]kyber.Point, 2)
 	ys[0] = make([]kyber.Point, max-min+1)
 	ys[1] = make([]kyber.Point, max-min+1)
 	for i := range ps[0] {
-		ps[0][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u))
-		ps[1][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u))
+		ps[0][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u))
+		ps[1][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u))
 		ys[0][i] = ps[0][i].Public
 		ys[1][i] = ps[1][i].Public
 		ranges[i] = &[]int64{u, l}
@@ -104,8 +103,8 @@ func TestEncodeDecodeUnionInterWithProofs(t *testing.T) {
 	assert.Equal(t, expected_inter, resultInter)
 
 	for i,v := range prfMin{
-		assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(v), u, l, yss[i], pubKey))
-		assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prfMax[i]), u, l, yss[i], pubKey))
+		assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(v), u, l, yss[i], pubKey))
+		assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prfMax[i]), u, l, yss[i], pubKey))
 	}
 
 

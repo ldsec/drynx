@@ -12,11 +12,9 @@ import (
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/drynx/protocols"
-	"github.com/dedis/kyber/pairing/bn256"
 )
 
 func TestCtks(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	onet.GlobalProtocolRegister("CtksTest", NewCtksTest)
 	_, entityList, tree := local.GenTree(5, true)

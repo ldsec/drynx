@@ -1,18 +1,16 @@
 package encoding_test
 
 import (
-	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"github.com/dedis/kyber"
-	"github.com/lca1/drynx/lib"
-	"github.com/dedis/kyber/pairing/bn256"
+	"github.com/lca1/unlynx/lib"
 )
 
 
 func TestEncodeDecodeBit(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	//data
 	var inputValues []bool
 	inputValues = append(inputValues, false)
@@ -38,7 +36,6 @@ func TestEncodeDecodeBit(t *testing.T) {
 }
 
 func TestEncodeDecodeBitWithProofs(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	//Data
 	var inputValues []bool
 	inputValues = append(inputValues, false)
@@ -53,7 +50,7 @@ func TestEncodeDecodeBitWithProofs(t *testing.T) {
 	//signatures needed to check the proof
 	u := int64(2)
 	l := int64(1)
-	ps := []lib.PublishSignature{lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u))}
+	ps := []libdrynx.PublishSignature{libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u))}
 
 
 	resultEncrypted_OR, _, prfOr := encoding.EncodeBit_ORWithProof(expect_OR, pubKey,  ps, l, u)
@@ -63,9 +60,9 @@ func TestEncodeDecodeBitWithProofs(t *testing.T) {
 	resultEncrypted_AND, _, prfAnd := encoding.EncodeBit_ANDWithProof(expect_AND, pubKey, ps, l, u)
 	result_AND := encoding.DecodeBit_AND(*resultEncrypted_AND, secKey)
 
-	assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prfOr), u, l, []kyber.Point{ps[0].Public}, pubKey))
+	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prfOr), u, l, []kyber.Point{ps[0].Public}, pubKey))
 	assert.Equal(t, expect_OR, result_OR)
 
-	assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prfAnd), u, l, []kyber.Point{ps[0].Public}, pubKey))
+	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prfAnd), u, l, []kyber.Point{ps[0].Public}, pubKey))
 	assert.Equal(t, expect_AND, result_AND)
 }

@@ -9,18 +9,16 @@ import (
 	"math"
 	"testing"
 	"github.com/lca1/drynx/lib"
-	"github.com/dedis/kyber/pairing/bn256"
 )
 
 func TestEncodeDecodeCosim(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	secKey, pubKey := libunlynx.GenKey()
 
 	limit := int64(10000)
 	log.LLvl1("Preparing decryption up to:", limit)
 
 	// Decrpytion hashtable creation
-	lib.CreateDecryptionTable(limit, pubKey, secKey)
+	libdrynx.CreateDecryptionTable(limit, pubKey, secKey)
 
 	//data
 	rijs := []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12}
@@ -47,16 +45,15 @@ func TestEncodeDecodeCosim(t *testing.T) {
 
 	//expected results
 	expect := float64(resultClear[4]) / (math.Sqrt(float64(resultClear[2])) * math.Sqrt(float64(resultClear[3])))
-	log.LLvl1("Expected Results ", resultClear)
+	log.LLvl1("Expected Preliminary Results ", resultClear)
 
 	resultEncrypted, _ := encoding.EncodeCosim(rijs, riks, pubKey)
 	result := encoding.DecodeCosim(resultEncrypted, secKey)
-	log.LLvl1("Actual Results ", result)
+	log.LLvl1("Final Results ", result)
 	assert.Equal(t, expect, result)
 }
 
 func TestEncodeDecodeCosimWithProofs(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	// key
 	secKey, pubKey := libunlynx.GenKey()
 
@@ -64,7 +61,7 @@ func TestEncodeDecodeCosimWithProofs(t *testing.T) {
 	log.LLvl1("Preparing decryption up to:", limit)
 
 	// Decrpytion hashtable creation
-	lib.CreateDecryptionTable(limit, pubKey, secKey)
+	libdrynx.CreateDecryptionTable(limit, pubKey, secKey)
 
 	//data
 	rijs := []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 1}
@@ -96,17 +93,17 @@ func TestEncodeDecodeCosimWithProofs(t *testing.T) {
 	//signatures needed to check the proof
 	u := int64(2)
 	l := int64(10)
-	ps := make([][]lib.PublishSignature, 2)
+	ps := make([][]libdrynx.PublishSignature, 2)
 
 	ranges := make([]*[]int64, len(resultClear))
-	ps[0] = make([]lib.PublishSignature, len(resultClear))
-	ps[1] = make([]lib.PublishSignature, len(resultClear))
+	ps[0] = make([]libdrynx.PublishSignature, len(resultClear))
+	ps[1] = make([]libdrynx.PublishSignature, len(resultClear))
 	ys := make([][]kyber.Point, 2)
 	ys[0] = make([]kyber.Point, len(resultClear))
 	ys[1] = make([]kyber.Point, len(resultClear))
 	for i := range ps[0] {
-		ps[0][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u))
-		ps[1][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u))
+		ps[0][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u))
+		ps[1][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u))
 		ys[0][i] = ps[0][i].Public
 		ys[1][i] = ps[1][i].Public
 		ranges[i] = &[]int64{u, l}
@@ -126,7 +123,7 @@ func TestEncodeDecodeCosimWithProofs(t *testing.T) {
 		for j := range ys {
 			yss[j] = ys[j][i]
 		}
-		assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(v), u, l, yss, pubKey))
+		assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(v), u, l, yss, pubKey))
 	}
 
 	result := encoding.DecodeCosim(resultEncrypted, secKey)

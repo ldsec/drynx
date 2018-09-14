@@ -13,7 +13,7 @@ func EncodeMean(input []int64, pubKey kyber.Point) ([]libunlynx.CipherText, []in
 }
 
 // EncodeMeanWithProofs computes the mean of query results with the proof of range
-func EncodeMeanWithProofs(input []int64, pubKey kyber.Point, sigs [][]lib.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []lib.CreateProof) {
+func EncodeMeanWithProofs(input []int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
 	//sum the local DP's query results
 	sum := int64(0)
 	for _, el := range input {
@@ -29,7 +29,7 @@ func EncodeMeanWithProofs(input []int64, pubKey kyber.Point, sigs [][]lib.Publis
 	for i, v := range resultClear {
 		go func(i int, v int64) {
 			defer wg.Done()
-			tmp, r := lib.EncryptIntGetR(pubKey, v)
+			tmp, r := libdrynx.EncryptIntGetR(pubKey, v)
 			result_encrypted[i] = *tmp
 			result_randomR[i] = r
 		}(i,v)
@@ -41,18 +41,18 @@ func EncodeMeanWithProofs(input []int64, pubKey kyber.Point, sigs [][]lib.Publis
 		return result_encrypted, resultClear, nil
 	}
 
-	createProofs := make([]lib.CreateProof, len(resultClear))
+	createProofs := make([]libdrynx.CreateProof, len(resultClear))
 	wg1 := libunlynx.StartParallelize(len(resultClear))
 	for i, v := range resultClear {
 		if libunlynx.PARALLELIZE {
 			go func(i int, v int64) {
 				defer wg1.Done()
 				//input range validation proof
-				createProofs[i] = lib.CreateProof{Sigs: lib.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
+				createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
 			}(i, v)
 		} else {
 			//input range validation proof
-			createProofs[i] = lib.CreateProof{Sigs: lib.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
+			createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
 		}
 
 	}

@@ -1,14 +1,12 @@
-package lib
+package libdrynx
 
 import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"github.com/dedis/kyber/pairing/bn256"
 )
 
 func TestObfuscationProofVerification(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	sec, pub := libunlynx.GenKey()
 	tab := int64(2)
 	ev := libunlynx.EncryptInt(pub, tab)

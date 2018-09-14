@@ -24,7 +24,7 @@ var VerificationBitmap = []skipchain.VerifierID{VerifyBitmap, skipchain.VerifyBa
 // Query Handlers
 //______________________________________________________________________________________________________________________
 
-func (s *ServiceLeMal) HandleSurveyQueryToVN(recq *lib.SurveyQueryToVN) (network.Message, error) {
+func (s *ServiceLeMal) HandleSurveyQueryToVN(recq *libdrynx.SurveyQueryToVN) (network.Message, error) {
 
 	recq.SQ.Query.IVSigs.InputValidationSigs = recreateRangeSignatures(recq.SQ.Query.IVSigs)
 
@@ -45,7 +45,7 @@ func (s *ServiceLeMal) HandleSurveyQueryToVN(recq *lib.SurveyQueryToVN) (network
 	sizeQuery := make([]int, 0)
 	proofsVerified := make(map[string]int64)
 	//Put in the concurrent map the info that were calculated.
-	size := lib.QueryToProofsNbrs(recq.SQ)
+	size := libdrynx.QueryToProofsNbrs(recq.SQ)
 
 	//Order of proof is Range, Shuffle, Aggr, obfuscation, KeySwitch
 	sizeQuery = append(sizeQuery, size[0])
@@ -56,9 +56,9 @@ func (s *ServiceLeMal) HandleSurveyQueryToVN(recq *lib.SurveyQueryToVN) (network
 	totalNbrProofs = size[0] + size[2] + size[3] + size[1] + size[4]
 
 	if s.ServerIdentity().String() == recq.SQ.Query.RosterVNs.List[0].String() {
-		s.Request.Put(recq.SQ.SurveyID, &lib.QueryInfo{Bitmap: proofsVerified, TotalNbrProofs: sizeQuery, Query: &recq.SQ, SharedBMChannel: make(chan map[string]int64, 100), SharedBMChannelToTerminate: make(chan struct{}, 100), EndVerificationChannel: make(chan skipchain.SkipBlock, 100)})
+		s.Request.Put(recq.SQ.SurveyID, &libdrynx.QueryInfo{Bitmap: proofsVerified, TotalNbrProofs: sizeQuery, Query: &recq.SQ, SharedBMChannel: make(chan map[string]int64, 100), SharedBMChannelToTerminate: make(chan struct{}, 100), EndVerificationChannel: make(chan skipchain.SkipBlock, 100)})
 	} else {
-		s.Request.Put(recq.SQ.SurveyID, &lib.QueryInfo{Bitmap: proofsVerified, TotalNbrProofs: sizeQuery, Query: &recq.SQ})
+		s.Request.Put(recq.SQ.SurveyID, &libdrynx.QueryInfo{Bitmap: proofsVerified, TotalNbrProofs: sizeQuery, Query: &recq.SQ})
 	}
 
 	if s.DBPath == "" {
@@ -98,7 +98,7 @@ func (s *ServiceLeMal) HandleSurveyQueryToVN(recq *lib.SurveyQueryToVN) (network
 			startBI := libunlynx.StartTimer("BI")
 
 			//Create the data structure that will be inserted in the block
-			dataBlock := new(lib.DataBlock)
+			dataBlock := new(libdrynx.DataBlock)
 			dataBlock.Sample = 0.4
 			dataBlock.SurveyID = recq.SQ.SurveyID
 			dataBlock.Time = time.Now()
@@ -125,7 +125,7 @@ func (s *ServiceLeMal) HandleSurveyQueryToVN(recq *lib.SurveyQueryToVN) (network
 				genesisBytes, _ := network.Marshal(newSB)
 
 				log.LLvl1("SIZE OF BLOCK:", len(genesisBytes))
-				lib.UpdateDB(s.DB, "genesis", "genesis", genesisBytes)
+				libdrynx.UpdateDB(s.DB, "genesis", "genesis", genesisBytes)
 
 				s.LastSkipBlock = newSB
 
@@ -136,7 +136,7 @@ func (s *ServiceLeMal) HandleSurveyQueryToVN(recq *lib.SurveyQueryToVN) (network
 				}
 
 				//Store new block in DB
-				lib.UpdateDB(s.DB, "mapping", recq.SQ.SurveyID, []byte(newSB.Hash))
+				libdrynx.UpdateDB(s.DB, "mapping", recq.SQ.SurveyID, []byte(newSB.Hash))
 
 				s.LastSkipBlock = newSB
 			}
@@ -151,13 +151,13 @@ func (s *ServiceLeMal) HandleSurveyQueryToVN(recq *lib.SurveyQueryToVN) (network
 	return nil, nil
 }
 
-func (s *ServiceLeMal) HandleEndVerification(msg *lib.EndVerificationRequest) (network.Message, error) {
+func (s *ServiceLeMal) HandleEndVerification(msg *libdrynx.EndVerificationRequest) (network.Message, error) {
 	//block until all verification of the proofs is done (and of course inserted in the skipchain)
 	sb := <-protocols.CastToQueryInfo(s.Request.Get(msg.QueryInfoID)).EndVerificationChannel
-	return &lib.Reply{Latest: &sb}, nil
+	return &libdrynx.Reply{Latest: &sb}, nil
 }
 
-func (s *ServiceLeMal) HandleGetGenesis(request *lib.GetGenesis) (network.Message, error) {
+func (s *ServiceLeMal) HandleGetGenesis(request *libdrynx.GetGenesis) (network.Message, error) {
 
 	genesisBytes := make([]byte, 0)
 	err := s.DB.View(func(tx *bolt.Tx) error {
@@ -174,11 +174,11 @@ func (s *ServiceLeMal) HandleGetGenesis(request *lib.GetGenesis) (network.Messag
 	if err != nil {
 		return nil, err
 	}
-	return &lib.Reply{Latest: block.(*skipchain.SkipBlock)}, nil
+	return &libdrynx.Reply{Latest: block.(*skipchain.SkipBlock)}, nil
 
 }
 
-func (s *ServiceLeMal) HandleGetLatestBlock(request *lib.GetLatestBlock) (network.Message, error) {
+func (s *ServiceLeMal) HandleGetLatestBlock(request *libdrynx.GetLatestBlock) (network.Message, error) {
 	timeGet := libunlynx.StartTimer("GetBlock")
 	chain, err := s.Skipchain.GetUpdateChain(request.Roster, request.Sb.Hash)
 	libunlynx.EndTimer(timeGet)
@@ -186,10 +186,10 @@ func (s *ServiceLeMal) HandleGetLatestBlock(request *lib.GetLatestBlock) (networ
 		return nil, err
 	}
 
-	return &lib.Reply{Latest: chain.Update[len(chain.Update)-1]}, nil
+	return &libdrynx.Reply{Latest: chain.Update[len(chain.Update)-1]}, nil
 }
 
-func (s *ServiceLeMal) HandleGetBlock(request *lib.GetBlock) (network.Message, error) {
+func (s *ServiceLeMal) HandleGetBlock(request *libdrynx.GetBlock) (network.Message, error) {
 	blockID := skipchain.SkipBlockID{}
 
 	if s.DB == nil {
@@ -217,12 +217,12 @@ func (s *ServiceLeMal) HandleGetBlock(request *lib.GetBlock) (network.Message, e
 		return nil, err
 	}
 
-	return &lib.Reply{Latest: block}, nil
+	return &libdrynx.Reply{Latest: block}, nil
 }
 
 //HandleGetProofs handle the request to send back proof for a given query ID
 //It is sent as a key,value (string,[]byte)
-func (s *ServiceLeMal) HandleGetProofs(request *lib.GetProofs) (network.Message, error) {
+func (s *ServiceLeMal) HandleGetProofs(request *libdrynx.GetProofs) (network.Message, error) {
 	//Open the DB if it is not open
 	timeGetProof := libunlynx.StartTimer(s.ServerIdentity().String() + "_GetProofs")
 	if s.DB == nil {
@@ -301,10 +301,10 @@ func (s *ServiceLeMal) HandleGetProofs(request *lib.GetProofs) (network.Message,
 	}
 
 	libunlynx.EndTimer(timeGetProof)
-	return &lib.ProofsAsMap{Proofs: result}, nil
+	return &libdrynx.ProofsAsMap{Proofs: result}, nil
 }
 
-func (s *ServiceLeMal) HandleCloseDB(request *lib.CloseDB) (network.Message, error) {
+func (s *ServiceLeMal) HandleCloseDB(request *libdrynx.CloseDB) (network.Message, error) {
 	if s.DB != nil {
 		log.Lvl2("Closing DB")
 
@@ -384,7 +384,7 @@ func (s *ServiceLeMal) verifyFuncBitmap(newID []byte, newSB *skipchain.SkipBlock
 	}
 
 	//Get bitmap that was inserted in newBlock
-	blockData := msg.(*lib.DataBlock)
+	blockData := msg.(*libdrynx.DataBlock)
 	bitMap := blockData.Proofs
 	bitMapFromServ := make(map[string]int64)
 
@@ -396,7 +396,7 @@ func (s *ServiceLeMal) verifyFuncBitmap(newID []byte, newSB *skipchain.SkipBlock
 		}
 		v := b.Get([]byte(blockData.SurveyID + "/map"))
 		_, message, _ := network.Unmarshal(v, libunlynx.SuiTe)
-		result := message.(*lib.BitMap)
+		result := message.(*libdrynx.BitMap)
 		bitMapFromServ = result.BitMap
 		return nil
 	})
@@ -427,7 +427,7 @@ func generateProofCollectionRoster(root *network.ServerIdentity, rosterVNs *onet
 	return onet.NewRoster(roster)
 }
 
-func (s *ServiceLeMal) generateMapPIs(query *lib.SurveyQuery) map[string]onet.ProtocolInstance {
+func (s *ServiceLeMal) generateMapPIs(query *libdrynx.SurveyQuery) map[string]onet.ProtocolInstance {
 	mapPIs := make(map[string]onet.ProtocolInstance)
 
 	tree := generateProofCollectionRoster(s.ServerIdentity(), query.Query.RosterVNs).GenerateStar()

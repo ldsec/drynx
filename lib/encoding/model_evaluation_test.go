@@ -7,12 +7,10 @@ import (
 	"testing"
 	"github.com/dedis/kyber"
 	"github.com/lca1/drynx/lib"
-	"github.com/dedis/kyber/pairing/bn256"
 )
 
 //TestEncodeDecodeModelEvaluation tests EncodeModelEvaluation and DecodeModelEvaluation
 func TestEncodeDecodeModelEvaluation(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	//data
 	inputValues_y := []int64{1, 2, 3, 4, 5, 6, 7, 8, 1, 67, -72}
 	inputValues_y_pred := []int64{32, 12, 23, 4, 13, -72, 12, 8, 23, 67, 2}
@@ -50,7 +48,6 @@ func TestEncodeDecodeModelEvaluation(t *testing.T) {
 
 //TestEncodeDecodeModelEvaluationWithProofs tests EncodeModelEvaluationWithProofs and DecodeModelEvaluationWithProofs
 func TestEncodeDecodeModelEvaluationWithProofs(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	//data
 	inputValues_y := []int64{1, 2, 3, 4, 5, 6, 7, 8, 1, 6, -7}
 	inputValues_y_pred := []int64{32, 12, 23, 4, 13, -7, 12, 8, 2, 6, 2}
@@ -74,16 +71,16 @@ func TestEncodeDecodeModelEvaluationWithProofs(t *testing.T) {
 	u := []int64{2, 2, 2, 2}
 	l := []int64{8, 12, 12, 12}
 
-	ps := make([][]lib.PublishSignature, 2)
+	ps := make([][]libdrynx.PublishSignature, 2)
 	ranges := make([]*[]int64, 4)
-	ps[0] = make([]lib.PublishSignature, 4)
-	ps[1] = make([]lib.PublishSignature, 4)
+	ps[0] = make([]libdrynx.PublishSignature, 4)
+	ps[1] = make([]libdrynx.PublishSignature, 4)
 	ys := make([][]kyber.Point, 2)
 	ys[0] = make([]kyber.Point, 4)
 	ys[1] = make([]kyber.Point, 4)
 	for i := range ps[0] {
-		ps[0][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u[i]))
-		ps[1][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u[i]))
+		ps[0][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u[i]))
+		ps[1][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u[i]))
 		ys[0][i] = ps[0][i].Public
 		ys[1][i] = ps[1][i].Public
 		ranges[i] = &[]int64{u[i], l[i]}
@@ -101,9 +98,9 @@ func TestEncodeDecodeModelEvaluationWithProofs(t *testing.T) {
 	resultEncrypted, _, prf := encoding.EncodeModelEvaluationWithProofs(inputValues_y, inputValues_y_pred, pubKey, ps, ranges)
 	result := encoding.DecodeModelEvaluation(resultEncrypted, secKey)
 
-	assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prf[0]), u[0], l[0], yss[0], pubKey))
-	assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prf[1]), u[1], l[1], yss[1], pubKey))
-	assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prf[2]), u[2], l[2], yss[2], pubKey))
-	assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prf[3]), u[3], l[3], yss[3], pubKey))
+	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[0]), u[0], l[0], yss[0], pubKey))
+	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[1]), u[1], l[1], yss[1], pubKey))
+	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[2]), u[2], l[2], yss[2], pubKey))
+	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[3]), u[3], l[3], yss[3], pubKey))
 	assert.Equal(t, R_expect, result)
 }

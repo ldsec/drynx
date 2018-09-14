@@ -8,12 +8,10 @@ import (
 	"testing"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/drynx/lib"
-	"github.com/dedis/kyber/pairing/bn256"
 )
 
 //TestEncodeDecodeVariance tests EncodeVariance and DecodeVariance
 func TestEncodeDecodeVariance(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	// key
 	secKey, pubKey := libunlynx.GenKey()
 
@@ -21,7 +19,7 @@ func TestEncodeDecodeVariance(t *testing.T) {
 	log.LLvl1("Preparing decryption up to:", limit)
 
 	// Decrpytion hashtable creation
-	lib.CreateDecryptionTable(limit, pubKey, secKey)
+	libdrynx.CreateDecryptionTable(limit, pubKey, secKey)
 
 	//data
 	inputValues := []int64{0, 1, 2, -3, -44, 5, 6, -7, -8, 9, -120}
@@ -46,7 +44,6 @@ func TestEncodeDecodeVariance(t *testing.T) {
 
 // TestEncodeDecodeVarianceWithProofs tests EncodeVariance and DecodeVariance with input range validation
 func TestEncodeDecodeVarianceWithProofs(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
 	//data
 	inputValues := []int64{0, 10, 9, 1, 11}
 
@@ -57,7 +54,7 @@ func TestEncodeDecodeVarianceWithProofs(t *testing.T) {
 	log.LLvl1("Preparing decryption up to:", limit)
 
 	// Decrpytion hashtable creation
-	lib.CreateDecryptionTable(limit, pubKey, secKey)
+	libdrynx.CreateDecryptionTable(limit, pubKey, secKey)
 
 	//expected results
 	sum_squares := int64(0)
@@ -75,15 +72,15 @@ func TestEncodeDecodeVarianceWithProofs(t *testing.T) {
 	l := []int64{5, 3, 9}
 
 	ranges := make([]*[]int64, 3)
-	ps := make([][]lib.PublishSignature, 2)
-	ps[0] = make([]lib.PublishSignature, 3)
-	ps[1] = make([]lib.PublishSignature, 3)
+	ps := make([][]libdrynx.PublishSignature, 2)
+	ps[0] = make([]libdrynx.PublishSignature, 3)
+	ps[1] = make([]libdrynx.PublishSignature, 3)
 	ys := make([][]kyber.Point, 2)
 	ys[0] = make([]kyber.Point, 3)
 	ys[1] = make([]kyber.Point, 3)
 	for i := range ps[0] {
-		ps[0][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u[i]))
-		ps[1][i] = lib.PublishSignatureBytesToPublishSignatures(lib.InitRangeProofSignature(u[i]))
+		ps[0][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u[i]))
+		ps[1][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u[i]))
 		ys[0][i] = ps[0][i].Public
 		ys[1][i] = ps[1][i].Public
 		ranges[i] = &[]int64{u[i], l[i]}
@@ -101,8 +98,8 @@ func TestEncodeDecodeVarianceWithProofs(t *testing.T) {
 	resultEncrypted, _, prf := encoding.EncodeVarianceWithProofs(inputValues, pubKey, ps, ranges)
 	result := encoding.DecodeVariance(resultEncrypted, secKey)
 
-	assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prf[0]), u[0], l[0], yss[0], pubKey))
-	assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prf[1]), u[1], l[1], yss[1], pubKey))
-	assert.True(t, lib.RangeProofVerification(lib.CreatePredicateRangeProofForAllServ(prf[2]), u[2], l[2], yss[2], pubKey))
+	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[0]), u[0], l[0], yss[0], pubKey))
+	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[1]), u[1], l[1], yss[1], pubKey))
+	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[2]), u[2], l[2], yss[2], pubKey))
 	assert.Equal(t, expect, result)
 }

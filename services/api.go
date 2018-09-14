@@ -22,13 +22,12 @@ type API struct {
 
 //init of the network messages
 func init() {
-	network.RegisterMessage(lib.GetLatestBlock{})
-	network.RegisterMessage(lib.RangeProofListBytes{})
-	network.RegisterMessage(lib.PublishedShufflingProofBytes{})
-	network.RegisterMessage(lib.PublishedKSListProofBytes{})
-	network.RegisterMessage(lib.PublishAggregationProofBytes{})
-	network.RegisterMessage(lib.PublishedListObfuscationProofBytes{})
-
+	network.RegisterMessage(libdrynx.GetLatestBlock{})
+	network.RegisterMessage(libdrynx.RangeProofListBytes{})
+	network.RegisterMessage(libdrynx.PublishedShufflingProofBytes{})
+	network.RegisterMessage(libdrynx.PublishedKSListProofBytes{})
+	network.RegisterMessage(libdrynx.PublishAggregationProofBytes{})
+	network.RegisterMessage(libdrynx.PublishedListObfuscationProofBytes{})
 }
 
 // NewLeMalClient constructor of a client.
@@ -52,7 +51,7 @@ func NewLeMalClient(entryPoint *network.ServerIdentity, clientID string) *API {
 // Send Query
 //______________________________________________________________________________________________________________________
 
-func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToServer map[string]*[]network.ServerIdentity, idToPublic map[string]kyber.Point, surveyID string, operation lib.Operation, ranges []*[]int64, ps []*[]lib.PublishSignatureBytes, proofs int, obfuscation bool, thresholds []float64, diffP lib.QueryDiffP, dpDataGen lib.QueryDPDataGen, cuttingFactor int) lib.SurveyQuery {
+func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToServer map[string]*[]network.ServerIdentity, idToPublic map[string]kyber.Point, surveyID string, operation libdrynx.Operation, ranges []*[]int64, ps []*[]libdrynx.PublishSignatureBytes, proofs int, obfuscation bool, thresholds []float64, diffP libdrynx.QueryDiffP, dpDataGen libdrynx.QueryDPDataGen, cuttingFactor int) libdrynx.SurveyQuery {
 	size1 := 0
 	size2 := 0
 	if ps != nil {
@@ -60,13 +59,13 @@ func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToSer
 		size2 = len(*ps[0])
 	}
 
-	iVSigs := lib.QueryIVSigs{InputValidationSigs: ps, InputValidationSize1: size1, InputValidationSize2: size2}
+	iVSigs := libdrynx.QueryIVSigs{InputValidationSigs: ps, InputValidationSize1: size1, InputValidationSize2: size2}
 
 	test := make([][]int64, 0)
 	test = append(test, []int64{int64(1)})
 
 	//create the query
-	sq := lib.SurveyQuery{
+	sq := libdrynx.SurveyQuery{
 		SurveyID:                   surveyID,
 		RosterServers:              *rosterServers,
 		ClientPubKey:               c.public,
@@ -80,7 +79,7 @@ func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToSer
 
 
 		// query statement
-		Query: lib.Query{
+		Query: libdrynx.Query{
 			Operation:   operation,
 			Ranges:      ranges,
 			DiffP:       diffP,
@@ -99,11 +98,11 @@ func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToSer
 }
 
 // SendSurveyQuery creates a survey based on a set of entities (servers) and a survey description.
-func (c *API) SendSurveyQuery(sq lib.SurveyQuery) (*[]string, *[][]float64, error) {
+func (c *API) SendSurveyQuery(sq libdrynx.SurveyQuery) (*[]string, *[][]float64, error) {
 	log.Lvl2("[API] <LEMAL> Client", c.clientID, "is creating a query with SurveyID: ", sq.SurveyID)
 
 	//send the query and get the answer
-	sr := lib.ResponseDP{}
+	sr := libdrynx.ResponseDP{}
 	err := c.SendProtobuf(c.entryPoint, &sq, &sr)
 	if err != nil {
 		return nil, nil, err

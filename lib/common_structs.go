@@ -1,4 +1,4 @@
-package lib
+package libdrynx
 
 import (
 	"github.com/coreos/bbolt"
@@ -355,6 +355,8 @@ func ChooseOperation(operationName string, queryMin, queryMax, d int, cuttingFac
 		//NbrInput should be equal to d + 1, in the case of linear regression
 		operation.NbrInput = d + 1
 		operation.NbrOutput = (d*d + 5*d + 4) / 2
+		break
+	case "logistic regression":
 		break
 	default:
 		log.Fatal("Operation: <", operation, "> does not exist")

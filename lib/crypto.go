@@ -1,10 +1,11 @@
-package lib
+package libdrynx
 
 import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
 	"sync"
+	"github.com/dedis/onet/log"
 )
 
 func CreateDecryptionTable(limit int64, pubKey kyber.Point, secKey kyber.Scalar) {
@@ -145,4 +146,20 @@ func Equal(cv *libunlynx.CipherVector, cv2 *libunlynx.CipherVector) bool {
 // Equal checks equality between ciphertexts.
 func EqualCipherText(c *libunlynx.CipherText, c2 *libunlynx.CipherText) bool {
 	return c2.K.Equal(c.K) && c2.C.Equal(c.C)
+}
+
+// BytesToAbstractPoints converts a byte array to an array of kyber.Point
+func BytesToAbstractPoints(target []byte) []kyber.Point {
+	var err error
+	aps := make([]kyber.Point, 0)
+	pointLength := libunlynx.SuiTe.PointLen()
+	for i := 0; i < len(target); i += pointLength {
+		ap := libunlynx.SuiTe.Point()
+		if err = ap.UnmarshalBinary(target[i : i+pointLength]); err != nil {
+			log.Fatal(err)
+		}
+
+		aps = append(aps, ap)
+	}
+	return aps
 }

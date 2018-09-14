@@ -37,7 +37,7 @@ type AnnouncementDCMessage struct{}
 
 // DataCollectionMessage message that contains the data of each data provider
 type DataCollectionMessage struct {
-	DCMdata lib.ResponseDPBytes
+	DCMdata libdrynx.ResponseDPBytes
 }
 
 // Structs
@@ -49,7 +49,7 @@ type SurveyToDP struct {
 	Aggregate kyber.Point // the joint aggregate key to encrypt the data
 
 	// query statement
-	Query lib.Query // the query must be added to each node before the protocol can start
+	Query libdrynx.Query // the query must be added to each node before the protocol can start
 }
 
 type AnnouncementDCStruct struct {
@@ -169,7 +169,7 @@ func (p *DataCollectionProtocol) Dispatch() error {
 // Support Functions
 //______________________________________________________________________________________________________________________
 
-func (p *DataCollectionProtocol) GenerateData() (lib.ResponseDPBytes, error) {
+func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error) {
 
 	// Prepare the generation of all possible groups with the query information.
 	numType := make([]int64, len(p.Survey.Query.DPDataGen.GroupByValues))
@@ -186,11 +186,11 @@ func (p *DataCollectionProtocol) GenerateData() (lib.ResponseDPBytes, error) {
 	data.Groups = make([][]int64, 0)
 
 	// read the signatures needed to compute the range proofs
-	signatures := make([][]lib.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize1)
+	signatures := make([][]libdrynx.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize1)
 	for i := 0; i < p.Survey.Query.IVSigs.InputValidationSize1; i++ {
-		signatures[i] = make([]lib.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize2)
+		signatures[i] = make([]libdrynx.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize2)
 		for j := 0; j < p.Survey.Query.IVSigs.InputValidationSize2; j++ {
-			signatures[i][j] = lib.PublishSignatureBytesToPublishSignatures((*p.Survey.Query.IVSigs.InputValidationSigs[i])[j])
+			signatures[i][j] = libdrynx.PublishSignatureBytesToPublishSignatures((*p.Survey.Query.IVSigs.InputValidationSigs[i])[j])
 		}
 	}
 
@@ -229,7 +229,7 @@ func (p *DataCollectionProtocol) GenerateData() (lib.ResponseDPBytes, error) {
 
 	// ------- START: ENCODING & ENCRYPTION -------
 	//encodeTime := libunlynx.StartTimer(p.Name() + "_DPencoding")
-	cprf := make([]lib.CreateProof, 0)
+	cprf := make([]libdrynx.CreateProof, 0)
 
 	// compute response
 	queryResponse := make(map[string]libunlynx.CipherVector, 0)
@@ -260,29 +260,29 @@ func (p *DataCollectionProtocol) GenerateData() (lib.ResponseDPBytes, error) {
 		if p.Survey.Query.Proofs != 0 {
 			go func() {
 				startAllProofs := libunlynx.StartTimer(p.Name() + "_AllProofs")
-				rpl := lib.RangeProofList{}
+				rpl := libdrynx.RangeProofList{}
 
 				//rangeProofCreation := libunlynx.StartTimer(p.Name() + "_RangeProofCreation")
 				// no range proofs (send only the ciphertexts)
 				if len(cprf) == 0 {
-					tmp := make([]lib.RangeProof, 0)
+					tmp := make([]libdrynx.RangeProof, 0)
 					for _, ct := range queryResponse[v] {
-						tmp = append(tmp, lib.RangeProof{Commit: ct, RP: nil})
+						tmp = append(tmp, libdrynx.RangeProof{Commit: ct, RP: nil})
 					}
-					rpl = lib.RangeProofList{Data: tmp}
+					rpl = libdrynx.RangeProofList{Data: tmp}
 				} else { // if range proofs
-					rpl = lib.RangeProofList{Data: lib.CreatePredicateRangeProofListForAllServers(cprf)}
+					rpl = libdrynx.RangeProofList{Data: libdrynx.CreatePredicateRangeProofListForAllServers(cprf)}
 				}
 				// scaling for simulation purposes
 				if p.Survey.Query.CuttingFactor != 0 {
-					rplNew := lib.RangeProofList{}
-					rplNew.Data = make([]lib.RangeProof, len(rpl.Data)*p.Survey.Query.CuttingFactor)
+					rplNew := libdrynx.RangeProofList{}
+					rplNew.Data = make([]libdrynx.RangeProof, len(rpl.Data)*p.Survey.Query.CuttingFactor)
 					counter := 0
 					suitePair := bn256.NewSuite()
 					for j := 0; j < p.Survey.Query.CuttingFactor; j++ {
 						for _, v := range rpl.Data {
 
-							rplNew.Data[counter].RP = &lib.RangeProofData{}
+							rplNew.Data[counter].RP = &libdrynx.RangeProofData{}
 							rplNew.Data[counter].RP.V = make([][]kyber.Point, len(v.RP.V))
 							for k, w := range v.RP.V {
 								rplNew.Data[counter].RP.V[k] = make([]kyber.Point, len(w))
@@ -309,7 +309,7 @@ func (p *DataCollectionProtocol) GenerateData() (lib.ResponseDPBytes, error) {
 				}
 
 				pi := p.MapPIs["range/"+p.ServerIdentity().String()]
-				pi.(*ProofCollectionProtocol).Proof = lib.ProofRequest{RangeProof: lib.NewRangeProofRequest(&rpl, p.Survey.SurveyID, p.ServerIdentity().String(), "", p.Survey.Query.RosterVNs, p.Private(), nil)}
+				pi.(*ProofCollectionProtocol).Proof = libdrynx.ProofRequest{RangeProof: libdrynx.NewRangeProofRequest(&rpl, p.Survey.SurveyID, p.ServerIdentity().String(), "", p.Survey.Query.RosterVNs, p.Private(), nil)}
 				//libunlynx.EndTimer(rangeProofCreation)
 
 				go pi.Dispatch()
@@ -343,11 +343,11 @@ func (p *DataCollectionProtocol) GenerateData() (lib.ResponseDPBytes, error) {
 	}
 	libunlynx.EndParallelize(wg)
 
-	return lib.ResponseDPBytes{Data: queryResponseBytes, Len: lenQueryResponse}, nil
+	return libdrynx.ResponseDPBytes{Data: queryResponseBytes, Len: lenQueryResponse}, nil
 }
 
 // createFakeDataForOperation creates fake data to be used
-func createFakeDataForOperation(operation lib.Operation, nbrRows, min, max int64) [][]int64 {
+func createFakeDataForOperation(operation libdrynx.Operation, nbrRows, min, max int64) [][]int64 {
 	//either use the min and max defined by the query or the default constants
 	zero := int64(0)
 	if min == zero && max == zero {

@@ -13,9 +13,9 @@ import (
 //______________________________________________________________________________________________________________________
 
 // SendSurveyQueryToVNs creates a survey based on a set of entities (servers) and a survey description.
-func (c *API) SendSurveyQueryToVNs(entities *onet.Roster, query *lib.SurveyQuery) error {
+func (c *API) SendSurveyQueryToVNs(entities *onet.Roster, query *libdrynx.SurveyQuery) error {
 	for _, si := range entities.List {
-		err := c.SendProtobuf(si, &lib.SurveyQueryToVN{SQ: *query}, nil)
+		err := c.SendProtobuf(si, &libdrynx.SurveyQueryToVN{SQ: *query}, nil)
 		if err != nil {
 			return err
 		}
@@ -27,8 +27,8 @@ func (c *API) SendSurveyQueryToVNs(entities *onet.Roster, query *lib.SurveyQuery
 //______________________________________________________________________________________________________________________
 
 func (c *API) SendEndVerification(si *network.ServerIdentity, queryInfoID string) (*skipchain.SkipBlock, error) {
-	evm := lib.EndVerificationRequest{QueryInfoID: queryInfoID}
-	reply := &lib.Reply{}
+	evm := libdrynx.EndVerificationRequest{QueryInfoID: queryInfoID}
+	reply := &libdrynx.Reply{}
 	err := c.SendProtobuf(si, &evm, reply)
 	if err != nil {
 		return nil, err
@@ -47,8 +47,8 @@ func (c *API) SendGetLatestBlock(roster *onet.Roster, sb *skipchain.SkipBlock) (
 		return nil, errors.New("No block provided")
 	}
 
-	reply := &lib.Reply{}
-	err := c.SendProtobuf(roster.RandomServerIdentity(), &lib.GetLatestBlock{Roster: roster, Sb: sb}, reply)
+	reply := &libdrynx.Reply{}
+	err := c.SendProtobuf(roster.RandomServerIdentity(), &libdrynx.GetLatestBlock{Roster: roster, Sb: sb}, reply)
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +56,8 @@ func (c *API) SendGetLatestBlock(roster *onet.Roster, sb *skipchain.SkipBlock) (
 }
 
 func (c *API) SendGetGenesis(toAsk *network.ServerIdentity) (*skipchain.SkipBlock, error) {
-	reply := &lib.Reply{}
-	err := c.SendProtobuf(toAsk, &lib.GetGenesis{}, reply)
+	reply := &libdrynx.Reply{}
+	err := c.SendProtobuf(toAsk, &libdrynx.GetGenesis{}, reply)
 	if err != nil {
 		return nil, err
 	}
@@ -65,9 +65,9 @@ func (c *API) SendGetGenesis(toAsk *network.ServerIdentity) (*skipchain.SkipBloc
 }
 
 func (c *API) SendGetBlock(entities *onet.Roster, surveyID string) (*skipchain.SkipBlock, error) {
-	reply := &lib.Reply{}
+	reply := &libdrynx.Reply{}
 	err := c.SendProtobuf(entities.List[0],
-		&lib.GetBlock{ID: surveyID, Roster: entities}, reply)
+		&libdrynx.GetBlock{ID: surveyID, Roster: entities}, reply)
 	if err != nil {
 		return nil, err
 	}
@@ -79,9 +79,9 @@ func (c *API) SendGetBlock(entities *onet.Roster, surveyID string) (*skipchain.S
 //______________________________________________________________________________________________________________________
 
 func (c *API) SendGetProofs(serverID *network.ServerIdentity, surveyID string) (map[string][]byte, error) {
-	result := lib.ProofsAsMap{}
+	result := libdrynx.ProofsAsMap{}
 
-	err := c.SendProtobuf(serverID, &lib.GetProofs{ID: surveyID}, &result)
+	err := c.SendProtobuf(serverID, &libdrynx.GetProofs{ID: surveyID}, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (c *API) SendGetProofs(serverID *network.ServerIdentity, surveyID string) (
 	return result.Proofs, err
 }
 
-func (c *API) SendCloseDB(entities *onet.Roster, request *lib.CloseDB) error {
+func (c *API) SendCloseDB(entities *onet.Roster, request *libdrynx.CloseDB) error {
 	for i := range entities.List {
 		err := c.SendProtobuf(entities.List[len(entities.List)-i-1], request, nil)
 		if err != nil {
