@@ -129,6 +129,7 @@ func (pop *PublishedObfuscationProof) FromBytes(popb PublishedObfuscationProofBy
 
 //ToBytes converts PublishedListObfuscationProof to bytes
 func (pop *PublishedListObfuscationProof) ToBytes() PublishedListObfuscationProofBytes {
+
 	plopb := PublishedListObfuscationProofBytes{}
 	popB := make([]PublishedObfuscationProofBytes, len(pop.Prs))
 	wg := libunlynx.StartParallelize(len(pop.Prs))
@@ -139,6 +140,7 @@ func (pop *PublishedListObfuscationProof) ToBytes() PublishedListObfuscationProo
 		}(i, plop)
 	}
 	libunlynx.EndParallelize(wg)
+
 	plopb.PrsB = popB
 	return plopb
 }

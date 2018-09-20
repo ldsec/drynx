@@ -4,7 +4,6 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
-	"sync"
 	"github.com/dedis/onet/log"
 )
 
@@ -25,9 +24,11 @@ func NewKeySwitching(targetPubKey kyber.Point, rbs []kyber.Point, secretKey kybe
 	for i, v := range rbs {
 		go func(i int, v kyber.Point) {
 			defer wg.Done()
+
 			vi := libunlynx.SuiTe.Scalar().Pick(random.New())
 			(*cv)[i].K = libunlynx.SuiTe.Point().Mul(vi, libunlynx.SuiTe.Point().Base())
 			rbNeg := libunlynx.SuiTe.Point().Neg(rbs[i])
+			log.LLvl1(secretKey.String())
 			rbkNeg := libunlynx.SuiTe.Point().Mul(secretKey, rbNeg)
 			viNewK := libunlynx.SuiTe.Point().Mul(vi, targetPubKey)
 			(*cv)[i].C = libunlynx.SuiTe.Point().Add(rbkNeg, viNewK)
@@ -39,10 +40,12 @@ func NewKeySwitching(targetPubKey kyber.Point, rbs []kyber.Point, secretKey kybe
 		}(i, v)
 	}
 	libunlynx.EndParallelize(wg)
+	log.LLvl1("LILILA")
 
 	return *cv, ks2s, rBNegs, vis
 }
 
+/*
 // EncryptPoint creates an elliptic curve point from a non-encrypted point and encrypt it using ElGamal encryption.
 func EncryptPoint(pubkey kyber.Point, M kyber.Point) (*libunlynx.CipherText, kyber.Scalar) {
 	B := libunlynx.SuiTe.Point().Base()
@@ -119,12 +122,13 @@ func EncryptScalarVector(pubkey kyber.Point, intArray []kyber.Scalar) *libunlynx
 	}
 
 	return &cv
-}
+}*/
 
 func CurvePairingTest() bool {
 	return libunlynx.SuiTe.String() == "combined:bn256.G1"
 }
 
+/*
 // Equal checks equality between ciphervector.
 func Equal(cv *libunlynx.CipherVector, cv2 *libunlynx.CipherVector) bool {
 	if cv == nil || cv2 == nil {
@@ -146,8 +150,8 @@ func Equal(cv *libunlynx.CipherVector, cv2 *libunlynx.CipherVector) bool {
 // Equal checks equality between ciphertexts.
 func EqualCipherText(c *libunlynx.CipherText, c2 *libunlynx.CipherText) bool {
 	return c2.K.Equal(c.K) && c2.C.Equal(c.C)
-}
-
+}*/
+/*
 // BytesToAbstractPoints converts a byte array to an array of kyber.Point
 func BytesToAbstractPoints(target []byte) []kyber.Point {
 	var err error
@@ -162,4 +166,4 @@ func BytesToAbstractPoints(target []byte) []kyber.Point {
 		aps = append(aps, ap)
 	}
 	return aps
-}
+}*/

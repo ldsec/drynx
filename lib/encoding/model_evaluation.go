@@ -26,7 +26,7 @@ func EncodeModelEvaluationWithProofs(input_y []int64, input_pred []int64, pubKey
 	r := make([]kyber.Scalar, 4)
 
 	//Encrypt the number of data samples considered
-	N_Encrypted, r0 := libdrynx.EncryptIntGetR(pubKey, int64(len(input_y)))
+	N_Encrypted, r0 := libunlynx.EncryptIntGetR(pubKey, int64(len(input_y)))
 	r[0] = r0
 
 	for i, el := range input_y {
@@ -41,15 +41,15 @@ func EncodeModelEvaluationWithProofs(input_y []int64, input_pred []int64, pubKey
 	plaintext_values[3] = sum_diff_square
 
 	//Encrypt the sum of Ys
-	sum_y_Encrypted, r1 := libdrynx.EncryptIntGetR(pubKey, sum_y)
+	sum_y_Encrypted, r1 := libunlynx.EncryptIntGetR(pubKey, sum_y)
 	r[1] = r1
 
 	//Encrypt the sum of squares of Ys
-	sum_y_square_Encrypted, r2 := libdrynx.EncryptIntGetR(pubKey, sum_y_square)
+	sum_y_square_Encrypted, r2 := libunlynx.EncryptIntGetR(pubKey, sum_y_square)
 	r[2] = r2
 
 	//Encrypt the sum of squares of the differences between true and predicted Ys
-	sum_diff_square_Encrypted, r3 := libdrynx.EncryptIntGetR(pubKey, sum_diff_square)
+	sum_diff_square_Encrypted, r3 := libunlynx.EncryptIntGetR(pubKey, sum_diff_square)
 	r[3] = r3
 
 	Ciphertext_Tuple := make([]libunlynx.CipherText, len(plaintext_values))

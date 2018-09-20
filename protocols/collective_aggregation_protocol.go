@@ -187,6 +187,7 @@ func (p *CollectiveAggregationProtocol) ascendingAggregationPhase() *map[libunly
 				} else {
 					localAggr = aggr.Fr
 				}
+				log.LLvl1(aggr.DetTagGroupBy)
 				(*p.GroupedData)[aggr.DetTagGroupBy] = localAggr
 			}
 

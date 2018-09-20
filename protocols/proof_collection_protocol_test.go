@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/satori/go.uuid.v1"
 	"github.com/lca1/drynx/lib"
+	"github.com/dedis/onet/network"
 )
 
 type nodeTools struct {
@@ -34,8 +35,17 @@ var testSQ libdrynx.SurveyQuery
 var sharedBMChannel chan map[string]int64
 var sharedBMChannelToTerminate chan struct{}
 
+
+
 //TestProofCollectionProtocol tests collective aggregation protocol
 func TestProofCollectionProtocol(t *testing.T) {
+	network.RegisterMessage(libdrynx.GetLatestBlock{})
+	network.RegisterMessage(libdrynx.RangeProofListBytes{})
+	network.RegisterMessage(libdrynx.PublishedShufflingProofBytes{})
+	network.RegisterMessage(libdrynx.PublishedKSListProofBytes{})
+	network.RegisterMessage(libdrynx.PublishAggregationProofBytes{})
+	network.RegisterMessage(libdrynx.PublishedListObfuscationProofBytes{})
+
 	log.SetDebugVisible(1)
 
 	nbrProofs := 2

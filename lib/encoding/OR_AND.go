@@ -27,7 +27,7 @@ func EncodeBit_ORWithProof(input bool, pubKey kyber.Point, sigs []libdrynx.Publi
 		if input {
 			toEncrypt = int64(1)
 		}
-		tmp,r := libdrynx.EncryptIntGetR(pubKey, toEncrypt)
+		tmp,r := libunlynx.EncryptIntGetR(pubKey, toEncrypt)
 		cipher = *tmp
 		//input range validation proof
 		cp = libdrynx.CreateProof{Sigs: sigs, U: u, L: l, Secret: toEncrypt, R: r, CaPub: pubKey, Cipher: cipher}
@@ -80,7 +80,7 @@ func EncodeBit_ANDWithProof(input bool, pubKey kyber.Point, sigs []libdrynx.Publ
 		if input {
 			toEncrypt = int64(0)
 		}
-		tmp,r := libdrynx.EncryptIntGetR(pubKey, toEncrypt)
+		tmp,r := libunlynx.EncryptIntGetR(pubKey, toEncrypt)
 		cipher = *tmp
 		//input range validation proof
 		cp = libdrynx.CreateProof{Sigs: sigs, U: u, L: l, Secret: toEncrypt, R: r, CaPub: pubKey, Cipher: cipher}

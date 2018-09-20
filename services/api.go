@@ -22,12 +22,15 @@ type API struct {
 
 //init of the network messages
 func init() {
+	log.LLvl1("API init")
 	network.RegisterMessage(libdrynx.GetLatestBlock{})
 	network.RegisterMessage(libdrynx.RangeProofListBytes{})
 	network.RegisterMessage(libdrynx.PublishedShufflingProofBytes{})
 	network.RegisterMessage(libdrynx.PublishedKSListProofBytes{})
 	network.RegisterMessage(libdrynx.PublishAggregationProofBytes{})
 	network.RegisterMessage(libdrynx.PublishedListObfuscationProofBytes{})
+	//network.RegisterMessage(libdrynx.PublishObfuscationProofBytes{})
+	log.LLvl1("API init")
 }
 
 // NewLeMalClient constructor of a client.

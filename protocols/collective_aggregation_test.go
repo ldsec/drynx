@@ -20,11 +20,12 @@ var clientPublic = bn256.NewSuiteG1().Point().Mul(clientPrivate, bn256.NewSuiteG
 var grpattr1 = libunlynx.DeterministCipherText{Point: bn256.NewSuiteG1().Point().Base()}
 var grpattr2 = libunlynx.DeterministCipherText{Point: bn256.NewSuiteG1().Point().Null()}
 var groupingAttrA = libunlynx.DeterministCipherVector{grpattr1, grpattr1}
-var groupingAttrAkey = groupingAttrA.Key()
+var groupingAttrAkey = libunlynx.GroupingKey("A")//groupingAttrA.Key()
 var groupingAttrB = libunlynx.DeterministCipherVector{grpattr2, grpattr2}
-var groupingAttrBkey = groupingAttrB.Key()
+var groupingAttrBkey = libunlynx.GroupingKey("B")//groupingAttrB.Key()
 var groupingAttrC = libunlynx.DeterministCipherVector{grpattr1, grpattr2}
-var groupingAttrCkey = groupingAttrC.Key()
+var groupingAttrCkey = libunlynx.GroupingKey("C")//groupingAttrC.Key()
+
 
 //var obfuscation = true
 

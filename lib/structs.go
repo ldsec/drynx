@@ -8,6 +8,7 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"time"
 	"sync"
+	"github.com/dedis/kyber/pairing/bn256"
 )
 
 // QueryInfo is a structure used in the service to store information about a query in the concurrent map.
@@ -60,8 +61,8 @@ type GetBlock struct {
 //--------------------------------------------------------------------------------------------------------------------------------------------------
 
 //Some variables to create dataTest
-var secKey = libunlynx.SuiTe.Scalar().Pick(random.New())
-var entityPub = libunlynx.SuiTe.Point().Mul(secKey, libunlynx.SuiTe.Point().Base())
+var secKey = bn256.NewSuiteG1().Scalar().Pick(random.New())
+var entityPub = bn256.NewSuiteG1().Point().Mul(secKey, bn256.NewSuiteG1().Point().Base())
 var tab1 = []int64{1, 2, 3, 6}
 var tab2 = []int64{2, 4, 8, 6}
 
@@ -139,7 +140,7 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 
 	for i := range result.ProofsRange {
 
-		encryption, r := EncryptIntGetR(roster.Aggregate, int64(25))
+		encryption, r := libunlynx.EncryptIntGetR(roster.Aggregate, int64(25))
 
 		// read the signatures needed to compute the range proofs
 		signatures := make([][]PublishSignature, len(roster.List))

@@ -408,7 +408,7 @@ func ComputeEncryptedApproxCoefficients(approxCoefficients [][]int64, pubKey kyb
 					log.Fatalf("Error: %d exceeds %d", approxCoefficients[i][j], libunlynx.MaxHomomorphicInt)
 				}
 			}
-			tmpCv, tmpRs := libdrynx.EncryptIntVectorGetRs(pubKey, approxCoefficients[j])
+			tmpCv, tmpRs := libunlynx.EncryptIntVectorGetRs(pubKey, approxCoefficients[j])
 			encryptedApproxCoefficients[j] = tmpCv
 			encryptedApproxCoefficientsRs[j] = tmpRs
 		}(j)

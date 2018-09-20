@@ -189,7 +189,7 @@ func (prf *RangeProof) FromBytes(prpb RangeProofBytes) {
 				}
 				prf.RP.Challenge = tmp
 
-				prf.RP.D = BytesToAbstractPoints(*prpb.RP.D)[0]
+				prf.RP.D = libunlynx.BytesToAbstractPoints(*prpb.RP.D)[0]
 
 				tmp1 := libunlynx.SuiTe.Scalar().One()
 				err = tmp1.UnmarshalBinary(*prpb.RP.Zr)

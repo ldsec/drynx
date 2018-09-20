@@ -20,7 +20,7 @@ func EncodeSumWithProofs(input []int64, pubKey kyber.Point, sigs []libdrynx.Publ
 		sum += el
 	}
 	//encrypt the local DP's query result
-	sumEncrypted, r := libdrynx.EncryptIntGetR(pubKey, sum)
+	sumEncrypted, r := libunlynx.EncryptIntGetR(pubKey, sum)
 
 	if sigs == nil {
 		return sumEncrypted, []int64{sum}, nil

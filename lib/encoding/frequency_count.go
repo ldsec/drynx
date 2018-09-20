@@ -32,7 +32,7 @@ func EncodeFreqCountWithProofs(input []int64, min int64, max int64, pubKey kyber
 	for i := int64(0); i <= max-min; i++ {
 		go func(i int64) {
 			defer wg.Done()
-			count_i_Encrypted, r_i := libdrynx.EncryptIntGetR(pubKey, freqcount[i])
+			count_i_Encrypted, r_i := libunlynx.EncryptIntGetR(pubKey, freqcount[i])
 			r[i] = r_i
 			Ciphertext_Tuple[i] = *count_i_Encrypted
 		}(i)

@@ -40,7 +40,7 @@ func EncodeCosimWithProofs(rijs, riks []int64, pubKey kyber.Point, sigs [][]libd
 	for i, v := range resultClear {
 		go func(i int, v int64) {
 			defer wg.Done()
-			tmp, r := libdrynx.EncryptIntGetR(pubKey, v)
+			tmp, r := libunlynx.EncryptIntGetR(pubKey, v)
 			result_encrypted[i] = *tmp
 			result_randomR[i] = r
 		}(i, v)

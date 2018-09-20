@@ -40,7 +40,8 @@ func ServerAggregationProofVerification(pap PublishAggregationProof) bool {
 		} else {
 			tmpGrp := proofAggr[k].GroupByEnc
 			tmpAggr := proofAggr[k].AggregatingAttributes
-			if !Equal(&v.GroupByEnc, &tmpGrp) || !Equal(&v.AggregatingAttributes,&tmpAggr) {
+
+			if !v.GroupByEnc.Equal(&tmpGrp) || !v.AggregatingAttributes.Equal(&tmpAggr) {
 				return false
 			}
 		}

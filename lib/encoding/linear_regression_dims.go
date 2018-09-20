@@ -33,7 +33,7 @@ func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pub
 
 	var Ciphertext_Tuple []libunlynx.CipherText
 	//Encrypt the number of data records considered
-	N_Encrypted, r_0 := libdrynx.EncryptIntGetR(pubKey, int64(N))
+	N_Encrypted, r_0 := libunlynx.EncryptIntGetR(pubKey, int64(N))
 	Ciphertext_Tuple = append(Ciphertext_Tuple, *N_Encrypted)
 	plaintext_values = append(plaintext_values, int64(N))
 	r = append(r, r_0)
@@ -49,7 +49,7 @@ func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pub
 			sum_xj += x
 			sum_xj_y += input2[i] * x
 		}
-		sum_xj_Encrypted, r_temp := libdrynx.EncryptIntGetR(pubKey, sum_xj)
+		sum_xj_Encrypted, r_temp := libunlynx.EncryptIntGetR(pubKey, sum_xj)
 		Ciphertext_Tuple = append(Ciphertext_Tuple, *sum_xj_Encrypted)
 		plaintext_values = append(plaintext_values, sum_xj)
 		r = append(r, r_temp)
@@ -62,7 +62,7 @@ func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pub
 			for i := 0; i < N; i++ {
 				sum_xj_xk += input1[i][j] * input1[i][k]
 			}
-			sum_xj_xk_Encrypted, r_temp := libdrynx.EncryptIntGetR(pubKey, sum_xj_xk)
+			sum_xj_xk_Encrypted, r_temp := libunlynx.EncryptIntGetR(pubKey, sum_xj_xk)
 			Ciphertext_Tuple = append(Ciphertext_Tuple, *sum_xj_xk_Encrypted)
 			plaintext_values = append(plaintext_values, sum_xj_xk)
 			r = append(r, r_temp)
@@ -72,13 +72,13 @@ func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pub
 	for _, el := range input2 {
 		sum_y += el
 	}
-	sum_y_Encrypted, r_y := libdrynx.EncryptIntGetR(pubKey, sum_y)
+	sum_y_Encrypted, r_y := libunlynx.EncryptIntGetR(pubKey, sum_y)
 	Ciphertext_Tuple = append(Ciphertext_Tuple, *sum_y_Encrypted)
 	plaintext_values = append(plaintext_values, sum_y)
 	r = append(r, r_y)
 
 	for j := 0; j < len(StoredVals); j++ {
-		sum_xj_y_Encrypted, r_temp := libdrynx.EncryptIntGetR(pubKey, StoredVals[j])
+		sum_xj_y_Encrypted, r_temp := libunlynx.EncryptIntGetR(pubKey, StoredVals[j])
 		Ciphertext_Tuple = append(Ciphertext_Tuple, *sum_xj_y_Encrypted)
 		plaintext_values = append(plaintext_values, StoredVals[j])
 		r = append(r, r_temp)

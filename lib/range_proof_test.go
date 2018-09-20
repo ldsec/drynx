@@ -19,7 +19,7 @@ func TestRangeProofVerification(t *testing.T) {
 	publishArgs := make([]RangeProof, 5)
 	for i := 0; i < 5; i++ {
 		sig[i] = PublishSignatureBytesToPublishSignatures(InitRangeProofSignature(u))
-		encryption, r := EncryptIntGetR(P, int64(25))
+		encryption, r := libunlynx.EncryptIntGetR(P, int64(25))
 		publishArgs[i] = CreatePredicateRangeProof(sig[i], u, l, int64(25), r, P, *encryption)
 		//publishArgsFalse := lib.CreatePredicateRangeProof(sig[i],u,l,int64(65),P)
 		log.LLvl1(RangeProofVerification(publishArgs[i], u, l, []kyber.Point{sig[i].Public}, P))
@@ -27,7 +27,7 @@ func TestRangeProofVerification(t *testing.T) {
 
 	publishArgs = make([]RangeProof, 5)
 	for i := 0; i < 5; i++ {
-		encryption, _ := EncryptIntGetR(P, int64(25))
+		encryption, _ := libunlynx.EncryptIntGetR(P, int64(25))
 		publishArgs[i] = CreatePredicateRangeProof(PublishSignature{}, 0, 0, 0, nil, nil, *encryption)
 		//publishArgsFalse := lib.CreatePredicateRangeProof(sig[i],u,l,int64(65),P)
 		log.LLvl1(RangeProofVerification(publishArgs[i], 0, 0, nil, nil))
@@ -47,7 +47,7 @@ func TestOptimizedRangeProofVerification(t *testing.T) {
 
 	sig := make([]PublishSignature, 5)
 	//publishArgs := make([]libunlynx.RangeProof, 5)
-	encryption, r := EncryptIntGetR(P, int64(1))
+	encryption, r := libunlynx.EncryptIntGetR(P, int64(1))
 	for i := 0; i < 5; i++ {
 		sig[i] = PublishSignatureBytesToPublishSignatures(InitRangeProofSignature(u))
 		//publishArgsFalse := lib.CreatePredicateRangeProof(sig[i],u,l,int64(65),P)
