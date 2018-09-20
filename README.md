@@ -10,4 +10,5 @@
 1. key switching test
 2. crypto_test
 3. common_structs_test
+4. remove drynx things from unlynx if any
 
