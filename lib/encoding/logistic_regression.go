@@ -17,9 +17,9 @@ import (
 	"time"
 
 	"github.com/dedis/onet/network"
+	"github.com/lca1/drynx/lib"
 	"gonum.org/v1/gonum/integrate"
 	"gonum.org/v1/gonum/stat"
-	"github.com/lca1/drynx/lib"
 )
 
 // first taylor expansion coefficients of ln(1/(1+exp(x))
@@ -27,8 +27,7 @@ var TaylorCoefficients = []float64{-math.Log(2), -0.5, -0.125, 0, 0.0052}
 var MinAreaCoefficients = []float64{-0.714761, -0.5, -0.0976419}
 
 var PolyApproxCoefficients = MinAreaCoefficients
-var NUM_DPS = 10
-
+var NUMDPS = 10
 
 // -------------------------
 // UnLynx framework specific
@@ -107,6 +106,7 @@ func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRe
 	return encryptedAggregatedApproxCoefficients, aggregatedApproxCoefficientsIntPacked
 }
 
+// CipherAndRandom contains one ciphertext and the scalar used in its encryption
 type CipherAndRandom struct {
 	C libunlynx.CipherText
 	r kyber.Scalar
@@ -262,7 +262,6 @@ func DecodeLogisticRegression(result []libunlynx.CipherText, privKey kyber.Scala
 
 	return weights
 }
-
 
 // Factorial computes the factorial of the given integer
 func Factorial(n int64) (result int64) {
@@ -1521,7 +1520,7 @@ func GetDataForDataProvider(filename string, dataProviderIdentity network.Server
 
 	if err == nil {
 		for i := 0; i < len(data); i++ {
-			if i%NUM_DPS == dpID {
+			if i%NUMDPS == dpID {
 				dataForDP = append(dataForDP, data[i])
 			}
 		}

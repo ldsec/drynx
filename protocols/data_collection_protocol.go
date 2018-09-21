@@ -14,10 +14,10 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/drynx/services/data"
+	"github.com/lca1/unlynx/lib"
 )
 
 // DataCollectionProtocolName is the registered name for the data provider protocol.

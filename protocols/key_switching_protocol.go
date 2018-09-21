@@ -13,8 +13,8 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
-	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/unlynx/lib"
 )
 
 // KeySwitchingProtocolName is the registered name for the collective aggregation protocol.

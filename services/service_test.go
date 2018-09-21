@@ -7,8 +7,8 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
-	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/unlynx/lib"
 	"gopkg.in/satori/go.uuid.v1"
 
 	"math"
@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/dedis/cothority/skipchain"
-	"github.com/stretchr/testify/assert"
 	"github.com/lca1/drynx/lib"
+	"github.com/stretchr/testify/assert"
 )
 
 func generateNodes(local *onet.LocalTest, nbrServers int, nbrDPs int, nbrVNs int) (*onet.Roster, *onet.Roster, *onet.Roster) {
@@ -645,7 +645,6 @@ func TestServiceLeMalLogisticRegressionForSPECTF(t *testing.T) {
 	fmt.Println()
 	log.LLvl1("ICI")
 	//encoding.PrintForLatex(meanAccuracy, meanPrecision, meanRecall, meanFscore, meanAUC)
-
 
 	if proofs != 0 {
 		clientSkip := NewLeMalClient(elVNs.List[0], "test-skip")

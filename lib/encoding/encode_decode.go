@@ -3,10 +3,11 @@ package encoding
 import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet/log"
-	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/unlynx/lib"
 )
 
+// Encode takes care of computing the query result and encode it for all possible operations.
 func Encode(datas [][]int64, pubKey kyber.Point, signatures [][]libdrynx.PublishSignature, ranges []*[]int64, operation libdrynx.Operation) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
 
 	clearResponse := []int64{}
@@ -78,38 +79,38 @@ func Encode(datas [][]int64, pubKey kyber.Point, signatures [][]libdrynx.Publish
 		break
 
 	case "bool_AND":
-		boolean_bit := false
+		booleanBit := false
 		if datas[0][0] == 1 {
-			boolean_bit = true
+			booleanBit = true
 		}
 		cipher := &libunlynx.CipherText{}
 		clear := int64(0)
 
 		if withProofs {
 			prf := libdrynx.CreateProof{}
-			cipher, clear, prf = EncodeBit_ANDWithProof(boolean_bit, pubKey, signatures[0], (*ranges[0])[1], (*ranges[0])[0])
+			cipher, clear, prf = EncodeBitANDWithProof(booleanBit, pubKey, signatures[0], (*ranges[0])[1], (*ranges[0])[0])
 			createPrf = []libdrynx.CreateProof{prf}
 		} else {
-			cipher, clear = EncodeBit_AND(boolean_bit, pubKey)
+			cipher, clear = EncodeBitAND(booleanBit, pubKey)
 		}
 		encryptedResponse = []libunlynx.CipherText{*cipher}
 		clearResponse = []int64{clear}
 		break
 
 	case "bool_OR":
-		boolean_bit := false
+		booleanBit := false
 		if datas[0][0] == 1 {
-			boolean_bit = true
+			booleanBit = true
 		}
 		cipher := &libunlynx.CipherText{}
 		clear := int64(0)
 
 		if withProofs {
 			prf := libdrynx.CreateProof{}
-			cipher, clear, prf = EncodeBit_ORWithProof(boolean_bit, pubKey, signatures[0], (*ranges[0])[1], (*ranges[0])[0])
+			cipher, clear, prf = EncodeBitOrWithProof(booleanBit, pubKey, signatures[0], (*ranges[0])[1], (*ranges[0])[0])
 			createPrf = []libdrynx.CreateProof{prf}
 		} else {
-			cipher, clear = EncodeBit_OR(boolean_bit, pubKey)
+			cipher, clear = EncodeBitOr(booleanBit, pubKey)
 		}
 		encryptedResponse = []libunlynx.CipherText{*cipher}
 		clearResponse = []int64{clear}
@@ -155,6 +156,7 @@ func Encode(datas [][]int64, pubKey kyber.Point, signatures [][]libdrynx.Publish
 	return encryptedResponse, clearResponse, createPrf
 }
 
+// Decode decodes and computes the result of a query depending on the operation
 func Decode(ciphers []libunlynx.CipherText, secKey kyber.Scalar, operation libdrynx.Operation) []float64 {
 	switch operation.NameOp {
 	case "sum":
@@ -179,14 +181,14 @@ func Decode(ciphers []libunlynx.CipherText, secKey kyber.Scalar, operation libdr
 	case "max":
 		return []float64{float64(DecodeMax(ciphers, operation.QueryMin, secKey))}
 	case "bool_AND":
-		boolResult := DecodeBit_AND(ciphers[0], secKey)
+		boolResult := DecodeBitAND(ciphers[0], secKey)
 		result := float64(0)
 		if boolResult {
 			result = float64(1)
 		}
 		return []float64{result}
 	case "bool_OR":
-		boolResult := DecodeBit_OR(ciphers[0], secKey)
+		boolResult := DecodeBitOR(ciphers[0], secKey)
 		result := float64(0)
 		if boolResult {
 			result = float64(1)

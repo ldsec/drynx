@@ -2,8 +2,8 @@ package encoding
 
 import (
 	"github.com/dedis/kyber"
-	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/unlynx/lib"
 )
 
 // EncodeMean computes the mean of query results
@@ -22,23 +22,23 @@ func EncodeMeanWithProofs(input []int64, pubKey kyber.Point, sigs [][]libdrynx.P
 	N := int64(len(input))
 	resultClear := []int64{sum, N}
 
-	result_encrypted := make([]libunlynx.CipherText, len(resultClear))
-	result_randomR := make([]kyber.Scalar, len(resultClear))
+	resultEncrypted := make([]libunlynx.CipherText, len(resultClear))
+	resultRandomR := make([]kyber.Scalar, len(resultClear))
 
 	wg := libunlynx.StartParallelize(len(resultClear))
 	for i, v := range resultClear {
 		go func(i int, v int64) {
 			defer wg.Done()
 			tmp, r := libunlynx.EncryptIntGetR(pubKey, v)
-			result_encrypted[i] = *tmp
-			result_randomR[i] = r
-		}(i,v)
+			resultEncrypted[i] = *tmp
+			resultRandomR[i] = r
+		}(i, v)
 
 	}
 	libunlynx.EndParallelize(wg)
 
 	if sigs == nil {
-		return result_encrypted, resultClear, nil
+		return resultEncrypted, resultClear, nil
 	}
 
 	createProofs := make([]libdrynx.CreateProof, len(resultClear))
@@ -48,30 +48,30 @@ func EncodeMeanWithProofs(input []int64, pubKey kyber.Point, sigs [][]libdrynx.P
 			go func(i int, v int64) {
 				defer wg1.Done()
 				//input range validation proof
-				createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
+				createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: resultRandomR[i], CaPub: pubKey, Cipher: resultEncrypted[i]}
 			}(i, v)
 		} else {
 			//input range validation proof
-			createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
+			createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: resultRandomR[i], CaPub: pubKey, Cipher: resultEncrypted[i]}
 		}
 
 	}
 	libunlynx.EndParallelize(wg1)
-	return result_encrypted, resultClear, createProofs
+	return resultEncrypted, resultClear, createProofs
 }
 
 // DecodeMean computes the mean of local DP's query results
 func DecodeMean(result []libunlynx.CipherText, secKey kyber.Scalar) float64 {
 	//decrypt the query results
-	results_clear := make([]int64, len(result))
+	resultsClear := make([]int64, len(result))
 	wg := libunlynx.StartParallelize(len(result))
 	for i, j := range result {
 		go func(i int, j libunlynx.CipherText) {
 			defer wg.Done()
-			results_clear[i] = libunlynx.DecryptIntWithNeg(secKey, j)
-		}(i,j)
+			resultsClear[i] = libunlynx.DecryptIntWithNeg(secKey, j)
+		}(i, j)
 
 	}
 	libunlynx.EndParallelize(wg)
-	return float64(results_clear[0]) / float64(results_clear[1])
+	return float64(resultsClear[0]) / float64(resultsClear[1])
 }

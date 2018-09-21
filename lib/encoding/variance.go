@@ -2,8 +2,8 @@ package encoding
 
 import (
 	"github.com/dedis/kyber"
-	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/unlynx/lib"
 )
 
 // EncodeVariance computes the variance of query results
@@ -24,8 +24,8 @@ func EncodeVarianceWithProofs(input []int64, pubKey kyber.Point, sigs [][]libdry
 	N := int64(len(input))
 	resultClear := []int64{sum, N, sum_squares}
 
-	result_encrypted := make([]libunlynx.CipherText, len(resultClear))
-	result_randomR := make([]kyber.Scalar, len(resultClear))
+	resultEncrypteds := make([]libunlynx.CipherText, len(resultClear))
+	resultRandomRS := make([]kyber.Scalar, len(resultClear))
 
 	//encrypt the local DP's query result
 	wg := libunlynx.StartParallelize(len(resultClear))
@@ -33,14 +33,14 @@ func EncodeVarianceWithProofs(input []int64, pubKey kyber.Point, sigs [][]libdry
 		go func(i int, v int64) {
 			defer wg.Done()
 			tmp, r := libunlynx.EncryptIntGetR(pubKey, v)
-			result_encrypted[i] = *tmp
-			result_randomR[i] = r
-		}(i,v)
+			resultEncrypteds[i] = *tmp
+			resultRandomRS[i] = r
+		}(i, v)
 	}
 	libunlynx.EndParallelize(wg)
 
 	if sigs == nil {
-		return result_encrypted, resultClear, nil
+		return resultEncrypteds, resultClear, nil
 	}
 
 	createProofs := make([]libdrynx.CreateProof, len(resultClear))
@@ -50,32 +50,32 @@ func EncodeVarianceWithProofs(input []int64, pubKey kyber.Point, sigs [][]libdry
 			go func(i int, v int64) {
 				defer wg1.Done()
 				//input range validation proof
-				createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
+				createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: resultRandomRS[i], CaPub: pubKey, Cipher: resultEncrypteds[i]}
 			}(i, v)
 		} else {
 			//input range validation proof
-			createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
+			createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: resultRandomRS[i], CaPub: pubKey, Cipher: resultEncrypteds[i]}
 		}
 
 	}
 	libunlynx.EndParallelize(wg1)
-	return result_encrypted, resultClear, createProofs
+	return resultEncrypteds, resultClear, createProofs
 }
 
 //DecodeVariance computes the variance of local DP's query results
 func DecodeVariance(result []libunlynx.CipherText, secKey kyber.Scalar) float64 {
 	//decrypt the query results
-	results_clear := make([]int64, len(result))
+	resultsClears := make([]int64, len(result))
 	wg := libunlynx.StartParallelize(len(result))
 	for i, j := range result {
 		go func(i int, j libunlynx.CipherText) {
 			defer wg.Done()
-			results_clear[i] = libunlynx.DecryptIntWithNeg(secKey, j)
-		}(i , j)
+			resultsClears[i] = libunlynx.DecryptIntWithNeg(secKey, j)
+		}(i, j)
 
 	}
 	libunlynx.EndParallelize(wg)
 	//compute and return the variance
-	mean := float64(results_clear[0]) / float64(results_clear[1])
-	return float64(results_clear[2])/float64(results_clear[1]) - mean*mean
+	mean := float64(resultsClears[0]) / float64(resultsClears[1])
+	return float64(resultsClears[2])/float64(resultsClears[1]) - mean*mean
 }

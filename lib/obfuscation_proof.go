@@ -1,11 +1,11 @@
 package libdrynx
 
 import (
-	"github.com/lca1/unlynx/lib"
 	"github.com/dedis/kyber"
-	"math"
 	"github.com/dedis/kyber/proof"
 	"github.com/dedis/onet/log"
+	"github.com/lca1/unlynx/lib"
+	"math"
 )
 
 // PublishedObfuscationProof contains all infos about proofs for addition in det, tagging of one element
@@ -58,7 +58,7 @@ func ObfuscationProofCreation(c, co libunlynx.CipherText, s kyber.Scalar) Publis
 	return PublishedObfuscationProof{Proof: Proof, C: c, Co: co}
 }
 
-// ObfuscationProofCreation creates proof for obfuscation of ciphertext
+// ObfuscationListProofCreation creates proofs for obfuscation of multiple ciphertext
 func ObfuscationListProofCreation(c, co []libunlynx.CipherText, s []kyber.Scalar) PublishedListObfuscationProof {
 	wg := libunlynx.StartParallelize(len(c))
 	plop := PublishedListObfuscationProof{}
@@ -76,7 +76,7 @@ func ObfuscationListProofCreation(c, co []libunlynx.CipherText, s []kyber.Scalar
 	return plop
 }
 
-// DetTagAdditionProofVerification checks a deterministic tag addition proof
+// ObfuscationProofVerification checks an obfuscation proof
 func ObfuscationProofVerification(pop PublishedObfuscationProof) bool {
 	predicate := createPredicateObfuscation()
 	pval := map[string]kyber.Point{"c1": pop.C.K, "c2": pop.C.C, "co1": pop.Co.K, "co2": pop.Co.C}
@@ -90,6 +90,7 @@ func ObfuscationProofVerification(pop PublishedObfuscationProof) bool {
 	return true
 }
 
+// ObfuscationListProofVerification checks a list of obfuscation proofs
 func ObfuscationListProofVerification(plop PublishedListObfuscationProof, percent float64) bool {
 	nbrProofsToVerify := int(math.Ceil(percent * float64(len(plop.Prs))))
 	wg := libunlynx.StartParallelize(nbrProofsToVerify)

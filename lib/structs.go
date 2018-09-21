@@ -3,13 +3,22 @@ package libdrynx
 import (
 	"github.com/dedis/cothority/skipchain"
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/lca1/unlynx/lib"
-	"time"
 	"sync"
-	"github.com/dedis/kyber/pairing/bn256"
+	"time"
+	"github.com/coreos/bbolt"
+	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/network"
 )
+
+const PROOF_FALSE = int64(0)
+const PROOF_TRUE = int64(1)
+const PROOF_RECEIVED = int64(2)
+const PROOF_NOT_RECEIVED = int64(3)
+const PROOF_FALSE_SIGN = int64(4)
 
 // QueryInfo is a structure used in the service to store information about a query in the concurrent map.
 // This information helps us to know how many proofs have been received and processed.
@@ -40,21 +49,222 @@ type GetProofs struct {
 	ID string
 }
 
-//ProofsAsMap is the reply from the Service containing a map as protobuf expect a return struct
+// ProofsAsMap is the reply from the Service containing a map as protobuf expect a return struct
 type ProofsAsMap struct {
 	Proofs map[string][]byte
 }
 
+// CloseDB is the struct to close a DB
 type CloseDB struct {
 	Close int64
 }
 
+// GetGenesis is the struct used to trigger the fetching of the genesis block
 type GetGenesis struct {
 }
 
+// GetBlock is used to fetch a block
 type GetBlock struct {
 	Roster *onet.Roster
 	ID     string
+}
+
+// DataToVerify contains the proofs to be verified by the skipchain CA
+type DataToVerify struct {
+	ProofsRange       []*RangeProofList
+	ProofsAggregation []*PublishAggregationProof
+	ProofsObfuscation []*PublishedListObfuscationProof
+	ProofsKeySwitch   []*PublishedKSListProof
+	ProofShuffle      []*PublishedShufflingProof
+}
+
+//DataBlock is the structure inserted in the Skipchain
+type DataBlock struct {
+	Roster       *onet.Roster
+	SurveyID     string
+	Sample       float64
+	Time         time.Time
+	ServerNumber int64
+	Proofs       map[string]int64
+}
+
+//BitMap is used to send a structure containing a map in protobuf. You cannot send a map as protobuf
+//expect a pointer on structure
+type BitMap struct {
+	BitMap map[string]int64
+}
+
+// ResponseDP contain the data to be sent to the server.
+type ResponseDPOneGroup struct {
+	Group string
+	Data  libunlynx.CipherVector
+}
+
+// ResponseDPOneGroupBytes contain DP answers in bytes
+type ResponseDPOneGroupBytes struct {
+	Groups   []byte
+	Data     []byte
+	CVLength []byte
+}
+
+// ResponseAllDPs contain list of DPs answers.
+type ResponseAllDPs struct {
+	Data []ResponseDPOneGroup
+}
+
+// ResponseAllDPsBytes will contain the data to be sent to the server.
+type ResponseAllDPsBytes struct {
+	Data []ResponseDPOneGroupBytes
+}
+
+// ResponseDPBytes contains DP answers in bytes.
+type ResponseDPBytes struct {
+	Data map[string][]byte
+	Len  int
+}
+
+// CothorityAggregatedData is the collective aggregation result.
+type CothorityAggregatedData struct {
+	GroupedData map[libunlynx.GroupingKey]libunlynx.FilteredResponse
+}
+
+// WhereQueryAttributeClear is the name and value of a where attribute in the query
+type WhereQueryAttributeClear struct {
+	Name  string
+	Value string
+}
+
+// ShufflingMessage represents a message containing data to shuffle
+type ShufflingMessage struct {
+	Data []libunlynx.ProcessResponse
+}
+
+// ShufflingBytesMessage represents a shuffling message in bytes
+type ShufflingBytesMessage struct {
+	Data *[]byte
+}
+
+// ResponseDP contains the data provider's response to be sent to the server.
+type ResponseDP struct {
+	Data map[string]libunlynx.CipherVector // group -> value(s)
+}
+
+//PublishSignature contains points signed with a private key and the public key associated to verify the signatures.
+type PublishSignature struct {
+	Public    kyber.Point   // y
+	Signature []kyber.Point // A_i
+}
+
+//PublishSignatureBytes is the same as PublishSignature but the signatures are in bytes
+type PublishSignatureBytes struct { //need this because of G2 in protobuf not working
+	Public    kyber.Point // y
+	Signature []byte      // A_i
+}
+
+type QueryDiffP struct {
+	LapMean       float64
+	LapScale      float64
+	NoiseListSize int
+	Quanta        float64
+	Scale         float64
+	Limit         float64
+}
+
+type QueryDPDataGen struct {
+	GroupByValues   []int64 // the number of groups = len(GroupByValues); number of categories for each group GroupByValues[i]
+	GenerateRows    int64
+	GenerateDataMin int64
+	GenerateDataMax int64
+}
+
+type QueryIVSigs struct {
+	InputValidationSigs  []*[]PublishSignatureBytes
+	InputValidationSize1 int
+	InputValidationSize2 int
+}
+
+type QuerySQL struct {
+	Select    []string
+	Where     []WhereQueryAttributeClear
+	Predicate string
+	GroupBy   []string
+}
+
+// Query is used to transport query information through servers, to DPs
+type Query struct {
+	// query statement
+	Operation   Operation
+	Ranges      []*[]int64
+	Proofs      int
+	Obfuscation bool
+	DiffP       QueryDiffP
+
+	// define how the DPs generate dummy data
+	DPDataGen QueryDPDataGen
+
+	// identity skipchain simulation
+	IVSigs    QueryIVSigs
+	RosterVNs *onet.Roster
+
+	// if real DB at data providers
+	SQL QuerySQL
+
+	//simulation
+	CuttingFactor int
+}
+
+type Operation struct {
+	NameOp       string
+	NbrInput     int
+	NbrOutput    int
+	QueryMin     int64
+	QueryMax     int64
+	LRParameters LogisticRegressionParameters
+}
+
+type LogisticRegressionParameters struct {
+	// logistic regression specific
+	FilePath           string
+	NbrRecords         int64
+	NbrFeatures        int64
+	Means              []float64
+	StandardDeviations []float64
+
+	// parameters
+	Lambda         float64
+	Step           float64
+	MaxIterations  int
+	InitialWeights []float64
+
+	// approximation
+	K                           int
+	PrecisionApproxCoefficients float64
+}
+
+type SurveyQuery struct {
+	SurveyID      string
+	RosterServers onet.Roster
+	ClientPubKey  kyber.Point
+	IntraMessage  bool // to define whether the query was sent by the querier or not
+	ServerToDP    map[string]*[]network.ServerIdentity
+	// query statement
+	Query Query
+	//map of DP/Server to Public key
+	IDtoPublic map[string]kyber.Point
+	//Threshold for verification in skipChain service
+	Threshold                  float64
+	ObfuscationProofThreshold  float64
+	RangeProofThreshold        float64
+	KeySwitchingProofThreshold float64
+}
+
+type SurveyQueryToVN struct {
+	SQ SurveyQuery
+}
+
+type SurveyQueryToDP struct {
+	SQ   SurveyQuery
+	Root *network.ServerIdentity
 }
 
 //Data for Test Below
@@ -68,8 +278,6 @@ var tab2 = []int64{2, 4, 8, 6}
 
 //CreateRandomGoodTestData only creates valid proofs
 func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]PublishSignatureBytes, ranges []*[]int64, nbrProofs int) DataToVerify {
-	//var cipherOne = *libunlynx.EncryptInt(roster.Aggregate, 10)
-
 	result := DataToVerify{}
 	result.ProofsKeySwitch = make([]*PublishedKSListProof, nbrProofs)
 	result.ProofsRange = make([]*RangeProofList, nbrProofs)
@@ -78,7 +286,6 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 	result.ProofShuffle = make([]*PublishedShufflingProof, nbrProofs)
 
 	//Fill Aggregation with good proofs
-
 	for i := range result.ProofsAggregation {
 		tab := []int64{1, 2, 3, 4, 5}
 		ev := libunlynx.EncryptIntVector(roster.Aggregate, tab)
@@ -161,112 +368,7 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 	return result
 }
 
-//DataToVerify contains the proofs to be verified by the skipchain CA
-type DataToVerify struct {
-	ProofsRange       []*RangeProofList
-	ProofsAggregation []*PublishAggregationProof
-	ProofsObfuscation []*PublishedListObfuscationProof
-	ProofsKeySwitch   []*PublishedKSListProof
-	ProofShuffle      []*PublishedShufflingProof
-}
-
-//PublishRangeProofByte is structure to send with array of point as byte as it cannot be converted
-/*type PublishRangeProofByte struct {
-	Commit    libunlynx.CipherText
-	Challenge kyber.Scalar
-	Zr        kyber.Scalar
-	D         kyber.Point
-	Zv        []kyber.Scalar
-	Zphi      []kyber.Scalar
-	V         [][]byte
-	A         [][]byte
-}*/
-
-//VerifRangProof is to verify a Range proof coming from a DP. A server need to give range,
-//but also the public key and P CA key that was used to encode the data
-/*type VerifRangeProof struct {
-	Proof *PublishRangeProofByte
-	U     int64
-	L     int64
-	Y     []kyber.Point
-	P     kyber.Point
-}*/
-
-//VerifyShufllingProof contains the proof and Seed needed to bverify them
-/*type VerifyShufflingProof struct {
-	Proof libunlynx.PublishedShufflingProof
-	Seed  kyber.Point
-}*/
-
-//PublishedCollectiveAggregationProofByte is the PublishedCollectiveAggregationProof friendly to protobuff,
-//meaning you transform field that cannot be transfered throught protobuf, to bytes
-/*type PublishedCollectiveAggregationProofByte struct {
-	Aggregation1      map[libunlynx.GroupingKey][]byte
-	Size11            []int64
-	Size12            []int64
-	Aggregation2      []libunlynx.FilteredResponseDet
-	AggregationResult map[libunlynx.GroupingKey][]byte
-	Size21            []int64
-	Size22            []int64
-}*/
-
-//DataBlock is the structure inserted in the Skipchain
-type DataBlock struct {
-	Roster       *onet.Roster
-	SurveyID     string
-	Sample       float64
-	Time         time.Time
-	ServerNumber int64
-	Proofs       map[string]int64
-}
-
-//BitMap is used to send a structure containing a map in protobuf. You cannot send a map as protobuf
-//expect a pointer on structure
-type BitMap struct {
-	BitMap map[string]int64
-}
-
-const PROOF_FALSE = int64(0)
-const PROOF_TRUE = int64(1)
-const PROOF_RECEIVED = int64(2)
-const PROOF_NOT_RECEIVED = int64(3)
-const PROOF_FALSE_SIGN = int64(4)
-
-
-// ResponseDP will contain the data to be sent to the server.
-type ResponseDPOneGroup struct {
-	Group string
-	Data  libunlynx.CipherVector
-}
-
-// ResponseDP will contain the data to be sent to the server.
-type ResponseDPOneGroupBytes struct {
-	Groups   []byte
-	Data     []byte
-	CVLength []byte
-}
-
-// ResponseDP will contain the data to be sent to the server.
-type ResponseAllDPs struct {
-	Data []ResponseDPOneGroup
-}
-
-// ResponseDP will contain the data to be sent to the server.
-type ResponseAllDPsBytes struct {
-	Data []ResponseDPOneGroupBytes
-}
-
-// ResponseDP will contain the data to be sent to the server.
-type ResponseDPBytes struct {
-	Data map[string][]byte
-	Len  int
-}
-
-// CothorityAggregatedData is the collective aggregation result.
-type CothorityAggregatedData struct {
-	GroupedData map[libunlynx.GroupingKey]libunlynx.FilteredResponse
-}
-
+// ToBytes transforms ResponseDPOneGroup to bytes
 func (rdog *ResponseDPOneGroup) ToBytes() ResponseDPOneGroupBytes {
 	result := ResponseDPOneGroupBytes{}
 	result.Groups = []byte(rdog.Group)
@@ -284,6 +386,7 @@ func (rdog *ResponseDPOneGroup) FromBytes(rdogb ResponseDPOneGroupBytes) {
 	rdog.Group = string(rdogb.Groups)
 }
 
+// ToBytes transforms ResponseAllDPs to bytes
 func (rad *ResponseAllDPs) ToBytes() ResponseAllDPsBytes {
 	result := ResponseAllDPsBytes{}
 	result.Data = make([]ResponseDPOneGroupBytes, len(rad.Data))
@@ -332,22 +435,6 @@ func ConvertFromAggregationStruct(cad CothorityAggregatedData) *ResponseAllDPs {
 	}
 
 	return &ResponseAllDPs{response}
-}
-
-// WhereQueryAttributeClear is the name and value of a where attribute in the query
-type WhereQueryAttributeClear struct {
-	Name  string
-	Value string
-}
-
-// ShufflingMessage represents a message containing data to shuffle
-type ShufflingMessage struct {
-	Data []libunlynx.ProcessResponse
-}
-
-// ShufflingBytesMessage represents a shuffling message in bytes
-type ShufflingBytesMessage struct {
-	Data *[]byte
 }
 
 // ToBytes converts a ShufflingMessage to a byte array
@@ -418,4 +505,234 @@ func (sm *ShufflingMessage) FromBytes(data *[]byte, gacbLength, aabLength, pgaeb
 		}
 		libunlynx.EndParallelize(wg)
 	}
+}
+
+
+
+func AddDiffP(qdf QueryDiffP) bool {
+	return !(qdf.LapMean == 0.0 && qdf.LapScale == 0.0 && qdf.NoiseListSize == 0 && qdf.Quanta == 0.0 && qdf.Scale == 0 && qdf.Limit == 0)
+}
+
+
+
+func checkRangesZeros(ranges []*[]int64) bool {
+	for _, v := range ranges {
+		if (*v)[0] != int64(0) || (*v)[1] != int64(0) {
+			return false
+		}
+	}
+	return true
+}
+
+func checkRangesBits(ranges []*[]int64) bool {
+	for _, v := range ranges {
+		if (*v)[0] != int64(2) || (*v)[1] != int64(1) {
+			return false
+		}
+	}
+	return true
+}
+
+func CheckParameters(sq SurveyQuery, diffP bool) bool {
+	message := ""
+	result := true
+	if sq.Query.Proofs == 1 {
+		if sq.Query.Obfuscation {
+			if sq.ObfuscationProofThreshold == 0 {
+				result = false
+				message = message + "obfuscation threshold is 0 while obfuscation is true \n"
+			}
+			if sq.Query.Operation.NameOp != "bool_AND" && sq.Query.Operation.NameOp != "bool_OR" && sq.Query.Operation.NameOp != "min" && sq.Query.Operation.NameOp != "max" && sq.Query.Operation.NameOp != "union" && sq.Query.Operation.NameOp != "inter" {
+				result = false
+				message = message + "obfuscation threshold for a non accepted operation \n"
+			}
+			if !checkRangesBits(sq.Query.Ranges) {
+				result = false
+				message = message + "obfuscation and proofs but ranges not for 0,1 \n"
+			}
+		} else {
+			if sq.ObfuscationProofThreshold != 0 {
+				result = false
+				message = message + "obfuscation threshold is set and there is no Obfuscation \n"
+			}
+		}
+		if sq.Query.Ranges == nil {
+			result = false
+			message = message + "proofs but no range \n"
+		}
+
+		if sq.Query.IVSigs.InputValidationSigs == nil && !checkRangesZeros(sq.Query.Ranges) {
+			result = false
+			message = message + "proofs but no signatures \n"
+		}
+
+		if checkRangesZeros(sq.Query.Ranges) && sq.Query.IVSigs.InputValidationSigs != nil {
+			result = false
+			message = message + "ranges to 0 but signatures also set \n"
+		}
+
+		if sq.Query.IVSigs.InputValidationSigs != nil && sq.Query.Ranges != nil {
+			if sq.Query.Operation.NbrOutput != len(*sq.Query.IVSigs.InputValidationSigs[0]) || sq.Query.Operation.NbrOutput != len(sq.Query.Ranges) {
+				result = false
+				message = message + "ranges or signatures length do not match with nbr output \n"
+			}
+		}
+	} else if sq.Query.Proofs == 0 {
+
+		if sq.KeySwitchingProofThreshold != 0 || sq.ObfuscationProofThreshold != 0 || sq.RangeProofThreshold != 0 || sq.Threshold != 0 {
+			result = false
+			message = message + "no proofs and one of the threshold not 0 \n"
+		}
+
+		if sq.Query.Ranges != nil || sq.Query.IVSigs.InputValidationSigs != nil {
+			result = false
+			message = message + "no proofs and some ranges or signatures \n"
+		}
+
+		if sq.Query.RosterVNs != nil {
+			result = false
+			message = message + "no proofs but VN roster \n"
+		}
+
+	} else {
+		result = false
+		message = message + "unsupported proof type \n"
+	}
+
+	if !diffP {
+		if sq.Query.DiffP.Limit != 0.0 || sq.Query.DiffP.Scale != 0.0 || sq.Query.DiffP.Quanta != 0.0 || sq.Query.DiffP.NoiseListSize != 0 || sq.Query.DiffP.LapMean != 0 || sq.Query.DiffP.LapScale != 0.0 {
+			result = false
+			message = message + "no diffP but parameters not to 0 \n"
+		}
+	} else {
+		if sq.Query.DiffP.Limit == 0.0 && sq.Query.DiffP.Quanta == 0.0 || sq.Query.DiffP.Scale == 0.0 || sq.Query.DiffP.NoiseListSize == 0 || sq.Query.DiffP.LapScale == 0.0 {
+			result = false
+			message = message + "diffP but parameters are 0 \n"
+		}
+	}
+
+	if sq.Query.Operation.QueryMin != sq.Query.DPDataGen.GenerateDataMin || sq.Query.Operation.QueryMax != sq.Query.DPDataGen.GenerateDataMax {
+		result = false
+		message = message + "min or max are inconsistent at DP and operations \n"
+	}
+
+	if message != "" {
+		log.LLvl1(message)
+	}
+	return result
+}
+
+
+
+func QueryToProofsNbrs(q SurveyQuery) []int {
+	nbrDPs := 0
+
+	for _, v := range q.ServerToDP {
+		if v != nil {
+			nbrDPs = nbrDPs + len(*v)
+		}
+	}
+	nbrServers := len(q.RosterServers.List)
+
+	// range proofs
+	prfRange := nbrDPs
+	// aggregation
+	if q.Query.Proofs == 0 {
+		nbrServers = 0
+	}
+
+	prfAggr := nbrServers
+	prfObf := 0
+	if q.Query.Obfuscation {
+		prfObf = nbrServers
+	}
+
+	// differential privacy
+	prfShuffling := 0
+	if AddDiffP(q.Query.DiffP) {
+		prfShuffling = nbrServers
+	}
+
+	// key switching
+	prfKS := nbrServers
+	return []int{prfRange, prfShuffling, prfAggr, prfObf, prfKS}
+}
+
+type EndVerificationRequest struct {
+	QueryInfoID string
+}
+
+type EndVerificationResponse struct{}
+
+//updateDB put in a given bucket the value as byte with given key.
+func UpdateDB(db *bolt.DB, bucketName string, key string, value []byte) {
+	if err := db.Batch(func(tx *bolt.Tx) error {
+		//Bucket with SurveyID server Adress
+		b, err := tx.CreateBucketIfNotExists([]byte(bucketName))
+		if err != nil {
+			log.Fatal("error")
+		}
+		//Put at key previous block index, the bitmap
+		err = b.Put([]byte(key), value)
+		if err != nil {
+			log.Fatal("error insert")
+		}
+
+		return nil
+	}); err != nil {
+		log.Fatal("Could not update DB", err)
+	}
+}
+
+func ChooseOperation(operationName string, queryMin, queryMax, d int, cuttingFactor int) Operation {
+	operation := Operation{}
+
+	operation.NameOp = operationName
+	operation.NbrInput = 0
+	operation.NbrOutput = 0
+	operation.QueryMax = int64(queryMax)
+	operation.QueryMin = int64(queryMin)
+
+	switch operationName {
+	case "sum":
+		operation.NbrInput = 1
+		operation.NbrOutput = 1
+		break
+	case "mean":
+		operation.NbrInput = 1
+		operation.NbrOutput = 2
+		break
+	case "variance":
+		operation.NbrInput = 1
+		operation.NbrOutput = 3
+		break
+	case "cosim":
+		operation.NbrInput = 2
+		operation.NbrOutput = 5
+		break
+	case "frequencyCount", "min", "max", "union", "inter":
+		//NbrOutput should be equal to (QueryMax - QueryMin + 1)
+		operation.NbrInput = 1
+		operation.NbrOutput = queryMax - queryMin + 1
+		break
+	case "bool_OR", "bool_AND":
+		operation.NbrInput = 1
+		operation.NbrOutput = 1
+		break
+	case "lin_reg":
+		//NbrInput should be equal to d + 1, in the case of linear regression
+		operation.NbrInput = d + 1
+		operation.NbrOutput = (d*d + 5*d + 4) / 2
+		break
+	case "logistic regression":
+		break
+	default:
+		log.Fatal("Operation: <", operation, "> does not exist")
+	}
+
+	if cuttingFactor != 0 {
+		operation.NbrOutput = operation.NbrOutput * cuttingFactor
+	}
+
+	return operation
 }

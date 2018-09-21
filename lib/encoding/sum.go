@@ -2,8 +2,8 @@ package encoding
 
 import (
 	"github.com/dedis/kyber"
-	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/unlynx/lib"
 )
 
 // EncodeSum computes the sum of query results

@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
+	"github.com/lca1/drynx/protocols"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
-	"github.com/dedis/onet/log"
-	"github.com/lca1/drynx/protocols"
 )
 
 //var obfuscation = true
@@ -30,7 +30,7 @@ func TestObfuscation(t *testing.T) {
 	}
 	priv, pub := libunlynx.GenKey()
 	protocol := p.(*protocols.ObfuscationProtocol)
-	protocol.ToObfuscateData = *libunlynx.EncryptIntVector(pub,[]int64{0,1,2})
+	protocol.ToObfuscateData = *libunlynx.EncryptIntVector(pub, []int64{0, 1, 2})
 	protocol.Proofs = 0
 
 	//run protocol
@@ -41,11 +41,11 @@ func TestObfuscation(t *testing.T) {
 
 	//verify results
 	expresult := []int64{0, 1, 1}
-	result := make([]int64,3)
+	result := make([]int64, 3)
 	select {
 	case encryptedResult := <-feedback:
-		for i,v := range encryptedResult {
-			result[i] = libunlynx.DecryptCheckZero(priv,v)
+		for i, v := range encryptedResult {
+			result[i] = libunlynx.DecryptCheckZero(priv, v)
 		}
 
 		assert.Equal(t, expresult, result)

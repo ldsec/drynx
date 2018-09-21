@@ -4,9 +4,9 @@ import (
 	"github.com/alex-ant/gomath/gaussian-elimination"
 	"github.com/alex-ant/gomath/rational"
 	"github.com/dedis/kyber"
+	"github.com/lca1/drynx/lib"
 	"github.com/lca1/unlynx/lib"
 	"github.com/tonestuff/quadratic"
-	"github.com/lca1/drynx/lib"
 )
 
 //EncodeLinearRegression_Dims implements a d-dimensional linear regression algorithm on the query results
@@ -18,104 +18,104 @@ func EncodeLinearRegression_Dims(input1 [][]int64, input2 []int64, pubKey kyber.
 //EncodeLinearRegression_DimsWithProofs implements a d-dimensional linear regression algorithm on the query results with range proofs
 func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
 	//sum the Xs and their squares, the Ys and the product of every pair of X and Y
-	sum_xj := int64(0)
-	sum_y := int64(0)
-	sum_xj_y := int64(0)
-	sum_xj_xk := int64(0)
+	sumXj := int64(0)
+	sumY := int64(0)
+	sumXjY := int64(0)
+	sumXjX := int64(0)
 
 	//Input dimension
 	d := len(input1[0])
 	//Input number of Samples
 	N := len(input1)
 
-	var plaintext_values []int64
+	var plaintextValues []int64
 	var r []kyber.Scalar
 
-	var Ciphertext_Tuple []libunlynx.CipherText
+	var CiphertextTuple []libunlynx.CipherText
 	//Encrypt the number of data records considered
-	N_Encrypted, r_0 := libunlynx.EncryptIntGetR(pubKey, int64(N))
-	Ciphertext_Tuple = append(Ciphertext_Tuple, *N_Encrypted)
-	plaintext_values = append(plaintext_values, int64(N))
-	r = append(r, r_0)
+	NEncrypted, r0 := libunlynx.EncryptIntGetR(pubKey, int64(N))
+	CiphertextTuple = append(CiphertextTuple, *NEncrypted)
+	plaintextValues = append(plaintextValues, int64(N))
+	r = append(r, r0)
 
 	var StoredVals []int64
 
 	//loop over dimensions
 	for j := 0; j < d; j++ {
-		sum_xj = int64(0)
-		sum_xj_y = int64(0)
+		sumXj = int64(0)
+		sumXjY = int64(0)
 		for i := 0; i < N; i++ {
 			x := input1[i][j]
-			sum_xj += x
-			sum_xj_y += input2[i] * x
+			sumXj += x
+			sumXjY += input2[i] * x
 		}
-		sum_xj_Encrypted, r_temp := libunlynx.EncryptIntGetR(pubKey, sum_xj)
-		Ciphertext_Tuple = append(Ciphertext_Tuple, *sum_xj_Encrypted)
-		plaintext_values = append(plaintext_values, sum_xj)
-		r = append(r, r_temp)
-		StoredVals = append(StoredVals, sum_xj_y)
+		sumXjEncrypted, rTemp := libunlynx.EncryptIntGetR(pubKey, sumXj)
+		CiphertextTuple = append(CiphertextTuple, *sumXjEncrypted)
+		plaintextValues = append(plaintextValues, sumXj)
+		r = append(r, rTemp)
+		StoredVals = append(StoredVals, sumXjY)
 	}
 
 	for j := 0; j < d; j++ {
 		for k := j; k < d; k++ {
-			sum_xj_xk = int64(0)
+			sumXjX = int64(0)
 			for i := 0; i < N; i++ {
-				sum_xj_xk += input1[i][j] * input1[i][k]
+				sumXjX += input1[i][j] * input1[i][k]
 			}
-			sum_xj_xk_Encrypted, r_temp := libunlynx.EncryptIntGetR(pubKey, sum_xj_xk)
-			Ciphertext_Tuple = append(Ciphertext_Tuple, *sum_xj_xk_Encrypted)
-			plaintext_values = append(plaintext_values, sum_xj_xk)
-			r = append(r, r_temp)
+			sumXjXkEncrypted, rTemp := libunlynx.EncryptIntGetR(pubKey, sumXjX)
+			CiphertextTuple = append(CiphertextTuple, *sumXjXkEncrypted)
+			plaintextValues = append(plaintextValues, sumXjX)
+			r = append(r, rTemp)
 		}
 	}
 
 	for _, el := range input2 {
-		sum_y += el
+		sumY += el
 	}
-	sum_y_Encrypted, r_y := libunlynx.EncryptIntGetR(pubKey, sum_y)
-	Ciphertext_Tuple = append(Ciphertext_Tuple, *sum_y_Encrypted)
-	plaintext_values = append(plaintext_values, sum_y)
-	r = append(r, r_y)
+	sumYEncrypted, ry := libunlynx.EncryptIntGetR(pubKey, sumY)
+	CiphertextTuple = append(CiphertextTuple, *sumYEncrypted)
+	plaintextValues = append(plaintextValues, sumY)
+	r = append(r, ry)
 
 	for j := 0; j < len(StoredVals); j++ {
-		sum_xj_y_Encrypted, r_temp := libunlynx.EncryptIntGetR(pubKey, StoredVals[j])
-		Ciphertext_Tuple = append(Ciphertext_Tuple, *sum_xj_y_Encrypted)
-		plaintext_values = append(plaintext_values, StoredVals[j])
+		sumXjYEncrypted, r_temp := libunlynx.EncryptIntGetR(pubKey, StoredVals[j])
+		CiphertextTuple = append(CiphertextTuple, *sumXjYEncrypted)
+		plaintextValues = append(plaintextValues, StoredVals[j])
 		r = append(r, r_temp)
 	}
 
 	if sigs == nil {
-		return Ciphertext_Tuple, []int64{0}, nil
+		return CiphertextTuple, []int64{0}, nil
 	}
 	//input range validation proof
-	createProofs := make([]libdrynx.CreateProof, len(plaintext_values))
-	wg := libunlynx.StartParallelize(len(plaintext_values))
-	for i, v := range plaintext_values {
+	createProofs := make([]libdrynx.CreateProof, len(plaintextValues))
+	wg := libunlynx.StartParallelize(len(plaintextValues))
+	for i, v := range plaintextValues {
 		if libunlynx.PARALLELIZE {
 			go func(i int, v int64) {
 				defer wg.Done()
 				//input range validation proof
-				createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: Ciphertext_Tuple[i]}
+				createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: CiphertextTuple[i]}
 			}(i, v)
 		} else {
 			//input range validation proof
-			createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: Ciphertext_Tuple[i]}
+			createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: CiphertextTuple[i]}
 		}
 	}
 	libunlynx.EndParallelize(wg)
-	return Ciphertext_Tuple, []int64{0}, createProofs
+	return CiphertextTuple, []int64{0}, createProofs
 }
 
 //DecodeLinearRegression_Dims implements a d-dimensional linear regression algorithm, in this encoding, we assume the system to have a perfect solution
 //TODO least-square computation and not equality
 func DecodeLinearRegression_Dims(result []libunlynx.CipherText, secKey kyber.Scalar) []float64 {
 	//get the the number of dimensions by solving the equation: d^2 + 5d + 4 = 2*len(result)
-	pos_sol, _ := quadratic.Solve(1, 5, complex128(complex(float32(4-2*len(result)), 0)))
-	d := int(real(pos_sol))
+	posSol, _ := quadratic.Solve(1, 5, complex128(complex(float32(4-2*len(result)), 0)))
+	d := int(real(posSol))
 
-	matrix_augmented := make([][]int64, d+1, d+2)
-	for i := range matrix_augmented {
-		matrix_augmented[i] = make([]int64, d+2)
+	matrixAugmented := make([][]int64, d+1, d+2)
+	for i := range matrixAugmented {
+		matrixAugmented[i] = make([]int64, d+2)
 	}
 
 	//Build the augmented matrix
@@ -130,30 +130,30 @@ func DecodeLinearRegression_Dims(result []libunlynx.CipherText, secKey kyber.Sca
 			i++
 			s = 0
 		}
-		matrix_augmented[i][i+s] = libunlynx.DecryptIntWithNeg(secKey, result[j])
+		matrixAugmented[i][i+s] = libunlynx.DecryptIntWithNeg(secKey, result[j])
 		if i != i+s {
-			matrix_augmented[i+s][i] = libunlynx.DecryptIntWithNeg(secKey, result[j])
+			matrixAugmented[i+s][i] = libunlynx.DecryptIntWithNeg(secKey, result[j])
 		}
 		s++
 	}
 
 	for j := len(result) - d - 1; j < len(result); j++ {
-		matrix_augmented[j-len(result)+d+1][d+1] = libunlynx.DecryptIntWithNeg(secKey, result[j])
+		matrixAugmented[j-len(result)+d+1][d+1] = libunlynx.DecryptIntWithNeg(secKey, result[j])
 	}
 
-	matrix_rational := make([][]rational.Rational, d+1, d+2)
-	for i := range matrix_augmented {
-		matrix_rational[i] = make([]rational.Rational, d+2)
+	matrixRational := make([][]rational.Rational, d+1, d+2)
+	for i := range matrixAugmented {
+		matrixRational[i] = make([]rational.Rational, d+2)
 	}
-	for i := range matrix_augmented {
+	for i := range matrixAugmented {
 		for j := 0; j < d+2; j++ {
-			matrix_rational[i][j] = rational.New(matrix_augmented[i][j], 1)
+			matrixRational[i][j] = rational.New(matrixAugmented[i][j], 1)
 		}
 	}
 
 	//Solve the linear system of equations and return x = [c0, c1, c2, ..., cd]
 	var solution [][]rational.Rational
-	solution, _ = gaussian.SolveGaussian(matrix_rational, false)
+	solution, _ = gaussian.SolveGaussian(matrixRational, false)
 
 	coeffs := make([]float64, d+1)
 	for i := 0; i < len(solution); i++ {

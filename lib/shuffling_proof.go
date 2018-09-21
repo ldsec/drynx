@@ -2,12 +2,12 @@ package libdrynx
 
 import (
 	"github.com/dedis/kyber"
-	"github.com/lca1/unlynx/lib"
-	"github.com/dedis/kyber/shuffle"
 	"github.com/dedis/kyber/proof"
-	"github.com/dedis/onet/log"
-	"math/big"
+	"github.com/dedis/kyber/shuffle"
 	"github.com/dedis/kyber/util/random"
+	"github.com/dedis/onet/log"
+	"github.com/lca1/unlynx/lib"
+	"math/big"
 	"sync"
 )
 
@@ -20,6 +20,7 @@ type PublishedShufflingProof struct {
 	HashProof    []byte
 }
 
+// PublishedShufflingProofBytes is the bytes equivalent of PublishedShufflingProof
 type PublishedShufflingProofBytes struct {
 	OriginalList *[]byte
 	ShuffledList *[]byte
@@ -31,6 +32,7 @@ type PublishedShufflingProofBytes struct {
 	HashProof    []byte
 }
 
+// ToBytes transforms shuffling proof to bytes
 func (psp *PublishedShufflingProof) ToBytes() PublishedShufflingProofBytes {
 	pspb := PublishedShufflingProofBytes{}
 	sm := ShufflingMessage{psp.OriginalList}
@@ -63,6 +65,7 @@ func (psp *PublishedShufflingProof) ToBytes() PublishedShufflingProofBytes {
 	return pspb
 }
 
+// FromBytes transforms bytes back to PublishedShufflingProof
 func (psp *PublishedShufflingProof) FromBytes(pspb PublishedShufflingProofBytes) {
 	sm := ShufflingMessage{}
 	sm.FromBytes(pspb.OriginalList, int((*pspb.L1)[0]), int((*pspb.L2)[0]), int((*pspb.L3)[0]))
@@ -74,7 +77,7 @@ func (psp *PublishedShufflingProof) FromBytes(pspb PublishedShufflingProofBytes)
 	psp.HashProof = pspb.HashProof
 }
 
-// ShuffleProofCreation creates a proof for one shuffle on a list of process response
+// shuffleProofCreation creates a proof for one shuffle on a list of process response
 func shuffleProofCreation(inputList, outputList []libunlynx.ProcessResponse, beta [][]kyber.Scalar, pi []int, h kyber.Point) []byte {
 	e := CipherVectorTag(&inputList[0], h)
 	k := len(inputList)
@@ -98,7 +101,7 @@ func shuffleProofCreation(inputList, outputList []libunlynx.ProcessResponse, bet
 	}
 	libunlynx.EndParallelize(wg1)
 
-	betaCompressed := CompressBeta(beta, e)
+	betaCompressed := libunlynx.CompressBeta(beta, e)
 
 	rand := libunlynx.SuiTe.RandomStream()
 	// do k-shuffle of ElGamal on the (Xhat,Yhat) and check it
@@ -255,7 +258,6 @@ func processResponseShuffling(pi []int, i int, inputList, outputList []libunlynx
 	libunlynx.EndParallelize(wg)
 }
 
-
 // CompressProcessResponseMultiple applies shuffling compression to 2 list of process responses corresponding to input and output of shuffling
 func CompressProcessResponseMultiple(inputList, outputList []libunlynx.ProcessResponse, i int, e []kyber.Scalar, Xhat, XhatBar, Yhat, YhatBar []kyber.Point) {
 	wg := libunlynx.StartParallelize(2)
@@ -327,8 +329,6 @@ func ComputeE(index int, cv libunlynx.ProcessResponse, seed []byte, aggrAttrLen,
 
 	randomCipher.Write(dataC)
 	randomCipher.Write(dataK)
-	//randomCipher.Message(nil, nil, dataC)
-	//randomCipher.Message(nil, nil, dataK)
 
 	return libunlynx.SuiTe.Scalar().Pick(randomCipher)
 }
@@ -417,6 +417,7 @@ func CompressListProcessResponse(processResponses []libunlynx.ProcessResponse, e
 	return xK, xC
 }
 
+/*
 // CompressBeta applies shuffling compression to a list of list of scalars (beta)
 func CompressBeta(beta [][]kyber.Scalar, e []kyber.Scalar) []kyber.Scalar {
 	k := len(beta)
@@ -444,4 +445,4 @@ func CompressBeta(beta [][]kyber.Scalar, e []kyber.Scalar) []kyber.Scalar {
 	libunlynx.EndParallelize(wg)
 
 	return betaCompressed
-}
+}*/

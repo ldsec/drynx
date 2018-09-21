@@ -1,11 +1,10 @@
 package encoding
 
 import (
-	"math"
-
 	"github.com/dedis/kyber"
-	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/unlynx/lib"
+	"math"
 )
 
 // EncodeCosim computes the elements needed to compute cosine similarity

@@ -1,13 +1,13 @@
 package encoding_test
 
 import (
-	"github.com/lca1/unlynx/lib"
+	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/pairing/bn256"
+	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"github.com/dedis/kyber"
-	"github.com/lca1/drynx/lib"
-	"github.com/dedis/kyber/pairing/bn256"
 )
 
 //TestEncodeDecodeUnionInter tests EncodeUnion and DecodeUnion
@@ -23,25 +23,25 @@ func TestEncodeDecodeUnionInter(t *testing.T) {
 	//minimum value taken by the attribute in question
 	min := int64(0)
 
-	expected_union := make([]int64, max-min+1)
-	unique_values := encoding.Unique(inputValues)
-	for i := int64(0); i < int64(len(expected_union)); i++ {
-		expected_union[i] = 0
+	expectedUnions := make([]int64, max-min+1)
+	uniqueValues := encoding.Unique(inputValues)
+	for i := int64(0); i < int64(len(expectedUnions)); i++ {
+		expectedUnions[i] = 0
 	}
-	for _, entry := range unique_values {
-		expected_union[entry-min] = 1
+	for _, entry := range uniqueValues {
+		expectedUnions[entry-min] = 1
 	}
-	var expected_inter = expected_union
+	var expectedInters = expectedUnions
 
 	//function call Union
 	unionCipher, _ := encoding.EncodeUnion(inputValues, min, max, pubKey)
-	result_union := encoding.DecodeUnion(unionCipher, secKey)
+	resultUnions := encoding.DecodeUnion(unionCipher, secKey)
 	//function call Intersection
 	interCipher, _ := encoding.EncodeInter(inputValues, min, max, pubKey)
-	result_inter := encoding.DecodeInter(interCipher, secKey)
+	resultInters := encoding.DecodeInter(interCipher, secKey)
 
-	assert.Equal(t, expected_union, result_union)
-	assert.Equal(t, expected_inter, result_inter)
+	assert.Equal(t, expectedUnions, resultUnions)
+	assert.Equal(t, expectedInters, resultInters)
 }
 
 func TestEncodeDecodeUnionInterWithProofs(t *testing.T) {
@@ -55,15 +55,15 @@ func TestEncodeDecodeUnionInterWithProofs(t *testing.T) {
 	//minimum value taken by the attribute in question
 	min := int64(0)
 
-	expected_union := make([]int64, max-min+1)
-	unique_values := encoding.Unique(inputValues)
-	for i := int64(0); i < int64(len(expected_union)); i++ {
-		expected_union[i] = 0
+	expectedUnions := make([]int64, max-min+1)
+	uniqueValues := encoding.Unique(inputValues)
+	for i := int64(0); i < int64(len(expectedUnions)); i++ {
+		expectedUnions[i] = 0
 	}
-	for _, entry := range unique_values {
-		expected_union[entry-min] = 1
+	for _, entry := range uniqueValues {
+		expectedUnions[entry-min] = 1
 	}
-	var expected_inter = expected_union
+	var expectedInters = expectedUnions
 
 	//signatures needed to check the proof
 	//signatures needed to check the proof
@@ -97,15 +97,14 @@ func TestEncodeDecodeUnionInterWithProofs(t *testing.T) {
 	//function call
 	resultEncryptedUnion, _, prfMin := encoding.EncodeUnionWithProofs(inputValues, min, max, pubKey, ps, ranges)
 	resultMin := encoding.DecodeUnion(resultEncryptedUnion, secKey)
-	assert.Equal(t, expected_union, resultMin)
+	assert.Equal(t, expectedUnions, resultMin)
 	resultEncryptedInter, _, prfMax := encoding.EncodeInterWithProofs(inputValues, min, max, pubKey, ps, ranges)
 	resultInter := encoding.DecodeInter(resultEncryptedInter, secKey)
-	assert.Equal(t, expected_inter, resultInter)
+	assert.Equal(t, expectedInters, resultInter)
 
-	for i,v := range prfMin{
+	for i, v := range prfMin {
 		assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(v), u, l, yss[i], pubKey))
 		assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prfMax[i]), u, l, yss[i], pubKey))
 	}
-
 
 }

@@ -2,11 +2,11 @@ package encoding_test
 
 import (
 	"github.com/dedis/kyber"
-	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"github.com/lca1/drynx/lib"
 )
 
 // TestEncodeDecodeSum tests EncodeSum and DecodeSum

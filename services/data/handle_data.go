@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/JoaoAndreSa/MedCo/lib"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
-	"github.com/JoaoAndreSa/MedCo/lib"
 )
 
 // Group identifies all different groups to be added to the test data file

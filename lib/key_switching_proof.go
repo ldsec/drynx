@@ -2,10 +2,10 @@ package libdrynx
 
 import (
 	"github.com/dedis/kyber"
-	"math"
-	"github.com/lca1/unlynx/lib"
 	"github.com/dedis/kyber/proof"
 	"github.com/dedis/onet/log"
+	"github.com/lca1/unlynx/lib"
+	"math"
 )
 
 // PublishedKSProof contains all infos about proofs for key switching
@@ -29,7 +29,7 @@ type PublishedKSListProof struct {
 	Prs []PublishedKSProof
 }
 
-// PublishedKSListProof is the bytes' version of PublishedKSListProof
+// PublishedKSListProofBytes is the bytes' version of PublishedKSListProof
 type PublishedKSListProofBytes struct {
 	PrsB []PublishedKSProofBytes
 }
@@ -70,7 +70,7 @@ func (pkslp *PublishedKSListProof) ToBytes() PublishedKSListProofBytes {
 	return pkslpb
 }
 
-//FromBytes converts bytes back to PublishedKSListProof
+// FromBytes converts bytes back to PublishedKSListProof
 func (pkslp *PublishedKSListProof) FromBytes(pkslpb PublishedKSListProofBytes) {
 	prs := make([]PublishedKSProof, len(pkslpb.PrsB))
 	wg := libunlynx.StartParallelize(len(pkslpb.PrsB))

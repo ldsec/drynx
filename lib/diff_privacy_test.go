@@ -6,7 +6,6 @@ import (
 	"testing"
 )
 
-// TestAddRmProof tests the generation of the noise values for the differential privacy
 func TestGenerateNoiseValues(t *testing.T) {
 	aux := GenerateNoiseValues(0, 0, 1, 0.005, 0)
 	assert.Empty(t, aux)

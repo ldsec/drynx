@@ -3,12 +3,12 @@ package encoding_test
 import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet/log"
-	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"math"
 	"testing"
-	"github.com/lca1/drynx/lib"
 )
 
 func TestEncodeDecodeCosim(t *testing.T) {
@@ -68,23 +68,22 @@ func TestEncodeDecodeCosimWithProofs(t *testing.T) {
 	riks := []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 1}
 
 	// excpected results
-	rijs_sum := int64(0)
-	riks_sum := int64(0)
-	rijs_2_sum := int64(0)
-	riks_2_sum := int64(0)
-	rijs_x_rijks_sum := int64(0)
+	rijsSum := int64(0)
+	riksSum := int64(0)
+	rijs2Sum := int64(0)
+	riks2Sum := int64(0)
+	rijsXRijksSum := int64(0)
 
 	for i, el := range rijs {
 		el2 := riks[i]
-		rijs_sum = rijs_sum + el
-		riks_sum = riks_sum + el2
-		rijs_2_sum = rijs_2_sum + el*el
-		riks_2_sum = riks_2_sum + el2*el2
-		rijs_x_rijks_sum = rijs_x_rijks_sum + el*el2
+		rijsSum = rijsSum + el
+		riksSum = riksSum + el2
+		rijs2Sum = rijs2Sum + el*el
+		riks2Sum = riks2Sum + el2*el2
+		rijsXRijksSum = rijsXRijksSum + el*el2
 
 	}
-	resultClear := []int64{rijs_sum, riks_sum, rijs_2_sum, riks_2_sum, rijs_x_rijks_sum}
-
+	resultClear := []int64{rijsSum, riksSum, rijs2Sum, riks2Sum, rijsXRijksSum}
 
 	//expected results
 	expect := float64(resultClear[4]) / (math.Sqrt(float64(resultClear[2])) * math.Sqrt(float64(resultClear[3])))

@@ -13,10 +13,10 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
-	"github.com/lca1/unlynx/lib"
-	"gopkg.in/satori/go.uuid.v1"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/services"
+	"github.com/lca1/unlynx/lib"
+	"gopkg.in/satori/go.uuid.v1"
 )
 
 func init() {

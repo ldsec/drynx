@@ -1,17 +1,15 @@
 package libdrynx
 
 import (
+	"crypto/sha256"
 	"github.com/cbergoon/merkletree"
 	"github.com/dedis/kyber"
-	"crypto/sha256"
 	"github.com/dedis/kyber/pairing/bn256"
-	"math"
-	"github.com/lca1/unlynx/lib"
 	"github.com/dedis/onet/log"
+	"github.com/lca1/unlynx/lib"
 	"golang.org/x/crypto/sha3"
+	"math"
 )
-
-
 
 //RangeProof contains all information sent by DataProvider to Server
 type RangeProof struct {
@@ -56,6 +54,17 @@ type RangeProofDataBytes struct {
 	Zphi      *[]byte
 	V         *[][]byte
 	A         *[][]byte
+}
+
+//CreateProof contains all the elements used to create a range proof
+type CreateProof struct {
+	Sigs   []PublishSignature
+	U      int64
+	L      int64
+	Secret int64
+	R      kyber.Scalar
+	CaPub  kyber.Point
+	Cipher libunlynx.CipherText
 }
 
 //ToBytes converts RangeProofList to bytes
@@ -144,6 +153,7 @@ func (prf *RangeProof) ToBytes() RangeProofBytes {
 	return prfBytes
 }
 
+// FromBytes converts bytes back to RangeProofList
 func (prf *RangeProofList) FromBytes(prpb RangeProofListBytes) {
 	prf.Data = make([]RangeProof, len(*prpb.Data))
 	wg := libunlynx.StartParallelize(len(*prpb.Data))
@@ -156,7 +166,7 @@ func (prf *RangeProofList) FromBytes(prpb RangeProofListBytes) {
 	libunlynx.EndParallelize(wg)
 }
 
-//FromBytes converts bytes back to RangeProof
+// FromBytes converts bytes back to RangeProof
 func (prf *RangeProof) FromBytes(prpb RangeProofBytes) {
 	prf.RP = &RangeProofData{}
 
@@ -233,16 +243,7 @@ func (prf *RangeProof) FromBytes(prpb RangeProofBytes) {
 
 }
 
-//CreateProof contains all the elements used to create a range proof
-type CreateProof struct {
-	Sigs   []PublishSignature
-	U      int64
-	L      int64
-	Secret int64
-	R      kyber.Scalar
-	CaPub  kyber.Point
-	Cipher libunlynx.CipherText
-}
+
 
 // InitRangeProofSignatureDeterministic is used for simulation puposes to create deterministic servers' signatures
 func InitRangeProofSignatureDeterministic(u int64) PublishSignatureBytes {
@@ -622,5 +623,3 @@ func ReadColumnYs(sigs []*[]PublishSignatureBytes, column int) []kyber.Point {
 	}
 	return sigiY
 }
-
-

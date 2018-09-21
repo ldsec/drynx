@@ -13,10 +13,10 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/fanliao/go-concurrentMap"
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/protocols"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/protocols"
+	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/protocols"
 )
 
 // ServiceName is the registered name for the lemal service.
@@ -313,7 +313,6 @@ func (s *ServiceLeMal) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 			log.Error("[SERVICE] <LEMAL> Server, broadcasting [SurveyQuery] error ", err)
 		}
 	}
-
 
 	// DRO Phase
 	if recq.IntraMessage == false {

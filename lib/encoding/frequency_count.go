@@ -2,8 +2,8 @@ package encoding
 
 import (
 	"github.com/dedis/kyber"
-	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/unlynx/lib"
 )
 
 //EncodeFreqCount computes the frequency count of query results
@@ -28,13 +28,13 @@ func EncodeFreqCountWithProofs(input []int64, min int64, max int64, pubKey kyber
 
 	//encrypt the local DP's query results
 	Ciphertext_Tuple := make([]libunlynx.CipherText, max-min+1)
-	wg := libunlynx.StartParallelize(int(max-min)+1)
+	wg := libunlynx.StartParallelize(int(max-min) + 1)
 	for i := int64(0); i <= max-min; i++ {
 		go func(i int64) {
 			defer wg.Done()
-			count_i_Encrypted, r_i := libunlynx.EncryptIntGetR(pubKey, freqcount[i])
-			r[i] = r_i
-			Ciphertext_Tuple[i] = *count_i_Encrypted
+			countIEncrypted, ri := libunlynx.EncryptIntGetR(pubKey, freqcount[i])
+			r[i] = ri
+			Ciphertext_Tuple[i] = *countIEncrypted
 		}(i)
 
 	}
@@ -64,19 +64,19 @@ func EncodeFreqCountWithProofs(input []int64, min int64, max int64, pubKey kyber
 
 //DecodeFreqCount computes the frequency count of local DP's query results
 func DecodeFreqCount(result []libunlynx.CipherText, secKey kyber.Scalar) []int64 {
-	Plaintext_Tuple := make([]int64, len(result))
+	PlaintextTuple := make([]int64, len(result))
 
 	//get the counts for all integer values in the range {1, 2, ..., max}
 	wg := libunlynx.StartParallelize(len(result))
 	for i := int64(0); i < int64(len(result)); i++ {
 		go func(i int64) {
 			defer wg.Done()
-			Plaintext_Tuple[i] = libunlynx.DecryptIntWithNeg(secKey, result[i])
+			PlaintextTuple[i] = libunlynx.DecryptIntWithNeg(secKey, result[i])
 		}(i)
 
 	}
 	libunlynx.EndParallelize(wg)
 
 	//return the array of counts
-	return Plaintext_Tuple
+	return PlaintextTuple
 }

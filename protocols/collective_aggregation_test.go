@@ -5,27 +5,25 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
-	"github.com/dedis/kyber/pairing/bn256"
 )
-
 
 var clientPrivate = bn256.NewSuiteG1().Scalar().Pick(random.New())
 var clientPublic = bn256.NewSuiteG1().Point().Mul(clientPrivate, bn256.NewSuiteG1().Point().Base())
 var grpattr1 = libunlynx.DeterministCipherText{Point: bn256.NewSuiteG1().Point().Base()}
 var grpattr2 = libunlynx.DeterministCipherText{Point: bn256.NewSuiteG1().Point().Null()}
 var groupingAttrA = libunlynx.DeterministCipherVector{grpattr1, grpattr1}
-var groupingAttrAkey = libunlynx.GroupingKey("A")//groupingAttrA.Key()
+var groupingAttrAkey = libunlynx.GroupingKey("A") //groupingAttrA.Key()
 var groupingAttrB = libunlynx.DeterministCipherVector{grpattr2, grpattr2}
-var groupingAttrBkey = libunlynx.GroupingKey("B")//groupingAttrB.Key()
+var groupingAttrBkey = libunlynx.GroupingKey("B") //groupingAttrB.Key()
 var groupingAttrC = libunlynx.DeterministCipherVector{grpattr1, grpattr2}
-var groupingAttrCkey = libunlynx.GroupingKey("C")//groupingAttrC.Key()
-
+var groupingAttrCkey = libunlynx.GroupingKey("C") //groupingAttrC.Key()
 
 //var obfuscation = true
 
@@ -64,7 +62,7 @@ func TestCollectiveAggregation(t *testing.T) {
 		log.Lvl1("Received results:")
 		resultData := make(map[libunlynx.GroupingKey][]int64)
 		for k, v := range encryptedResult.GroupedData {
-				resultData[k] = libunlynx.DecryptIntVector(clientPrivate, &v.AggregatingAttributes)
+			resultData[k] = libunlynx.DecryptIntVector(clientPrivate, &v.AggregatingAttributes)
 			log.Lvl1(k, resultData[k])
 
 		}

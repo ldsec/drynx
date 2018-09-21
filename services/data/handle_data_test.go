@@ -1,11 +1,11 @@
 package data_test
 
 import (
+	"github.com/JoaoAndreSa/MedCo/lib"
 	"github.com/dedis/onet/log"
+	"github.com/lca1/drynx/services/data"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"github.com/lca1/drynx/services/data"
-	"github.com/JoaoAndreSa/MedCo/lib"
 )
 
 const filename = "unlynx_test_data.txt"

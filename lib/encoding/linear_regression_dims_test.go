@@ -4,243 +4,243 @@ import (
 	"github.com/alex-ant/gomath/gaussian-elimination"
 	"github.com/alex-ant/gomath/rational"
 	"github.com/dedis/kyber"
-	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"github.com/lca1/drynx/lib"
 )
 
 //TestEncodeDecodeLinearRegressionDims tests EncodeLinearRegression_Dims and DecodeLinearRegression_Dims
 func TestEncodeDecodeLinearRegressionDims(t *testing.T) {
 	//data
-	inputValues_x := [][]int64{{1, 2}, {0, 1}, {1, 0}, {2, 1}, {3, 5}}
-	inputValues_y := []int64{11, 5, 3, 9, 27}
+	inputValuesX := [][]int64{{1, 2}, {0, 1}, {1, 0}, {2, 1}, {3, 5}}
+	inputValuesY := []int64{11, 5, 3, 9, 27}
 	//Solution: c0 = 1, c1 = 2, c2 = 4
 
 	//Input for 1 dimension
-	//inputValues_x := [][]int64{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {1}}
-	//inputValues_y := []int64{32, 12, 23, 4, 13, -72, 12, 8, 23}
+	//inputValuesX := [][]int64{{1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {1}}
+	//inputValuesY := []int64{32, 12, 23, 4, 13, -72, 12, 8, 23}
 
 	//dimension
-	d := len(inputValues_x[0])
+	d := len(inputValuesX[0])
 
 	// key
 	secKey, pubKey := libunlynx.GenKey()
 	//Build the augmented matrix
-	sum_xj := int64(0)
-	sum_y := int64(0)
-	sum_xj_y := int64(0)
-	sum_xj_xk := int64(0)
+	sumXj := int64(0)
+	sumY := int64(0)
+	sumXjY := int64(0)
+	sumXjXk := int64(0)
 
-	var Data_Tuple []int64
-	Data_Tuple = append(Data_Tuple, int64(len(inputValues_x)))
+	var DataTuple []int64
+	DataTuple = append(DataTuple, int64(len(inputValuesX)))
 
 	var StoredVals []int64
 	//loop over dimensions
 	for j := 0; j < d; j++ {
-		sum_xj = int64(0)
-		sum_xj_y = int64(0)
-		for i := 0; i < len(inputValues_x); i++ {
-			x := inputValues_x[i][j]
-			sum_xj += x
-			sum_xj_y += inputValues_y[i] * x
+		sumXj = int64(0)
+		sumXjY = int64(0)
+		for i := 0; i < len(inputValuesX); i++ {
+			x := inputValuesX[i][j]
+			sumXj += x
+			sumXjY += inputValuesY[i] * x
 		}
-		Data_Tuple = append(Data_Tuple, sum_xj)
-		StoredVals = append(StoredVals, sum_xj_y)
+		DataTuple = append(DataTuple, sumXj)
+		StoredVals = append(StoredVals, sumXjY)
 	}
 
 	for j := 0; j < d; j++ {
 		for k := j; k < d; k++ {
-			sum_xj_xk = int64(0)
-			for i := 0; i < len(inputValues_x); i++ {
-				sum_xj_xk += inputValues_x[i][j] * inputValues_x[i][k]
+			sumXjXk = int64(0)
+			for i := 0; i < len(inputValuesX); i++ {
+				sumXjXk += inputValuesX[i][j] * inputValuesX[i][k]
 			}
-			Data_Tuple = append(Data_Tuple, sum_xj_xk)
+			DataTuple = append(DataTuple, sumXjXk)
 		}
 	}
 
-	for _, el := range inputValues_y {
-		sum_y += el
+	for _, el := range inputValuesY {
+		sumY += el
 	}
-	Data_Tuple = append(Data_Tuple, sum_y)
+	DataTuple = append(DataTuple, sumY)
 	for j := 0; j < len(StoredVals); j++ {
-		Data_Tuple = append(Data_Tuple, StoredVals[j])
+		DataTuple = append(DataTuple, StoredVals[j])
 	}
 
-	matrix_augmented := make([][]int64, d+1, d+2)
-	for i := range matrix_augmented {
-		matrix_augmented[i] = make([]int64, d+2)
+	matrixAugmented := make([][]int64, d+1, d+2)
+	for i := range matrixAugmented {
+		matrixAugmented[i] = make([]int64, d+2)
 	}
 
 	s := 0
 	l := d + 1
 	k := d + 1
 	i := 0
-	for j := 0; j < len(Data_Tuple)-d-1; j++ {
+	for j := 0; j < len(DataTuple)-d-1; j++ {
 		if j == l {
 			k--
 			l = l + k
 			i++
 			s = 0
 		}
-		matrix_augmented[i][i+s] = Data_Tuple[j]
+		matrixAugmented[i][i+s] = DataTuple[j]
 		if i != i+s {
-			matrix_augmented[i+s][i] = Data_Tuple[j]
+			matrixAugmented[i+s][i] = DataTuple[j]
 		}
 		s++
 	}
-	for j := len(Data_Tuple) - d - 1; j < len(Data_Tuple); j++ {
-		matrix_augmented[j-len(Data_Tuple)+d+1][d+1] = Data_Tuple[j]
+	for j := len(DataTuple) - d - 1; j < len(DataTuple); j++ {
+		matrixAugmented[j-len(DataTuple)+d+1][d+1] = DataTuple[j]
 	}
 
-	matrix_rational := make([][]rational.Rational, d+1, d+2)
-	for i := range matrix_augmented {
-		matrix_rational[i] = make([]rational.Rational, d+2)
+	matrixRational := make([][]rational.Rational, d+1, d+2)
+	for i := range matrixAugmented {
+		matrixRational[i] = make([]rational.Rational, d+2)
 	}
-	for i := range matrix_augmented {
+	for i := range matrixAugmented {
 		for j := 0; j < d+2; j++ {
-			matrix_rational[i][j] = rational.New(matrix_augmented[i][j], 1)
+			matrixRational[i][j] = rational.New(matrixAugmented[i][j], 1)
 		}
 	}
 
 	//Solve the linear system of equations and return x = [c0, c1, c2, ..., cd]
 	var solution [][]rational.Rational
-	solution, _ = gaussian.SolveGaussian(matrix_rational, false)
+	solution, _ = gaussian.SolveGaussian(matrixRational, false)
 
 	//Expected results
-	coeffs_expected := make([]float64, d+1)
+	coeffsExpected := make([]float64, d+1)
 	for i := 0; i < len(solution); i++ {
-		coeffs_expected[i] = solution[i][0].Float64()
+		coeffsExpected[i] = solution[i][0].Float64()
 	}
 
 	//Actual results
 	var resultEncrypted []libunlynx.CipherText
-	resultEncrypted, _ = encoding.EncodeLinearRegression_Dims(inputValues_x, inputValues_y, pubKey)
+	resultEncrypted, _ = encoding.EncodeLinearRegression_Dims(inputValuesX, inputValuesY, pubKey)
 	//Testing the length of the encrypted tuple that is sent
 	assert.Equal(t, (d*d+5*d+4)/2, len(resultEncrypted))
 
-	coeffs_actual := encoding.DecodeLinearRegression_Dims(resultEncrypted, secKey)
+	coeffsActual := encoding.DecodeLinearRegression_Dims(resultEncrypted, secKey)
 	//Testing the correctness of the coefficient values
-	assert.Equal(t, coeffs_expected, coeffs_actual)
+	assert.Equal(t, coeffsExpected, coeffsActual)
 }
 
 //TestEncodeDecodeLinearRegressionDimsWithProofs tests EncodeLinearRegression_DimsWithProofs and DecodeLinearRegression_DimsWithProofs
 func TestEncodeDecodeLinearRegressionDimsWithProofs(t *testing.T) {
 	//data
-	inputValues_x := [][]int64{{1, 2}, {0, 1}, {1, 0}, {2, 1}, {3, 5}}
-	inputValues_y := []int64{11, 5, 3, 9, 27}
+	inputValuesX := [][]int64{{1, 2}, {0, 1}, {1, 0}, {2, 1}, {3, 5}}
+	inputValuesY := []int64{11, 5, 3, 9, 27}
 	//Solution: c0 = 1, c1 = 2, c2 = 4
 
 	//dimension
-	d := len(inputValues_x[0])
+	d := len(inputValuesX[0])
 
 	// key
 	secKey, pubKey := libunlynx.GenKey()
 	//Build the augmented matrix
-	sum_xj := int64(0)
-	sum_y := int64(0)
-	sum_xj_y := int64(0)
-	sum_xj_xk := int64(0)
+	sumXj := int64(0)
+	sumY := int64(0)
+	sumXjY := int64(0)
+	sumXjXk := int64(0)
 
-	var Data_Tuple []int64
-	Data_Tuple = append(Data_Tuple, int64(len(inputValues_x)))
+	var DataTuple []int64
+	DataTuple = append(DataTuple, int64(len(inputValuesX)))
 
 	var StoredVals []int64
 	//loop over dimensions
 	for j := 0; j < d; j++ {
-		sum_xj = int64(0)
-		sum_xj_y = int64(0)
-		for i := 0; i < len(inputValues_x); i++ {
-			x := inputValues_x[i][j]
-			sum_xj += x
-			sum_xj_y += inputValues_y[i] * x
+		sumXj = int64(0)
+		sumXjY = int64(0)
+		for i := 0; i < len(inputValuesX); i++ {
+			x := inputValuesX[i][j]
+			sumXj += x
+			sumXjY += inputValuesY[i] * x
 		}
-		Data_Tuple = append(Data_Tuple, sum_xj)
-		StoredVals = append(StoredVals, sum_xj_y)
+		DataTuple = append(DataTuple, sumXj)
+		StoredVals = append(StoredVals, sumXjY)
 	}
 
 	for j := 0; j < d; j++ {
 		for k := j; k < d; k++ {
-			sum_xj_xk = int64(0)
-			for i := 0; i < len(inputValues_x); i++ {
-				sum_xj_xk += inputValues_x[i][j] * inputValues_x[i][k]
+			sumXjXk = int64(0)
+			for i := 0; i < len(inputValuesX); i++ {
+				sumXjXk += inputValuesX[i][j] * inputValuesX[i][k]
 			}
-			Data_Tuple = append(Data_Tuple, sum_xj_xk)
+			DataTuple = append(DataTuple, sumXjXk)
 		}
 	}
 
-	for _, el := range inputValues_y {
-		sum_y += el
+	for _, el := range inputValuesY {
+		sumY += el
 	}
-	Data_Tuple = append(Data_Tuple, sum_y)
+	DataTuple = append(DataTuple, sumY)
 	for j := 0; j < len(StoredVals); j++ {
-		Data_Tuple = append(Data_Tuple, StoredVals[j])
+		DataTuple = append(DataTuple, StoredVals[j])
 	}
 
-	matrix_augmented := make([][]int64, d+1, d+2)
-	for i := range matrix_augmented {
-		matrix_augmented[i] = make([]int64, d+2)
+	matrixAugmented := make([][]int64, d+1, d+2)
+	for i := range matrixAugmented {
+		matrixAugmented[i] = make([]int64, d+2)
 	}
 
 	s := 0
 	l := d + 1
 	k := d + 1
 	i := 0
-	for j := 0; j < len(Data_Tuple)-d-1; j++ {
+	for j := 0; j < len(DataTuple)-d-1; j++ {
 		if j == l {
 			k--
 			l = l + k
 			i++
 			s = 0
 		}
-		matrix_augmented[i][i+s] = Data_Tuple[j]
+		matrixAugmented[i][i+s] = DataTuple[j]
 		if i != i+s {
-			matrix_augmented[i+s][i] = Data_Tuple[j]
+			matrixAugmented[i+s][i] = DataTuple[j]
 		}
 		s++
 	}
-	for j := len(Data_Tuple) - d - 1; j < len(Data_Tuple); j++ {
-		matrix_augmented[j-len(Data_Tuple)+d+1][d+1] = Data_Tuple[j]
+	for j := len(DataTuple) - d - 1; j < len(DataTuple); j++ {
+		matrixAugmented[j-len(DataTuple)+d+1][d+1] = DataTuple[j]
 	}
 
-	matrix_rational := make([][]rational.Rational, d+1, d+2)
-	for i := range matrix_augmented {
-		matrix_rational[i] = make([]rational.Rational, d+2)
+	matrixRational := make([][]rational.Rational, d+1, d+2)
+	for i := range matrixAugmented {
+		matrixRational[i] = make([]rational.Rational, d+2)
 	}
-	for i := range matrix_augmented {
+	for i := range matrixAugmented {
 		for j := 0; j < d+2; j++ {
-			matrix_rational[i][j] = rational.New(matrix_augmented[i][j], 1)
+			matrixRational[i][j] = rational.New(matrixAugmented[i][j], 1)
 		}
 	}
 
 	//Solve the linear system of equations and return x = [c0, c1, c2, ..., cd]
 	var solution [][]rational.Rational
-	solution, _ = gaussian.SolveGaussian(matrix_rational, false)
+	solution, _ = gaussian.SolveGaussian(matrixRational, false)
 
 	//Expected results
-	coeffs_expected := make([]float64, d+1)
+	coeffsExpected := make([]float64, d+1)
 	for i := 0; i < len(solution); i++ {
-		coeffs_expected[i] = solution[i][0].Float64()
+		coeffsExpected[i] = solution[i][0].Float64()
 	}
 
-	len_ciphertext := (d*d + 5*d + 4) / 2
+	lenCiphertext := (d*d + 5*d + 4) / 2
 	//signatures needed to check the proof
-	u := make([]int64, len_ciphertext)
-	l2 := make([]int64, len_ciphertext)
+	u := make([]int64, lenCiphertext)
+	l2 := make([]int64, lenCiphertext)
 
 	//Define u and l2, according to the data at hand
 	for i := 0; i < len(l2); i++ {
 		u[i] = 2
 		l2[i] = 8
 	}
-	ranges := make([]*[]int64, len_ciphertext)
+	ranges := make([]*[]int64, lenCiphertext)
 	ps := make([][]libdrynx.PublishSignature, 2)
-	ps[0] = make([]libdrynx.PublishSignature, len_ciphertext)
-	ps[1] = make([]libdrynx.PublishSignature, len_ciphertext)
+	ps[0] = make([]libdrynx.PublishSignature, lenCiphertext)
+	ps[1] = make([]libdrynx.PublishSignature, lenCiphertext)
 	ys := make([][]kyber.Point, 2)
-	ys[0] = make([]kyber.Point, len_ciphertext)
-	ys[1] = make([]kyber.Point, len_ciphertext)
+	ys[0] = make([]kyber.Point, lenCiphertext)
+	ys[1] = make([]kyber.Point, lenCiphertext)
 	for i := range ps[0] {
 		ps[0][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u[i]))
 		ps[1][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u[i]))
@@ -249,7 +249,7 @@ func TestEncodeDecodeLinearRegressionDimsWithProofs(t *testing.T) {
 		ranges[i] = &[]int64{u[i], l2[i]}
 	}
 
-	yss := make([][]kyber.Point, len_ciphertext)
+	yss := make([][]kyber.Point, lenCiphertext)
 	for i := range yss {
 		yss[i] = make([]kyber.Point, 2)
 		for j := range ys {
@@ -259,16 +259,16 @@ func TestEncodeDecodeLinearRegressionDimsWithProofs(t *testing.T) {
 
 	//Actual results
 	var resultEncrypted []libunlynx.CipherText
-	resultEncrypted, _, prf := encoding.EncodeLinearRegression_DimsWithProofs(inputValues_x, inputValues_y, pubKey, ps, ranges)
+	resultEncrypted, _, prf := encoding.EncodeLinearRegression_DimsWithProofs(inputValuesX, inputValuesY, pubKey, ps, ranges)
 
 	//Testing the length of the encrypted tuple that is sent
 	assert.Equal(t, (d*d+5*d+4)/2, len(resultEncrypted))
 
-	coeffs_actual := encoding.DecodeLinearRegression_Dims(resultEncrypted, secKey)
+	coeffsActual := encoding.DecodeLinearRegression_Dims(resultEncrypted, secKey)
 	//Testing the correctness of the coefficient values
-	assert.Equal(t, coeffs_expected, coeffs_actual)
+	assert.Equal(t, coeffsExpected, coeffsActual)
 
-	for i := 0; i < len_ciphertext; i++ {
+	for i := 0; i < lenCiphertext; i++ {
 		//Testing the correctness of the proofs
 		assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[i]), u[i], l2[i], yss[i], pubKey))
 	}

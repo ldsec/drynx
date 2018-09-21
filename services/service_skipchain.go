@@ -12,10 +12,10 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/fanliao/go-concurrentMap"
-	"github.com/lca1/unlynx/lib"
-	"gopkg.in/satori/go.uuid.v1"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/protocols"
+	"github.com/lca1/unlynx/lib"
+	"gopkg.in/satori/go.uuid.v1"
 )
 
 var VerifyBitmap = skipchain.VerifierID(uuid.NewV5(uuid.NamespaceURL, "Bitmap"))

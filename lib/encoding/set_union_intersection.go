@@ -2,8 +2,8 @@ package encoding
 
 import (
 	"github.com/dedis/kyber"
-	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/unlynx/lib"
 )
 
 //Note: min and max are such that we are examining the attribute's values in the range [min, max]
@@ -15,72 +15,72 @@ func EncodeUnion(input []int64, min int64, max int64, pubKey kyber.Point) ([]lib
 }
 
 //EncodeUnionWithProofs encodes the local union vector with range proofs
-func EncodeUnionWithProofs(input []int64, min int64, max int64, pubKey kyber.Point,  sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
+func EncodeUnionWithProofs(input []int64, min int64, max int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
 	//compute the local min
 	//get the set of unique values from the input
-	unique_values := Unique(input)
+	uniqueValues := Unique(input)
 
 	//encode (and encrypt) under OR operation all the bits of min_vector
-	Ciphertext_Tuple := make([]libunlynx.CipherText, max-min+1)
-	Cleartext_Tuple := make([]int64, max-min+1)
-	Proofs_Tuple := make([]libdrynx.CreateProof, max-min+1)
+	ciphertextTuples := make([]libunlynx.CipherText, max-min+1)
+	cleartextTuples := make([]int64, max-min+1)
+	proofsTuples := make([]libdrynx.CreateProof, max-min+1)
 	filled := make([]bool, max-min+1)
-	wg := libunlynx.StartParallelize(len(unique_values))
-	for _, entry := range unique_values {
+	wg := libunlynx.StartParallelize(len(uniqueValues))
+	for _, entry := range uniqueValues {
 		go func(entry int64) {
 			defer wg.Done()
 			tmp := &libunlynx.CipherText{}
 			if sigs != nil {
-				tmp, Cleartext_Tuple[entry-min], Proofs_Tuple[entry-min] = EncodeBit_ORWithProof(true, pubKey, libdrynx.ReadColumn(sigs, int(entry-min)),(*lu[entry-min])[1], (*lu[entry-min])[0])
+				tmp, cleartextTuples[entry-min], proofsTuples[entry-min] = EncodeBitOrWithProof(true, pubKey, libdrynx.ReadColumn(sigs, int(entry-min)), (*lu[entry-min])[1], (*lu[entry-min])[0])
 			} else {
-				tmp, Cleartext_Tuple[entry-min] = EncodeBit_OR(true, pubKey)
+				tmp, cleartextTuples[entry-min] = EncodeBitOr(true, pubKey)
 			}
-			Ciphertext_Tuple[entry-min] = *tmp
+			ciphertextTuples[entry-min] = *tmp
 			filled[entry-min] = true
 		}(entry)
 	}
 	libunlynx.EndParallelize(wg)
-	wg1 := libunlynx.StartParallelize(len(Ciphertext_Tuple))
-	for i := int64(0); i < int64(len(Ciphertext_Tuple)); i++ {
+	wg1 := libunlynx.StartParallelize(len(ciphertextTuples))
+	for i := int64(0); i < int64(len(ciphertextTuples)); i++ {
 		go func(i int64) {
 			defer wg1.Done()
 			if !filled[i] {
 				tmp := &libunlynx.CipherText{}
 				if sigs != nil {
-					tmp, Cleartext_Tuple[i], Proofs_Tuple[i] = EncodeBit_ORWithProof(false, pubKey, libdrynx.ReadColumn(sigs, int(i)),(*lu[i])[1], (*lu[i])[0])
+					tmp, cleartextTuples[i], proofsTuples[i] = EncodeBitOrWithProof(false, pubKey, libdrynx.ReadColumn(sigs, int(i)), (*lu[i])[1], (*lu[i])[0])
 				} else {
-					tmp, Cleartext_Tuple[i] = EncodeBit_OR(false, pubKey)
+					tmp, cleartextTuples[i] = EncodeBitOr(false, pubKey)
 				}
-				Ciphertext_Tuple[i] = *tmp
+				ciphertextTuples[i] = *tmp
 			}
 		}(i)
 
 	}
 	libunlynx.EndParallelize(wg1)
 
-	return Ciphertext_Tuple, Cleartext_Tuple, Proofs_Tuple
+	return ciphertextTuples, cleartextTuples, proofsTuples
 }
 
 //DecodeUnion decodes the global union vector
 func DecodeUnion(result []libunlynx.CipherText, secKey kyber.Scalar) []int64 {
-	output_vector := make([]int64, len(result))
+	outputVectors := make([]int64, len(result))
 	//decode the vector
 	wg := libunlynx.StartParallelize(len(result))
 	for i := int64(0); i < int64(len(result)); i++ {
 		go func(i int64) {
 			defer wg.Done()
-			bit_i := DecodeBit_OR(result[i], secKey)
+			bit_i := DecodeBitOR(result[i], secKey)
 			//return the index of the rightmost 1-bit
 			if bit_i == true {
-				output_vector[i] = 1
+				outputVectors[i] = 1
 			} else {
-				output_vector[i] = 0
+				outputVectors[i] = 0
 			}
 		}(i)
 
 	}
 	libunlynx.EndParallelize(wg)
-	return output_vector
+	return outputVectors
 }
 
 //EncodeInter encodes the local intersection vector
@@ -90,68 +90,68 @@ func EncodeInter(input []int64, min int64, max int64, pubKey kyber.Point) ([]lib
 }
 
 //EncodeInterWithProofs encodes the local intersection vector with range proofs
-func EncodeInterWithProofs(input []int64, min int64, max int64, pubKey kyber.Point,  sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
+func EncodeInterWithProofs(input []int64, min int64, max int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
 	//get the set of unique values from the input
-	unique_values := Unique(input)
-	Ciphertext_Tuple := make([]libunlynx.CipherText, max-min+1)
-	Cleartext_Tuple := make([]int64, max-min+1)
-	Proofs_Tuple := make([]libdrynx.CreateProof, max-min+1)
+	uniqueValues := Unique(input)
+	ciphertextTuples := make([]libunlynx.CipherText, max-min+1)
+	cleartextTuples := make([]int64, max-min+1)
+	proofsTuples := make([]libdrynx.CreateProof, max-min+1)
 	filled := make([]bool, max-min+1)
-	wg := libunlynx.StartParallelize(len(unique_values))
-	for _, entry := range unique_values {
+	wg := libunlynx.StartParallelize(len(uniqueValues))
+	for _, entry := range uniqueValues {
 		go func(entry int64) {
 			defer wg.Done()
 			tmp := &libunlynx.CipherText{}
 			if sigs != nil {
-				tmp, Cleartext_Tuple[entry-min], Proofs_Tuple[entry-min] = EncodeBit_ANDWithProof(true, pubKey, libdrynx.ReadColumn(sigs, int(entry-min)),(*lu[entry-min])[1], (*lu[entry-min])[0])
+				tmp, cleartextTuples[entry-min], proofsTuples[entry-min] = EncodeBitANDWithProof(true, pubKey, libdrynx.ReadColumn(sigs, int(entry-min)), (*lu[entry-min])[1], (*lu[entry-min])[0])
 			} else {
-				tmp, Cleartext_Tuple[entry-min] = EncodeBit_AND(true, pubKey)
+				tmp, cleartextTuples[entry-min] = EncodeBitAND(true, pubKey)
 			}
-			Ciphertext_Tuple[entry-min] = *tmp
+			ciphertextTuples[entry-min] = *tmp
 			filled[entry-min] = true
 		}(entry)
 
 	}
 	libunlynx.EndParallelize(wg)
-	wg1 := libunlynx.StartParallelize(len(Ciphertext_Tuple))
-	for i := int64(0); i < int64(len(Ciphertext_Tuple)); i++ {
+	wg1 := libunlynx.StartParallelize(len(ciphertextTuples))
+	for i := int64(0); i < int64(len(ciphertextTuples)); i++ {
 		go func(i int64) {
 			defer wg1.Done()
 			if !filled[i] {
 				tmp := &libunlynx.CipherText{}
 				if sigs != nil {
-					tmp, Cleartext_Tuple[i], Proofs_Tuple[i] = EncodeBit_ANDWithProof(false, pubKey, libdrynx.ReadColumn(sigs, int(i)),(*lu[i])[1], (*lu[i])[0])
+					tmp, cleartextTuples[i], proofsTuples[i] = EncodeBitANDWithProof(false, pubKey, libdrynx.ReadColumn(sigs, int(i)), (*lu[i])[1], (*lu[i])[0])
 				} else {
-					tmp, Cleartext_Tuple[i] = EncodeBit_AND(false, pubKey)
+					tmp, cleartextTuples[i] = EncodeBitAND(false, pubKey)
 				}
-				Ciphertext_Tuple[i] = *tmp
+				ciphertextTuples[i] = *tmp
 			}
 		}(i)
 	}
 	libunlynx.EndParallelize(wg1)
 
-	return Ciphertext_Tuple, Cleartext_Tuple, Proofs_Tuple
+	return ciphertextTuples, cleartextTuples, proofsTuples
 }
 
 //DecodeInter decodes the global intersection vector
 func DecodeInter(result []libunlynx.CipherText, secKey kyber.Scalar) []int64 {
-	output_vector := make([]int64, len(result))
+	outputVectors := make([]int64, len(result))
 	//decode the vector
 	wg := libunlynx.StartParallelize(len(result))
 	for i := int64(0); i < int64(len(result)); i++ {
 		go func(i int64) {
 			defer wg.Done()
-			bit_i := DecodeBit_AND(result[i], secKey)
+			bitI := DecodeBitAND(result[i], secKey)
 			//return the index of the rightmost 1-bit
-			if bit_i == true {
-				output_vector[i] = 1
+			if bitI == true {
+				outputVectors[i] = 1
 			} else {
-				output_vector[i] = 0
+				outputVectors[i] = 0
 			}
 		}(i)
 	}
 	libunlynx.EndParallelize(wg)
-	return output_vector
+	return outputVectors
 }
 
 // Unique returns a list of the unique elements from a list of int64

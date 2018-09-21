@@ -14,12 +14,12 @@ import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/network"
 	"github.com/fanliao/go-concurrentMap"
+	"github.com/lca1/drynx/lib"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/satori/go.uuid.v1"
-	"github.com/lca1/drynx/lib"
-	"github.com/dedis/onet/network"
 )
 
 type nodeTools struct {
@@ -34,8 +34,6 @@ var nodeToolsMap map[string]*nodeTools
 var testSQ libdrynx.SurveyQuery
 var sharedBMChannel chan map[string]int64
 var sharedBMChannelToTerminate chan struct{}
-
-
 
 //TestProofCollectionProtocol tests collective aggregation protocol
 func TestProofCollectionProtocol(t *testing.T) {

@@ -1,6 +1,5 @@
 package libdrynx
 
-
 //PublishAggregationProof is an aggregation proof
 type PublishAggregationProof struct {
 	DPsData        ResponseAllDPs

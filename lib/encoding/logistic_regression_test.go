@@ -3,8 +3,8 @@ package encoding_test
 import (
 	"github.com/cdipaolo/goml/base"
 	"github.com/cdipaolo/goml/linear"
-	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"gonum.org/v1/gonum/stat/combin"
 
@@ -12,8 +12,8 @@ import (
 	"math"
 	"testing"
 
-	"github.com/dedis/onet/log"
 	"github.com/dedis/kyber"
+	"github.com/dedis/onet/log"
 	"github.com/lca1/drynx/lib"
 )
 
@@ -614,7 +614,6 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 
 	initialWeights = []float64{0.1, 0.2, 0.3, 0.4, 0.5} // FindMinimumWeights modifies the initial weights...
 
-
 	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: N_64, NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
 		InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
 
@@ -677,7 +676,6 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 
 	initialWeights = []float64{0.1, 0.2, 0.3, 0.4, 0.5} // FindMinimumWeights modifies the initial weights...
 
-
 	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: N_64, NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
 		InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
 
@@ -709,7 +707,6 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 	}
 
 	//function call
-
 
 	resultEncrypted, clear, prf := encoding.EncodeLogisticRegressionWithProofs(data, lrParameters, pubKey, ps, ranges)
 	result := encoding.DecodeLogisticRegression(resultEncrypted, privKey, lrParameters)

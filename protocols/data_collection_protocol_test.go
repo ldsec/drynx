@@ -9,10 +9,10 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
-	"github.com/lca1/unlynx/lib"
-	"github.com/stretchr/testify/assert"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/protocols"
+	"github.com/lca1/unlynx/lib"
+	"github.com/stretchr/testify/assert"
 )
 
 func ChooseOperation(operationName string, queryMin, queryMax, d int, cuttingFactor int) libdrynx.Operation {
@@ -60,7 +60,7 @@ func ChooseOperation(operationName string, queryMin, queryMax, d int, cuttingFac
 	}
 
 	if cuttingFactor != 0 {
-		operation.NbrOutput = operation.NbrOutput*cuttingFactor
+		operation.NbrOutput = operation.NbrOutput * cuttingFactor
 	}
 
 	return operation

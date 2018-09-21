@@ -6,9 +6,9 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/unlynx/lib"
 )
 
 // API represents a client with the server to which he is connected and its public/private key pair.
@@ -80,7 +80,6 @@ func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToSer
 		ObfuscationProofThreshold:  thresholds[2],
 		KeySwitchingProofThreshold: thresholds[3],
 
-
 		// query statement
 		Query: libdrynx.Query{
 			Operation:   operation,
@@ -92,8 +91,8 @@ func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToSer
 			DPDataGen: dpDataGen,
 
 			// identity blockchain infos
-			IVSigs:    iVSigs,
-			RosterVNs: rosterVNs,
+			IVSigs:        iVSigs,
+			RosterVNs:     rosterVNs,
 			CuttingFactor: cuttingFactor,
 		},
 	}

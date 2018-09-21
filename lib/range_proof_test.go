@@ -1,10 +1,10 @@
 package libdrynx
 
 import (
-	"testing"
-	"github.com/lca1/unlynx/lib"
 	"github.com/dedis/kyber"
-	"github.com/dedis/onet/log"
+	"github.com/lca1/unlynx/lib"
+	"testing"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRangeProofVerification(t *testing.T) {
@@ -22,7 +22,6 @@ func TestRangeProofVerification(t *testing.T) {
 		encryption, r := libunlynx.EncryptIntGetR(P, int64(25))
 		publishArgs[i] = CreatePredicateRangeProof(sig[i], u, l, int64(25), r, P, *encryption)
 		//publishArgsFalse := lib.CreatePredicateRangeProof(sig[i],u,l,int64(65),P)
-		log.LLvl1(RangeProofVerification(publishArgs[i], u, l, []kyber.Point{sig[i].Public}, P))
 	}
 
 	publishArgs = make([]RangeProof, 5)
@@ -30,14 +29,11 @@ func TestRangeProofVerification(t *testing.T) {
 		encryption, _ := libunlynx.EncryptIntGetR(P, int64(25))
 		publishArgs[i] = CreatePredicateRangeProof(PublishSignature{}, 0, 0, 0, nil, nil, *encryption)
 		//publishArgsFalse := lib.CreatePredicateRangeProof(sig[i],u,l,int64(65),P)
-		log.LLvl1(RangeProofVerification(publishArgs[i], 0, 0, nil, nil))
+		assert.True(t,RangeProofVerification(publishArgs[i], 0, 0, nil, nil) )
 	}
 }
 
 func TestOptimizedRangeProofVerification(t *testing.T) {
-	//aScalar := libunlynx.SuiTe
-	//chimera := libunlynx.ChimeraSuite{}
-	log.LLvl1(libunlynx.SuiTe.String())
 	if !CurvePairingTest() {
 		t.Skip("no pairing")
 	}
@@ -62,12 +58,10 @@ func TestOptimizedRangeProofVerification(t *testing.T) {
 	tmpProof := RangeProof{}
 	tmpProof.FromBytes(publishArgsbytes)
 
-
 	ys := make([]kyber.Point, 5)
 	for i := 0; i < 5; i++ {
 		ys[i] = sig[i].Public
 	}
 
-	log.LLvl1(RangeProofVerification(publishArgs, u, l, ys, P))
-
+	assert.True(t, RangeProofVerification(publishArgs, u, l, ys, P))
 }

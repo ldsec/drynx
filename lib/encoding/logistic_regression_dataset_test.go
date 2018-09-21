@@ -9,8 +9,8 @@ import (
 	"github.com/cdipaolo/goml/linear"
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet/log"
-	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/unlynx/lib"
 )
 
 type MinimisationParameters struct {
@@ -70,7 +70,7 @@ func findMinimumWeights(X [][]float64, y []int64, k int, maxIterations int, step
 
 	// each data provider computes its approximation coefficients on its side and then sends them to its chosen server
 	N := len(X)
-	N_64 := int64(N)
+	N64 := int64(N)
 	approxCoefficients := make([][][]float64, N)
 	for i := range X {
 		approxCoefficients[i] = encoding.ComputeAllApproxCoefficients(X[i], y[i], k)
@@ -79,7 +79,7 @@ func findMinimumWeights(X [][]float64, y []int64, k int, maxIterations int, step
 
 	// the client computes the weights on its side
 	weights := encoding.FindMinimumWeights(aggregatedApproxCoefficients,
-		initialWeights, N_64,
+		initialWeights, N64,
 		lambda, step, maxIterations)
 
 	fmt.Println("weights 1", weights)
@@ -229,13 +229,11 @@ func predict(Xtrain [][]float64, ytrain []int64,
 	fmt.Println("AUC:      ", auc)
 	fmt.Println()
 
-
 	// compute the TPR (True Positive Rate) and FPR (False Positive Rate)
 	//tpr, fpr := encoding.ComputeTPRFPR(predictionsFloat, yTest)
 	// save to file (for plotting the ROC)
 	//encoding.SaveToFile(tpr, "../../data/tpr.txt")
 	//encoding.SaveToFile(fpr, "../../data/fpr.txt")
-
 
 	return accuracy, precision, recall, fscore, auc
 }
@@ -715,7 +713,6 @@ func TestPredictForPCSWithGoml(t *testing.T) {
 	predictGoml(X, y, ratio, parameters, 5, int64(5432109876))
 }
 
-
 func getParametersForLBW() (MinimisationParameters, float64, string, string, float64, float64, float64) {
 	k := 2
 	lambda := 1.0
@@ -749,8 +746,8 @@ func TestPredictForLBW(t *testing.T) {
 	initSeed := int64(5432109876)
 	X, y := encoding.LoadData("LBW", path)
 
-	predictWithRandomSplit(X, y,nil, ratio, parameters, preprocessing, precisionApproxCoefficients, precisionData,
-		precisionWeights,false, numberTrials, initSeed)
+	predictWithRandomSplit(X, y, nil, ratio, parameters, preprocessing, precisionApproxCoefficients, precisionData,
+		precisionWeights, false, numberTrials, initSeed)
 }
 
 func TestPredictForLBWWithGoml(t *testing.T) {

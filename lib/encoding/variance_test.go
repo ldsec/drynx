@@ -2,12 +2,12 @@ package encoding_test
 
 import (
 	"github.com/dedis/kyber"
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/drynx/lib/encoding"
-	"github.com/stretchr/testify/assert"
-	"testing"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/unlynx/lib"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 //TestEncodeDecodeVariance tests EncodeVariance and DecodeVariance
@@ -25,15 +25,15 @@ func TestEncodeDecodeVariance(t *testing.T) {
 	inputValues := []int64{0, 1, 2, -3, -44, 5, 6, -7, -8, 9, -120}
 
 	//expected results
-	sum_squares := int64(0)
+	sumSquares := int64(0)
 	sum := int64(0)
 	for _, el := range inputValues {
 		sum += el
-		sum_squares += el * el
+		sumSquares += el * el
 	}
 	N := int64(len(inputValues))
 	mean := float64(sum) / float64(N)
-	expect := float64(sum_squares)/float64(N) - mean*mean
+	expect := float64(sumSquares)/float64(N) - mean*mean
 	log.LLvl1(expect)
 	//function call
 	resultEncrypted, _ := encoding.EncodeVariance(inputValues, pubKey)
