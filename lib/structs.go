@@ -161,6 +161,7 @@ type PublishSignatureBytes struct { //need this because of G2 in protobuf not wo
 	Signature []byte      // A_i
 }
 
+// QueryDiffP contains diffP parameters for a query
 type QueryDiffP struct {
 	LapMean       float64
 	LapScale      float64
@@ -170,6 +171,7 @@ type QueryDiffP struct {
 	Limit         float64
 }
 
+// QueryDPDataGen contains the query information for the generation of data at DP
 type QueryDPDataGen struct {
 	GroupByValues   []int64 // the number of groups = len(GroupByValues); number of categories for each group GroupByValues[i]
 	GenerateRows    int64
@@ -177,12 +179,14 @@ type QueryDPDataGen struct {
 	GenerateDataMax int64
 }
 
+// QueryIVSigs contains parameters for input validation
 type QueryIVSigs struct {
 	InputValidationSigs  []*[]PublishSignatureBytes
 	InputValidationSize1 int
 	InputValidationSize2 int
 }
 
+// QuerySQL contains SQL parameters of the query
 type QuerySQL struct {
 	Select    []string
 	Where     []WhereQueryAttributeClear
@@ -213,6 +217,7 @@ type Query struct {
 	CuttingFactor int
 }
 
+// Operation defines the operation in the query
 type Operation struct {
 	NameOp       string
 	NbrInput     int
@@ -222,6 +227,7 @@ type Operation struct {
 	LRParameters LogisticRegressionParameters
 }
 
+// LogisticRegressionParameters are the parameters specific to logistic regression
 type LogisticRegressionParameters struct {
 	// logistic regression specific
 	FilePath           string
@@ -241,6 +247,7 @@ type LogisticRegressionParameters struct {
 	PrecisionApproxCoefficients float64
 }
 
+// SurveyQuery is the complete query
 type SurveyQuery struct {
 	SurveyID      string
 	RosterServers onet.Roster
@@ -258,18 +265,27 @@ type SurveyQuery struct {
 	KeySwitchingProofThreshold float64
 }
 
+// SurveyQueryToVN is the version of the query sent to the VNs
 type SurveyQueryToVN struct {
 	SQ SurveyQuery
 }
 
+// SurveyQueryToDP is the version of the query for the DPs
 type SurveyQueryToDP struct {
 	SQ   SurveyQuery
 	Root *network.ServerIdentity
 }
 
+// EndVerificationRequest is the request to wait until the end of the proofs' verification
+type EndVerificationRequest struct {
+	QueryInfoID string
+}
+
+// EndVerificationResponse is the response to a waiting on the vend of the verification
+type EndVerificationResponse struct{}
+
 //Data for Test Below
 //--------------------------------------------------------------------------------------------------------------------------------------------------
-
 //Some variables to create dataTest
 var secKey = bn256.NewSuiteG1().Scalar().Pick(random.New())
 var entityPub = bn256.NewSuiteG1().Point().Mul(secKey, bn256.NewSuiteG1().Point().Base())
@@ -379,6 +395,7 @@ func (rdog *ResponseDPOneGroup) ToBytes() ResponseDPOneGroupBytes {
 	return result
 }
 
+// FromBytes creates a ResponseDPOneGroup struct back from the bytes
 func (rdog *ResponseDPOneGroup) FromBytes(rdogb ResponseDPOneGroupBytes) {
 	tmp := libunlynx.NewCipherVector(int(rdogb.CVLength[0]))
 	tmp.FromBytes(rdogb.Data, int(rdogb.CVLength[0]))
@@ -401,6 +418,7 @@ func (rad *ResponseAllDPs) ToBytes() ResponseAllDPsBytes {
 	return result
 }
 
+// FromBytes construct the ResponseAllDPs struct back from the bytes
 func (rad *ResponseAllDPs) FromBytes(radb ResponseAllDPsBytes) {
 	rad.Data = make([]ResponseDPOneGroup, len(radb.Data))
 	wg := libunlynx.StartParallelize(len(radb.Data))
@@ -414,6 +432,7 @@ func (rad *ResponseAllDPs) FromBytes(radb ResponseAllDPsBytes) {
 	libunlynx.EndParallelize(wg)
 }
 
+// ConvertToAggregationStruct transforms ResponseAllDPs to a map
 func ConvertToAggregationStruct(dp ResponseAllDPs) map[libunlynx.GroupingKey]libunlynx.FilteredResponse {
 	convertedData := make(map[libunlynx.GroupingKey]libunlynx.FilteredResponse)
 	for _, val := range dp.Data {
@@ -428,6 +447,7 @@ func ConvertToAggregationStruct(dp ResponseAllDPs) map[libunlynx.GroupingKey]lib
 	return convertedData
 }
 
+// ConvertFromAggregationStruct transforms CothorityAggregatedData to ResponseAllDPs
 func ConvertFromAggregationStruct(cad CothorityAggregatedData) *ResponseAllDPs {
 	response := make([]ResponseDPOneGroup, 0)
 	for k, v := range cad.GroupedData {
@@ -507,13 +527,10 @@ func (sm *ShufflingMessage) FromBytes(data *[]byte, gacbLength, aabLength, pgaeb
 	}
 }
 
-
-
+// AddFiffP checks if differential privacy is required or not
 func AddDiffP(qdf QueryDiffP) bool {
 	return !(qdf.LapMean == 0.0 && qdf.LapScale == 0.0 && qdf.NoiseListSize == 0 && qdf.Quanta == 0.0 && qdf.Scale == 0 && qdf.Limit == 0)
 }
-
-
 
 func checkRangesZeros(ranges []*[]int64) bool {
 	for _, v := range ranges {
@@ -533,6 +550,7 @@ func checkRangesBits(ranges []*[]int64) bool {
 	return true
 }
 
+// CheckParameters checks that the query parameters make sens
 func CheckParameters(sq SurveyQuery, diffP bool) bool {
 	message := ""
 	result := true
@@ -622,8 +640,7 @@ func CheckParameters(sq SurveyQuery, diffP bool) bool {
 	return result
 }
 
-
-
+// QueryToProofsNbrs creates the number of required proofs from the query parameters
 func QueryToProofsNbrs(q SurveyQuery) []int {
 	nbrDPs := 0
 
@@ -658,13 +675,7 @@ func QueryToProofsNbrs(q SurveyQuery) []int {
 	return []int{prfRange, prfShuffling, prfAggr, prfObf, prfKS}
 }
 
-type EndVerificationRequest struct {
-	QueryInfoID string
-}
-
-type EndVerificationResponse struct{}
-
-//updateDB put in a given bucket the value as byte with given key.
+// UpdateDB put in a given bucket the value as byte with given key.
 func UpdateDB(db *bolt.DB, bucketName string, key string, value []byte) {
 	if err := db.Batch(func(tx *bolt.Tx) error {
 		//Bucket with SurveyID server Adress
@@ -684,6 +695,7 @@ func UpdateDB(db *bolt.DB, bucketName string, key string, value []byte) {
 	}
 }
 
+// ChooseOperation sets the parameters according to the operation
 func ChooseOperation(operationName string, queryMin, queryMax, d int, cuttingFactor int) Operation {
 	operation := Operation{}
 
