@@ -19,8 +19,8 @@ import (
 	"github.com/lca1/unlynx/protocols"
 )
 
-// ServiceName is the registered name for the lemal service.
-const ServiceName = "lemal"
+// ServiceName is the registered name for the drynx service.
+const ServiceName = "drynx"
 
 const gobFile = "pre_compute_multiplications.gob"
 
@@ -44,7 +44,7 @@ type Survey struct {
 
 func castToSurvey(object interface{}, err error) Survey {
 	if err != nil {
-		log.Fatal("[SERVICE] <LEMAL> Server, Error reading map")
+		log.Fatal("[SERVICE] <drynx> Server, Error reading map")
 	}
 	return object.(Survey)
 }
@@ -54,6 +54,7 @@ type DPqueryReceived struct {
 	SurveyID string
 }
 
+// SyncDCP used to synchronize the computing nodes
 type SyncDCP struct {
 	SurveyID string
 }
@@ -63,8 +64,8 @@ type DPdataFinished struct {
 	SurveyID string
 }
 
-// Service defines a service in unlynx with a survey.
-type ServiceLeMal struct {
+// Service defines a service in drynx with a survey.
+type ServiceDrynx struct {
 	*onet.ServiceProcessor
 
 	// ---- Computing Nodes ----
@@ -123,65 +124,65 @@ func init() {
 
 // NewService constructor which registers the needed messages.
 func NewService(c *onet.Context) (onet.Service, error) {
-	newUnLynxInstance := &ServiceLeMal{
+	newDrynxInstance := &ServiceDrynx{
 		ServiceProcessor: onet.NewServiceProcessor(c),
 		Survey:           concurrent.NewConcurrentMap(),
 		Mutex:            &sync.Mutex{},
 	}
 	var cerr error
-	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyQuery); cerr != nil {
-		log.Fatal("[SERVICE] <LEMAL> Server, Wrong Handler.", cerr)
+	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleSurveyQuery); cerr != nil {
+		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
 	}
-	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyQueryToDP); cerr != nil {
-		log.Fatal("[SERVICE] <LEMAL> Server, Wrong Handler.", cerr)
+	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleSurveyQueryToDP); cerr != nil {
+		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
 	}
-	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSurveyQueryToVN); cerr != nil {
-		log.Fatal("[SERVICE] <LEMAL> Server, Wrong Handler.", cerr)
+	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleSurveyQueryToVN); cerr != nil {
+		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
 	}
-	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleDPqueryReceived); cerr != nil {
-		log.Fatal("[SERVICE] <LEMAL> Server, Wrong Handler.", cerr)
+	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleDPqueryReceived); cerr != nil {
+		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
 	}
-	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleSyncDCP); cerr != nil {
-		log.Fatal("[SERVICE] <LEMAL> Server, Wrong Handler.", cerr)
+	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleSyncDCP); cerr != nil {
+		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
 	}
-	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleDPdataFinished); cerr != nil {
-		log.Fatal("[SERVICE] <LEMAL> Server, Wrong Handler.", cerr)
+	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleDPdataFinished); cerr != nil {
+		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
 	}
-	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleEndVerification); cerr != nil {
-		log.Fatal("[SERVICE] <LEMAL> Server, Wrong Handler.", cerr)
+	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleEndVerification); cerr != nil {
+		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
 	}
-	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleGetLatestBlock); cerr != nil {
-		log.Fatal("[SERVICE] <LEMAL> Server, Wrong Handler.", cerr)
+	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleGetLatestBlock); cerr != nil {
+		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
 	}
-	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleGetGenesis); cerr != nil {
-		log.Fatal("[SERVICE] <LEMAL> Server, Wrong Handler.", cerr)
+	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleGetGenesis); cerr != nil {
+		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
 	}
-	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleGetBlock); cerr != nil {
-		log.Fatal("[SERVICE] <LEMAL> Server, Wrong Handler.", cerr)
+	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleGetBlock); cerr != nil {
+		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
 	}
-	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleGetProofs); cerr != nil {
-		log.Fatal("[SERVICE] <LEMAL> Server, Wrong Handler.", cerr)
+	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleGetProofs); cerr != nil {
+		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
 	}
-	if cerr = newUnLynxInstance.RegisterHandler(newUnLynxInstance.HandleCloseDB); cerr != nil {
-		log.Fatal("[SERVICE] <LEMAL> Server, Wrong Handler.", cerr)
+	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleCloseDB); cerr != nil {
+		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
 	}
 
-	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgSurveyQuery)
-	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgSurveyQueryToDP)
-	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgDPqueryReceived)
-	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgSyncDCP)
-	c.RegisterProcessor(newUnLynxInstance, msgTypes.msgDPdataFinished)
+	c.RegisterProcessor(newDrynxInstance, msgTypes.msgSurveyQuery)
+	c.RegisterProcessor(newDrynxInstance, msgTypes.msgSurveyQueryToDP)
+	c.RegisterProcessor(newDrynxInstance, msgTypes.msgDPqueryReceived)
+	c.RegisterProcessor(newDrynxInstance, msgTypes.msgSyncDCP)
+	c.RegisterProcessor(newDrynxInstance, msgTypes.msgDPdataFinished)
 
 	//Register new verifFunction
-	if err := skipchain.RegisterVerification(c, VerifyBitmap, newUnLynxInstance.verifyFuncBitmap); err != nil {
+	if err := skipchain.RegisterVerification(c, VerifyBitmap, newDrynxInstance.verifyFuncBitmap); err != nil {
 		return nil, err
 	}
 
-	return newUnLynxInstance, cerr
+	return newDrynxInstance, cerr
 }
 
 // Process implements the processor interface and is used to recognize messages broadcasted between servers
-func (s *ServiceLeMal) Process(msg *network.Envelope) {
+func (s *ServiceDrynx) Process(msg *network.Envelope) {
 	if msg.MsgType.Equal(msgTypes.msgSurveyQuery) {
 		tmp := (msg.Msg).(*libdrynx.SurveyQuery)
 		s.HandleSurveyQuery(tmp)
@@ -204,7 +205,7 @@ func (s *ServiceLeMal) Process(msg *network.Envelope) {
 //______________________________________________________________________________________________________________________
 
 // HandleDPqueryReceived handles the channel that each server has to know when to proceed with data collection protocol
-func (s *ServiceLeMal) HandleDPqueryReceived(recq *DPqueryReceived) (network.Message, error) {
+func (s *ServiceDrynx) HandleDPqueryReceived(recq *DPqueryReceived) (network.Message, error) {
 	var el interface{}
 	el = nil
 	for el == nil {
@@ -221,8 +222,8 @@ func (s *ServiceLeMal) HandleDPqueryReceived(recq *DPqueryReceived) (network.Mes
 	return nil, nil
 }
 
-// HandleDPqueryReceived handles the channel that each server has to know when to proceed with data collection protocol
-func (s *ServiceLeMal) HandleSyncDCP(recq *SyncDCP) (network.Message, error) {
+// HandleSyncDCP handles the messages to synchronize between computing nodes
+func (s *ServiceDrynx) HandleSyncDCP(recq *SyncDCP) (network.Message, error) {
 	var el interface{}
 	el = nil
 	for el == nil {
@@ -240,7 +241,7 @@ func (s *ServiceLeMal) HandleSyncDCP(recq *SyncDCP) (network.Message, error) {
 }
 
 // HandleDPdataFinished handles the channel that each server has to know when to proceed with the collective aggregation
-func (s *ServiceLeMal) HandleDPdataFinished(recq *DPdataFinished) (network.Message, error) {
+func (s *ServiceDrynx) HandleDPdataFinished(recq *DPdataFinished) (network.Message, error) {
 	var el interface{}
 	el = nil
 	for el == nil {
@@ -258,9 +259,9 @@ func (s *ServiceLeMal) HandleDPdataFinished(recq *DPdataFinished) (network.Messa
 }
 
 // HandleSurveyQuery handles the reception of a survey creation query by instantiating the corresponding survey.
-func (s *ServiceLeMal) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Message, error) {
+func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Message, error) {
 
-	log.Lvl2("[SERVICE] <LEMAL> Server", s.ServerIdentity().String(), "received a Survey Query")
+	log.Lvl2("[SERVICE] <drynx> Server", s.ServerIdentity().String(), "received a Survey Query")
 
 	recq.Query.IVSigs.InputValidationSigs = recreateRangeSignatures(recq.Query.IVSigs)
 
@@ -300,7 +301,7 @@ func (s *ServiceLeMal) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 		// to other computing servers
 		err := libunlynx.SendISMOthers(s.ServiceProcessor, &recq.RosterServers, recq)
 		if err != nil {
-			log.Error("[SERVICE] <LEMAL> Server, broadcasting [SurveyQuery] error ", err)
+			log.Error("[SERVICE] <drynx> Server, broadcasting [SurveyQuery] error ", err)
 		}
 		recq.IntraMessage = false
 	}
@@ -310,18 +311,18 @@ func (s *ServiceLeMal) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	if listDPs != nil {
 		err := libunlynx.SendISMOthers(s.ServiceProcessor, listDPs, &libdrynx.SurveyQueryToDP{SQ: *recq, Root: s.ServerIdentity()})
 		if err != nil {
-			log.Error("[SERVICE] <LEMAL> Server, broadcasting [SurveyQuery] error ", err)
+			log.Error("[SERVICE] <drynx> Server, broadcasting [SurveyQuery] error ", err)
 		}
 	}
 
 	// DRO Phase
 	if recq.IntraMessage == false {
 		go func() {
-			//diffPTimer := libunlynx.StartTimer(s.ServerIdentity().String() + "_DiffPPhase")
+			//diffPTimer := libDrynx.StartTimer(s.ServerIdentity().String() + "_DiffPPhase")
 			if libdrynx.AddDiffP(castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.Query.DiffP) {
 				s.DROPhase(castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.SurveyID)
 			}
-			//libunlynx.EndTimer(diffPTimer)
+			//libDrynx.EndTimer(diffPTimer)
 		}()
 	}
 
@@ -338,7 +339,7 @@ func (s *ServiceLeMal) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	// signal other nodes that the data provider(s) already sent their data (response)
 	err := libunlynx.SendISMOthers(s.ServiceProcessor, &recq.RosterServers, &SyncDCP{recq.SurveyID})
 	if err != nil {
-		log.Error("[SERVICE] <LEMAL> Server, broadcasting [syncDCPChannel] error ", err)
+		log.Error("[SERVICE] <drynx> Server, broadcasting [syncDCPChannel] error ", err)
 	}
 
 	counter := len(recq.RosterServers.List) - 1
@@ -351,7 +352,7 @@ func (s *ServiceLeMal) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	if listDPs != nil {
 		// servers contact their DPs to get their response
 		if err := s.DataCollectionPhase(recq.SurveyID); err != nil {
-			log.Error("[SERVICE] <LEMAL> Server, data collection error", err)
+			log.Error("[SERVICE] <drynx> Server, data collection error", err)
 		}
 		libunlynx.EndTimer(startDataCollectionProtocol)
 
@@ -361,24 +362,24 @@ func (s *ServiceLeMal) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	// signal other nodes that the data provider(s) already sent their data (response)
 	err = libunlynx.SendISMOthers(s.ServiceProcessor, &recq.RosterServers, &DPdataFinished{recq.SurveyID})
 	if err != nil {
-		log.Error("[SERVICE] <LEMAL> Server, broadcasting [DPdataFinished] error ", err)
+		log.Error("[SERVICE] <drynx> Server, broadcasting [DPdataFinished] error ", err)
 	}
 
 	counter = len(recq.RosterServers.List) - 1
 	for counter > 0 {
-		log.Lvl2("[SERVICE] <LEMAL> Server", s.ServerIdentity(), "is waiting for", counter, "servers to finish collecting their data")
+		log.Lvl2("[SERVICE] <drynx> Server", s.ServerIdentity(), "is waiting for", counter, "servers to finish collecting their data")
 		counter = counter - (<-castToSurvey(s.Survey.Get(recq.SurveyID)).DPdataChannel)
 	}
-	log.Lvl2("[SERVICE] <LEMAL> Server", s.ServerIdentity(), "- all data providers have sent their data")
+	log.Lvl2("[SERVICE] <drynx> Server", s.ServerIdentity(), "- all data providers have sent their data")
 
-	//libunlynx.EndTimer(startWaitTimeDPs)
+	//libDrynx.EndTimer(startWaitTimeDPs)
 
 	// ready to start the collective aggregation & key switching protocol
 	if recq.IntraMessage == false {
 		startJustExecution := libunlynx.StartTimer("JustExecution")
 		s.StartService(recq.SurveyID)
 
-		log.Lvl2("[SERVICE] <LEMAL> Server", s.ServerIdentity(), " completed the query processing...")
+		log.Lvl2("[SERVICE] <drynx> Server", s.ServerIdentity(), " completed the query processing...")
 
 		survey := castToSurvey(s.Survey.Get(recq.SurveyID))
 		result := survey.QueryResponseState
@@ -393,7 +394,7 @@ func (s *ServiceLeMal) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 //______________________________________________________________________________________________________________________
 
 // NewProtocol creates a protocol instance executed by all nodes
-func (s *ServiceLeMal) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfig) (onet.ProtocolInstance, error) {
+func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfig) (onet.ProtocolInstance, error) {
 	tn.SetConfig(conf)
 
 	var pi onet.ProtocolInstance
@@ -436,7 +437,7 @@ func (s *ServiceLeMal) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 
 		if survey.SurveyQuery.Query.Proofs != 0 {
 			go func() {
-				log.Lvl2("SERVICE] <LEMAL> Server", s.ServerIdentity(), "creates local aggregation proof")
+				log.Lvl2("SERVICE] <drynx> Server", s.ServerIdentity(), "creates local aggregation proof")
 				resultAggrLocal := libdrynx.ResponseAllDPs{}
 				for i, v := range groupedData {
 					resultAggrLocal.Data = append(resultAggrLocal.Data, libdrynx.ResponseDPOneGroup{Group: string(i), Data: v.AggregatingAttributes})
@@ -474,7 +475,7 @@ func (s *ServiceLeMal) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 
 	case protocolsunlynx.DROProtocolName:
 		survey := castToSurvey(s.Survey.Get(target))
-		log.Lvl2("SERVICE] <LEMAL> Server", s.ServerIdentity(), " Servers collectively add noise for differential privacy")
+		log.Lvl2("SERVICE] <drynx> Server", s.ServerIdentity(), " Servers collectively add noise for differential privacy")
 		pi, err := protocols.NewShufflingProtocol(tn)
 		if err != nil {
 			return nil, err
@@ -533,7 +534,7 @@ func (s *ServiceLeMal) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 }
 
 // StartProtocol starts a specific protocol
-func (s *ServiceLeMal) StartProtocol(name string, targetSurvey string) (onet.ProtocolInstance, error) {
+func (s *ServiceDrynx) StartProtocol(name string, targetSurvey string) (onet.ProtocolInstance, error) {
 	// this generates the PIs of proof collection to be run inside the protocols
 	tmp := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 
@@ -565,26 +566,26 @@ func (s *ServiceLeMal) StartProtocol(name string, targetSurvey string) (onet.Pro
 //______________________________________________________________________________________________________________________
 
 // StartService starts the service (with all its different steps/protocols)
-func (s *ServiceLeMal) StartService(targetSurvey string) error {
-	log.Lvl2("SERVICE] <LEMAL> Server", s.ServerIdentity(), " starts a collective aggregation, (differential privacy) & key switching for survey ", targetSurvey)
+func (s *ServiceDrynx) StartService(targetSurvey string) error {
+	log.Lvl2("SERVICE] <drynx> Server", s.ServerIdentity(), " starts a collective aggregation, (differential privacy) & key switching for survey ", targetSurvey)
 
 	target := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 
 	// Aggregation Phase
-	//aggregationTimer := libunlynx.StartTimer(s.ServerIdentity().String() + "_AggregationPhase")
+	//aggregationTimer := libDrynx.StartTimer(s.ServerIdentity().String() + "_AggregationPhase")
 	err := s.AggregationPhase(target.SurveyQuery.SurveyID)
 	if err != nil {
 		log.Fatal("Error in the Aggregation Phase")
 	}
-	//libunlynx.EndTimer(aggregationTimer)
+	//libDrynx.EndTimer(aggregationTimer)
 
 	if target.SurveyQuery.Query.Obfuscation {
-		//obfuscationTimer := libunlynx.StartTimer(s.ServerIdentity().String() + "_ObfuscationPhase")
+		//obfuscationTimer := libDrynx.StartTimer(s.ServerIdentity().String() + "_ObfuscationPhase")
 		err := s.ObfuscationPhase(target.SurveyQuery.SurveyID)
 		if err != nil {
 			log.Fatal("Error in the Obfuscation Phase")
 		}
-		//libunlynx.EndTimer(obfuscationTimer)
+		//libDrynx.EndTimer(obfuscationTimer)
 	}
 
 	// DRO Phase
@@ -593,17 +594,17 @@ func (s *ServiceLeMal) StartService(targetSurvey string) error {
 	}
 
 	// Key Switch Phase
-	//keySwitchTimer := libunlynx.StartTimer(s.ServerIdentity().String() + "_KeySwitchingPhase")
+	//keySwitchTimer := libDrynx.StartTimer(s.ServerIdentity().String() + "_KeySwitchingPhase")
 	err = s.KeySwitchingPhase(target.SurveyQuery.SurveyID)
 	if err != nil {
 		log.Fatal("Error in the Key Switching Phase")
 	}
-	//libunlynx.EndTimer(keySwitchTimer)
+	//libDrynx.EndTimer(keySwitchTimer)
 
 	return nil
 }
 
-func (s *ServiceLeMal) DataCollectionPhase(targetSurvey string) error {
+func (s *ServiceDrynx) DataCollectionPhase(targetSurvey string) error {
 	pi, err := s.StartProtocol(protocols.DataCollectionProtocolName, targetSurvey)
 	if err != nil {
 		return err
@@ -625,7 +626,7 @@ func (s *ServiceLeMal) DataCollectionPhase(targetSurvey string) error {
 }
 
 // AggregationPhase performs the per-group aggregation on the currently grouped data.
-func (s *ServiceLeMal) AggregationPhase(targetSurvey string) error {
+func (s *ServiceDrynx) AggregationPhase(targetSurvey string) error {
 	pi, err := s.StartProtocol(protocols.CollectiveAggregationProtocolName, targetSurvey)
 	if err != nil {
 		return err
@@ -640,7 +641,7 @@ func (s *ServiceLeMal) AggregationPhase(targetSurvey string) error {
 }
 
 // ObfuscationPhase performs the obfuscation phase (multiply the aggregated data by a random value from each server)
-func (s *ServiceLeMal) ObfuscationPhase(targetSurvey string) error {
+func (s *ServiceDrynx) ObfuscationPhase(targetSurvey string) error {
 	pi, err := s.StartProtocol(protocols.ObfuscationProtocolName, targetSurvey)
 	if err != nil {
 		return err
@@ -654,7 +655,7 @@ func (s *ServiceLeMal) ObfuscationPhase(targetSurvey string) error {
 }
 
 // DROPhase shuffles the list of noise values.
-func (s *ServiceLeMal) DROPhase(targetSurvey string) error {
+func (s *ServiceDrynx) DROPhase(targetSurvey string) error {
 	pi, err := s.StartProtocol(protocolsunlynx.DROProtocolName, targetSurvey)
 	if err != nil {
 		return err
@@ -674,7 +675,7 @@ func (s *ServiceLeMal) DROPhase(targetSurvey string) error {
 }
 
 // KeySwitchingPhase performs the switch to the querier's key on the currently aggregated data.
-func (s *ServiceLeMal) KeySwitchingPhase(targetSurvey string) error {
+func (s *ServiceDrynx) KeySwitchingPhase(targetSurvey string) error {
 	pi, err := s.StartProtocol(protocols.KeySwitchingProtocolName, targetSurvey)
 	if err != nil {
 		return err
@@ -690,7 +691,7 @@ func (s *ServiceLeMal) KeySwitchingPhase(targetSurvey string) error {
 // Support Functions
 //______________________________________________________________________________________________________________________
 
-// these first four functions are used to adapat the existing protocols to the 'lemal' service structs
+// these first four functions are used to adapat the existing protocols to the 'drynx' service structs
 func convertToCipherVector(ad *libdrynx.ResponseAllDPs) *libunlynx.CipherVector {
 	cv := make(libunlynx.CipherVector, 0)
 	for _, response := range ad.Data {

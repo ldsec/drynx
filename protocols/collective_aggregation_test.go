@@ -25,7 +25,6 @@ var groupingAttrBkey = libunlynx.GroupingKey("B") //groupingAttrB.Key()
 var groupingAttrC = libunlynx.DeterministCipherVector{grpattr1, grpattr2}
 var groupingAttrCkey = libunlynx.GroupingKey("C") //groupingAttrC.Key()
 
-//var obfuscation = true
 
 //TestCollectiveAggregation tests collective aggregation protocol
 func TestCollectiveAggregation(t *testing.T) {

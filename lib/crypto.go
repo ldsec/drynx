@@ -3,7 +3,6 @@ package libdrynx
 import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 )
 
@@ -30,7 +29,6 @@ func NewKeySwitching(targetPubKey kyber.Point, rbs []kyber.Point, secretKey kybe
 			vi := libunlynx.SuiTe.Scalar().Pick(random.New())
 			(*cv)[i].K = libunlynx.SuiTe.Point().Mul(vi, libunlynx.SuiTe.Point().Base())
 			rbNeg := libunlynx.SuiTe.Point().Neg(rbs[i])
-			log.LLvl1(secretKey.String())
 			rbkNeg := libunlynx.SuiTe.Point().Mul(secretKey, rbNeg)
 			viNewK := libunlynx.SuiTe.Point().Mul(vi, targetPubKey)
 			(*cv)[i].C = libunlynx.SuiTe.Point().Add(rbkNeg, viNewK)

@@ -24,7 +24,8 @@ var VerificationBitmap = []skipchain.VerifierID{VerifyBitmap, skipchain.VerifyBa
 // Query Handlers
 //______________________________________________________________________________________________________________________
 
-func (s *ServiceLeMal) HandleSurveyQueryToVN(recq *libdrynx.SurveyQueryToVN) (network.Message, error) {
+// HandleSurveyQueryToVN handles the reception of the query at a VN
+func (s *ServiceDrynx) HandleSurveyQueryToVN(recq *libdrynx.SurveyQueryToVN) (network.Message, error) {
 
 	recq.SQ.Query.IVSigs.InputValidationSigs = recreateRangeSignatures(recq.SQ.Query.IVSigs)
 
@@ -151,13 +152,15 @@ func (s *ServiceLeMal) HandleSurveyQueryToVN(recq *libdrynx.SurveyQueryToVN) (ne
 	return nil, nil
 }
 
-func (s *ServiceLeMal) HandleEndVerification(msg *libdrynx.EndVerificationRequest) (network.Message, error) {
+// HandleEndVerification handles the reception of an end verification request
+func (s *ServiceDrynx) HandleEndVerification(msg *libdrynx.EndVerificationRequest) (network.Message, error) {
 	//block until all verification of the proofs is done (and of course inserted in the skipchain)
 	sb := <-protocols.CastToQueryInfo(s.Request.Get(msg.QueryInfoID)).EndVerificationChannel
 	return &libdrynx.Reply{Latest: &sb}, nil
 }
 
-func (s *ServiceLeMal) HandleGetGenesis(request *libdrynx.GetGenesis) (network.Message, error) {
+// HandleGetGenesis handles the reception of a genesis block request
+func (s *ServiceDrynx) HandleGetGenesis(request *libdrynx.GetGenesis) (network.Message, error) {
 
 	genesisBytes := make([]byte, 0)
 	err := s.DB.View(func(tx *bolt.Tx) error {
@@ -178,7 +181,8 @@ func (s *ServiceLeMal) HandleGetGenesis(request *libdrynx.GetGenesis) (network.M
 
 }
 
-func (s *ServiceLeMal) HandleGetLatestBlock(request *libdrynx.GetLatestBlock) (network.Message, error) {
+// HandleGetLatestBlock handles the last block request reception
+func (s *ServiceDrynx) HandleGetLatestBlock(request *libdrynx.GetLatestBlock) (network.Message, error) {
 	timeGet := libunlynx.StartTimer("GetBlock")
 	chain, err := s.Skipchain.GetUpdateChain(request.Roster, request.Sb.Hash)
 	libunlynx.EndTimer(timeGet)
@@ -189,7 +193,8 @@ func (s *ServiceLeMal) HandleGetLatestBlock(request *libdrynx.GetLatestBlock) (n
 	return &libdrynx.Reply{Latest: chain.Update[len(chain.Update)-1]}, nil
 }
 
-func (s *ServiceLeMal) HandleGetBlock(request *libdrynx.GetBlock) (network.Message, error) {
+// HandleGetBlock handles the request for a block
+func (s *ServiceDrynx) HandleGetBlock(request *libdrynx.GetBlock) (network.Message, error) {
 	blockID := skipchain.SkipBlockID{}
 
 	if s.DB == nil {
@@ -222,7 +227,7 @@ func (s *ServiceLeMal) HandleGetBlock(request *libdrynx.GetBlock) (network.Messa
 
 //HandleGetProofs handle the request to send back proof for a given query ID
 //It is sent as a key,value (string,[]byte)
-func (s *ServiceLeMal) HandleGetProofs(request *libdrynx.GetProofs) (network.Message, error) {
+func (s *ServiceDrynx) HandleGetProofs(request *libdrynx.GetProofs) (network.Message, error) {
 	//Open the DB if it is not open
 	timeGetProof := libunlynx.StartTimer(s.ServerIdentity().String() + "_GetProofs")
 	if s.DB == nil {
@@ -304,7 +309,8 @@ func (s *ServiceLeMal) HandleGetProofs(request *libdrynx.GetProofs) (network.Mes
 	return &libdrynx.ProofsAsMap{Proofs: result}, nil
 }
 
-func (s *ServiceLeMal) HandleCloseDB(request *libdrynx.CloseDB) (network.Message, error) {
+// HandleCloseDB handles the request to close database
+func (s *ServiceDrynx) HandleCloseDB(request *libdrynx.CloseDB) (network.Message, error) {
 	if s.DB != nil {
 		log.Lvl2("Closing DB")
 
@@ -328,7 +334,8 @@ func (s *ServiceLeMal) HandleCloseDB(request *libdrynx.CloseDB) (network.Message
 // Protocol Handlers
 //______________________________________________________________________________________________________________________
 
-func (s *ServiceLeMal) NewProofCollectionProtocolInstance(tn *onet.TreeNodeInstance, target string) (onet.ProtocolInstance, error) {
+// NewProofCollectionProtocolInstance creates a proof collection protocol
+func (s *ServiceDrynx) NewProofCollectionProtocolInstance(tn *onet.TreeNodeInstance, target string) (onet.ProtocolInstance, error) {
 	pi, err := protocols.NewProofCollectionProtocol(tn)
 	if err != nil {
 		return nil, err
@@ -355,8 +362,8 @@ func (s *ServiceLeMal) NewProofCollectionProtocolInstance(tn *onet.TreeNodeInsta
 	return pi, nil
 }
 
-// createProofCollectionPIs create a set of ProofCollection protocol instances to be used in the protocols: Aggregation, Shuffle, ...
-func (s *ServiceLeMal) CreateProofCollectionPIs(tree *onet.Tree, targetSurvey, name string) onet.ProtocolInstance {
+// CreateProofCollectionPIs create a set of ProofCollection protocol instances to be used in the protocols: Aggregation, Shuffle, ...
+func (s *ServiceDrynx) CreateProofCollectionPIs(tree *onet.Tree, targetSurvey, name string) onet.ProtocolInstance {
 	var tn *onet.TreeNodeInstance
 	tn = s.NewTreeNodeInstance(tree, tree.Root, protocols.ProofCollectionProtocolName)
 
@@ -374,7 +381,7 @@ func (s *ServiceLeMal) CreateProofCollectionPIs(tree *onet.Tree, targetSurvey, n
 //______________________________________________________________________________________________________________________
 
 //verifyFuncBitmap is used in the Lemal framework to verify if a block's data is correct or not.
-func (s *ServiceLeMal) verifyFuncBitmap(newID []byte, newSB *skipchain.SkipBlock) bool {
+func (s *ServiceDrynx) verifyFuncBitmap(newID []byte, newSB *skipchain.SkipBlock) bool {
 
 	//Get data of the newBlock
 	_, msg, err := network.Unmarshal(newSB.Data, libunlynx.SuiTe)
@@ -427,7 +434,7 @@ func generateProofCollectionRoster(root *network.ServerIdentity, rosterVNs *onet
 	return onet.NewRoster(roster)
 }
 
-func (s *ServiceLeMal) generateMapPIs(query *libdrynx.SurveyQuery) map[string]onet.ProtocolInstance {
+func (s *ServiceDrynx) generateMapPIs(query *libdrynx.SurveyQuery) map[string]onet.ProtocolInstance {
 	mapPIs := make(map[string]onet.ProtocolInstance)
 
 	tree := generateProofCollectionRoster(s.ServerIdentity(), query.Query.RosterVNs).GenerateStar()
@@ -461,6 +468,7 @@ func OpenDB(path string) (*bolt.DB, error) {
 	return db, nil
 }
 
+// CreateProofSkipchain creates the skipchain
 func CreateProofSkipchain(sk *skipchain.Client, roster *onet.Roster, dataBytes []byte) (*skipchain.SkipBlock, error) {
 	timeGenesis := libunlynx.StartTimer("Genesis")
 	root, err := sk.CreateGenesis(roster, 1, 1, VerificationBitmap, dataBytes, nil)
@@ -471,6 +479,7 @@ func CreateProofSkipchain(sk *skipchain.Client, roster *onet.Roster, dataBytes [
 	return root, nil
 }
 
+// AppendProofSkipchain appends a new block to the chain
 func AppendProofSkipchain(sk *skipchain.Client, roster *onet.Roster, dataBytes []byte, sb *skipchain.SkipBlock, surveyID string) (*skipchain.SkipBlock, error) {
 	timeAppendBlock := libunlynx.StartTimer("AppendBlock")
 	//Get the chain

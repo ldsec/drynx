@@ -32,27 +32,27 @@ func init() {
 // Messages
 //______________________________________________________________________________________________________________________
 
-// ObfuscationDownMessage message sent to trigger an aggregation protocol.
+// ObfuscationDownMessage message sent to trigger an obfuscation protocol.
 type ObfuscationDownMessage struct {
 	Data libunlynx.CipherVector
 }
 
-// ChildAggregatedDataMessage contains one node's aggregated data.
+// ObfuscationUpMessage message sent up the tree to execute obfuscation protocol.
 type ObfuscationUpMessage struct {
 	ChildData libunlynx.CipherVector
 }
 
-// ObfuscationUpBytesMessage is ChildAggregatedDataMessage in bytes.
+// ObfuscationUpBytesMessage is ObfuscationUpMessage in bytes.
 type ObfuscationUpBytesMessage struct {
 	Data []byte
 }
 
-// ObfuscationUpBytesMessage is ChildAggregatedDataMessage in bytes.
+// ObfuscationDownBytesMessage is ObfuscationDownMessage in bytes.
 type ObfuscationDownBytesMessage struct {
 	Data []byte
 }
 
-// CADBLengthMessage is a message containing the lengths to read a shuffling message in bytes
+// ObfuscationLengthMessage is a message containing the length of a message in bytes
 type ObfuscationLengthMessage struct {
 	Length int
 }
@@ -60,35 +60,46 @@ type ObfuscationLengthMessage struct {
 // Structs
 //______________________________________________________________________________________________________________________
 
+// ObfuscationDownStruct struct used to send message down the tree
 type ObfuscationDownStruct struct {
 	*onet.TreeNode
 	ObfuscationDownMessage
 }
 
+// ObfuscationDownBytesStruct is ObfuscationDownStruct in bytes
 type ObfuscationDownBytesStruct struct {
 	*onet.TreeNode
 	ObfuscationDownBytesMessage
 }
 
+// ObfuscationUpStruct struct used to send message up the tree
 type ObfuscationUpStruct struct {
 	*onet.TreeNode
 	ObfuscationUpMessage
 }
 
+// ObfuscationUpBytesStruct is ObfuscationUpStruct in bytes
 type ObfuscationUpBytesStruct struct {
 	*onet.TreeNode
 	ObfuscationUpBytesMessage
 }
 
+// ObfuscationLengthStruct struct to send Length message
 type ObfuscationLengthStruct struct {
 	*onet.TreeNode
 	ObfuscationLengthMessage
 }
 
+// PrepareObfuscationProof struct containing information used to create an obfuscation proof
+type PrepareObfuscationProof struct {
+	C, Co libunlynx.CipherText
+	S     kyber.Scalar
+}
+
 // Protocol
 //______________________________________________________________________________________________________________________
 
-// CollectiveAggregationProtocol performs an aggregation of the data held by every node in the cothority.
+// ObfuscationProtocol performs an obfuscation of the data held by a node in the cothority.
 type ObfuscationProtocol struct {
 	*onet.TreeNodeInstance
 
@@ -109,7 +120,7 @@ type ObfuscationProtocol struct {
 	MapPIs map[string]onet.ProtocolInstance
 }
 
-// NewCollectiveAggregationProtocol initializes the protocol instance.
+// NewObfuscationProtocol initializes the protocol instance.
 func NewObfuscationProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	pop := &ObfuscationProtocol{
 		TreeNodeInstance: n,
@@ -153,11 +164,11 @@ func (p *ObfuscationProtocol) Start() error {
 func (p *ObfuscationProtocol) Dispatch() error {
 	defer p.Done()
 
-	// 1. Aggregation announcement phase
+	// 1. Obfuscation announcement phase
 	if !p.IsRoot() {
 		p.obfuscationAnnouncementPhase()
 	}
-	// 2. Ascending aggregation phase
+	// 2. Ascending obfuscation phase
 	obfuscatededData := p.ascendingObfuscationPhase()
 	log.Lvl2("[OBFUSCATION PROTOCOL] <LEMAL> Server", p.ServerIdentity(), " completed obfuscation phase (", len(obfuscatededData), "group(s) )")
 
@@ -181,11 +192,6 @@ func (p *ObfuscationProtocol) obfuscationAnnouncementPhase() {
 		p.SendToChildren(&ObfuscationLengthMessage{Length: lengthMessage[0].Length})
 		p.SendToChildren(&ObfuscationDownBytesMessage{Data: dataReferenceMessage.Data})
 	}
-}
-
-type PrepareObfuscationProof struct {
-	C, Co libunlynx.CipherText
-	S     kyber.Scalar
 }
 
 // Results pushing up the tree containing aggregation results.

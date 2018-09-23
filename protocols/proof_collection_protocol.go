@@ -38,6 +38,7 @@ type ProofCollectionMessage struct {
 	SB     *skipchain.SkipBlock
 }
 
+// BitmapCollectionMessage message used to collect the bitmap information
 type BitmapCollectionMessage struct {
 	Bitmap map[string]int64
 	ID     string
@@ -46,6 +47,7 @@ type BitmapCollectionMessage struct {
 	sbHash skipchain.SkipBlockID
 }
 
+// ReplyPCMessage bitmap message
 type ReplyPCMessage struct {
 	Bitmap map[string]int64
 	SB     *skipchain.SkipBlock
@@ -54,6 +56,7 @@ type ReplyPCMessage struct {
 // Structs
 //______________________________________________________________________________________________________________________
 
+// AnnouncementPCStruct struct to send AnnouncementPCMessage message
 type AnnouncementPCStruct struct {
 	*onet.TreeNode
 	AnnouncementPCMessage
@@ -65,6 +68,7 @@ type ProofCollectionStruct struct {
 	ProofCollectionMessage
 }
 
+// BitmapCollectionStruct is the wrapper of BitmapCollectionStruct to be used in a channel
 type BitmapCollectionStruct struct {
 	*onet.TreeNode
 	BitmapCollectionMessage
@@ -107,7 +111,7 @@ type ProofCollectionProtocol struct {
 	SQ libdrynx.SurveyQuery
 }
 
-//CastToQueryInfo get in the concurrent map the queryInfo
+// CastToQueryInfo get in the concurrent map the queryInfo
 func CastToQueryInfo(object interface{}, err error) *libdrynx.QueryInfo {
 	if err != nil {
 		log.Fatal("Error reading map")

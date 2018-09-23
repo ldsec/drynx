@@ -1,4 +1,4 @@
-Simulation = "ServiceLeMal"
+Simulation = "ServiceDrynx"
 Servers = 13
 Bf = 2
 Suite = "bn256.g1"
@@ -12,7 +12,3 @@ RunWait = "2h"
 Hosts, NbrServers, NbrVNs, NbrDPs, NbrDPsPerServer, Proofs, Ranges, Obfuscation, OperationName, NbrInput, NbrOutput, DiffPEpsilon, DiffPDelta, DiffPSize, DiffPQuanta, DiffPScale, DiffPLimit, DPRows, MinData, MaxData, ThresholdGeneral, ThresholdOther, CuttingFactor
 19, 6, 7, 6, 1, 1, 99, false, "variance", 1, 3, 0.0, 0.0, 0, 0.0, 0.0, 0.0, 1, 1, 2, 1.0, 0.3, 0
 26, 6, 14, 6, 1, 1, 99, false, "variance", 1, 3, 0.0, 0.0, 0, 0.0, 0.0, 0.0, 1, 1, 2, 1.0, 0.3, 0
-33, 6, 21, 6, 1, 1, 99, false, "variance", 1, 3, 0.0, 0.0, 0, 0.0, 0.0, 0.0, 1, 1, 2, 1.0, 0.3, 0
-40, 6, 28, 6, 1, 1, 99, false, "variance", 1, 3, 0.0, 0.0, 0, 0.0, 0.0, 0.0, 1, 1, 2, 1.0, 0.3, 0
-47, 6, 35, 6, 1, 1, 99, false, "variance", 1, 3, 0.0, 0.0, 0, 0.0, 0.0, 0.0, 1, 1, 2, 1.0, 0.3, 0
-54, 6, 42, 6, 1, 1, 99, false, "variance", 1, 3, 0.0, 0.0, 0, 0.0, 0.0, 0.0, 1, 1, 2, 1.0, 0.3, 0

@@ -52,6 +52,7 @@ type SurveyToDP struct {
 	Query libdrynx.Query // the query must be added to each node before the protocol can start
 }
 
+// AnnouncementDCStruct announcement message
 type AnnouncementDCStruct struct {
 	*onet.TreeNode
 	AnnouncementDCMessage
@@ -169,6 +170,7 @@ func (p *DataCollectionProtocol) Dispatch() error {
 // Support Functions
 //______________________________________________________________________________________________________________________
 
+// GenerateData is used to generate data at DPs, this is more for simulation's purposes
 func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error) {
 
 	// Prepare the generation of all possible groups with the query information.

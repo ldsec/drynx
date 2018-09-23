@@ -1,4 +1,4 @@
-// Package protocolsunlynx contains the shuffling protocol which permits to rerandomize and shuffle a list of DP responses.
+// Shuffling protocol which permits to rerandomize and shuffle a list of DP responses.
 // The El-Gamal encrypted DP response should be encrypted by the collective public key of the cothority.
 // In that case, each cothority server (node) can  homomorphically rerandomize and shuffle the DP responses.
 // This is done by creating a circuit between the servers. The DP response is sent through this circuit and
@@ -42,12 +42,6 @@ type SBLengthMessage struct {
 
 // Structs
 //______________________________________________________________________________________________________________________
-
-// ShufflingStruct contains a shuffling message
-type shufflingStruct struct {
-	*onet.TreeNode
-	libdrynx.ShufflingMessage
-}
 
 // ShufflingBytesStruct contains a shuffling message in bytes
 type shufflingBytesStruct struct {

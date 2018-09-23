@@ -12,9 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//var obfuscation = true
-
-//TestCollectiveAggregation tests collective aggregation protocol
+//TestObfuscation tests collective obfuscation protocol
 func TestObfuscation(t *testing.T) {
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
@@ -54,13 +52,12 @@ func TestObfuscation(t *testing.T) {
 	}
 }
 
-// NewCollectiveAggregationTest is a test specific protocol instance constructor that injects test data.
+// NewObfuscationTest is a test specific protocol instance constructor that injects test data.
 func NewObfuscationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 
 	pi, err := protocols.NewObfuscationProtocol(tni)
 	protocol := pi.(*protocols.ObfuscationProtocol)
 
 	protocol.Proofs = 0
-	//protocol.Obfuscation = obfuscation
 	return protocol, err
 }

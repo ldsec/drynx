@@ -1,8 +1,8 @@
-// The collective aggregation protocol permits the cothority to collectively aggregate the local
-// results of all the servers.
-// It uses the tree structure of the cothority. The root sends down an aggregation trigger message. The leafs
-// respond with their local result and other nodes aggregate what they receive before forwarding the
-// aggregation result up the tree until the root can produce the final result.
+// The key switching protocol permits the cothority to collectively switch the encryption of a ciphertext from the
+// collective key to another key.
+// It uses the tree structure of the cothority. The root sends down a trigger message. The leafs
+// respond with their contribution result and other nodes aggregate what they receive before forwarding the
+// result up the tree until the root can produce the final result.
 
 package protocols
 
@@ -32,28 +32,28 @@ func init() {
 // Messages
 //______________________________________________________________________________________________________________________
 
-// DownMessage message sent down the tree containing all the rB (left part of ciphertexts
+// DownMessage message sent down the tree containing all the rB (left part of ciphertexts)
 type DownMessage struct {
 	NewKey kyber.Point
 	Rbs    []kyber.Point
 }
 
-// DownMessage message sent down the tree containing all the rB (left part of ciphertexts
+// DownMessage message sent down the tree containing all the rB (left part of ciphertexts)
 type DownMessageBytes struct {
 	Data []byte
 }
 
-// ChildAggregatedDataMessage contains one node's aggregated data.
+// UpMessage contains the ciphertext used by the servers to create their key switching contribution.
 type UpMessage struct {
 	ChildData []libunlynx.CipherText
 }
 
-// ChildAggregatedDataBytesMessage is ChildAggregatedDataMessage in bytes.
+// UpBytesMessage is UpMessage in bytes.
 type UpBytesMessage struct {
 	Data []byte
 }
 
-// CADBLengthMessage is a message containing the lengths to read a shuffling message in bytes
+// LengthMessage is a message containing the length of a message in bytes
 type LengthMessage struct {
 	Length int
 }
@@ -61,16 +61,19 @@ type LengthMessage struct {
 // Structs
 //______________________________________________________________________________________________________________________
 
+// DownBytesStruct struct used to send DownMessage(Bytes)
 type DownBytesStruct struct {
 	*onet.TreeNode
 	DownMessageBytes
 }
 
+// UpBytesStruct struct used to send Up(Bytes)Message
 type UpBytesStruct struct {
 	*onet.TreeNode
 	UpBytesMessage
 }
 
+// LengthStruct struct used to send LengthMessage
 type LengthStruct struct {
 	*onet.TreeNode
 	LengthMessage
@@ -187,7 +190,7 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 
 	// 1. Aggregation announcement phase
 	if !p.IsRoot() {
-		targetPublicKey, rbs := p.aggregationAnnouncementPhase()
+		targetPublicKey, rbs := p.switchingAnnouncementPhase()
 		tmp := p.keySwitching(p.Public(), targetPublicKey, rbs, p.Private())
 		p.NodeContribution = &tmp
 	} else {
@@ -195,7 +198,7 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 	}
 
 	// 2. Ascending aggregation phase
-	p.ascendingAggregationPhase()
+	p.ascendingSwitchingPhase()
 
 	// 3. Response reporting
 	if p.IsRoot() {
@@ -216,7 +219,7 @@ func (p *KeySwitchingProtocol) Dispatch() error {
 }
 
 // Announce forwarding down the tree.
-func (p *KeySwitchingProtocol) aggregationAnnouncementPhase() (kyber.Point, []kyber.Point) {
+func (p *KeySwitchingProtocol) switchingAnnouncementPhase() (kyber.Point, []kyber.Point) {
 	dataReferenceMessage := <-p.DownChannel
 	if !p.IsLeaf() {
 		p.SendToChildren(&dataReferenceMessage.DownMessageBytes)
@@ -227,7 +230,7 @@ func (p *KeySwitchingProtocol) aggregationAnnouncementPhase() (kyber.Point, []ky
 }
 
 // Results pushing up the tree containing aggregation results.
-func (p *KeySwitchingProtocol) ascendingAggregationPhase() *libunlynx.CipherVector {
+func (p *KeySwitchingProtocol) ascendingSwitchingPhase() *libunlynx.CipherVector {
 
 	//roundTotComput := libunlynx.StartTimer(p.Name() + "_KeySwitching(ascendingAggregation)")
 

@@ -62,8 +62,8 @@ func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 }
 
 //______________________________________________________________________________________________________________________
-/// Test service LeMal for all operations
-func TestServiceLeMal(t *testing.T) {
+/// Test service Drynx for all operations
+func TestServiceDrynx(t *testing.T) {
 	log.SetDebugVisible(2)
 
 	//------SET PARAMS--------
@@ -111,7 +111,7 @@ func TestServiceLeMal(t *testing.T) {
 	dpToServers := repartitionDPs(elServers, elDPs, repartition)
 
 	// Create a client (querier) for the service)
-	client := NewLeMalClient(elServers.List[0], "test-lemal")
+	client := NewDrynxClient(elServers.List[0], "test-Drynx")
 
 	var wgProofs []*sync.WaitGroup
 	var listBlocks []*skipchain.SkipBlock
@@ -205,7 +205,7 @@ func TestServiceLeMal(t *testing.T) {
 		// QUERY RECAP
 		log.LLvl1("\n")
 		log.LLvl1("#----- QUERY -----#")
-		log.LLvl1("Service LeMal Test with suite:", libunlynx.SuiTe.String(), "and query:")
+		log.LLvl1("Service Drynx Test with suite:", libunlynx.SuiTe.String(), "and query:")
 		log.LLvl1("SELECT ", operation, " ... FROM DP1, ..., DP", len(elDPs.List), " WHERE ... GROUP BY ", dpData.GroupByValues)
 		if ranges == nil || (u == int64(0) && l == int64(0)) {
 			log.LLvl1("No input range validation")
@@ -246,7 +246,7 @@ func TestServiceLeMal(t *testing.T) {
 		var wg *sync.WaitGroup
 		if proofs != 0 {
 			// send query to the skipchain and 'wait' for all proofs' verification to be done
-			clientSkip := NewLeMalClient(elVNs.List[0], "test-skip-"+op)
+			clientSkip := NewDrynxClient(elVNs.List[0], "test-skip-"+op)
 
 			wg = libunlynx.StartParallelize(1)
 			go func(elVNs *onet.Roster) {
@@ -275,7 +275,7 @@ func TestServiceLeMal(t *testing.T) {
 		grp, aggr, err := client.SendSurveyQuery(sq)
 
 		if err != nil {
-			t.Fatal("'Lemal' service did not start.", err)
+			t.Fatal("'Drynx' service did not start.", err)
 		}
 
 		// Result printing
@@ -290,7 +290,7 @@ func TestServiceLeMal(t *testing.T) {
 	}
 
 	if proofs != 0 {
-		clientSkip := NewLeMalClient(elVNs.List[0], "test-skip")
+		clientSkip := NewDrynxClient(elVNs.List[0], "test-skip")
 		for _, wg := range wgProofs {
 			libunlynx.EndParallelize(wg)
 		}
@@ -346,7 +346,7 @@ func TestServiceLeMal(t *testing.T) {
 	}
 }
 
-func TestServiceLeMalLogisticRegressionForSPECTF(t *testing.T) {
+func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 
@@ -439,7 +439,7 @@ func TestServiceLeMalLogisticRegressionForSPECTF(t *testing.T) {
 	dpToServers := repartitionDPs(elServers, elDPs, repartition)
 
 	// Create a client (querier) for the service)
-	client := NewLeMalClient(elServers.List[0], "test-lemal")
+	client := NewDrynxClient(elServers.List[0], "test-Drynx")
 
 	var wgProofs []*sync.WaitGroup
 	var listBlocks []*skipchain.SkipBlock
@@ -533,7 +533,7 @@ func TestServiceLeMalLogisticRegressionForSPECTF(t *testing.T) {
 		// QUERY RECAP
 		log.LLvl1("\n")
 		log.LLvl1("#----- QUERY -----#")
-		log.LLvl1("Service LeMal Test with suite:", libunlynx.SuiTe.String(), "and query:")
+		log.LLvl1("Service Drynx Test with suite:", libunlynx.SuiTe.String(), "and query:")
 		log.LLvl1("SELECT ", operation, " ... FROM DP1, ..., DP", len(elDPs.List), " WHERE ... GROUP BY ", dpData.GroupByValues)
 		if ranges == nil || (u == int64(0) && l == int64(0)) {
 			log.LLvl1("No input range validation")
@@ -574,7 +574,7 @@ func TestServiceLeMalLogisticRegressionForSPECTF(t *testing.T) {
 		var wg *sync.WaitGroup
 		if proofs != 0 {
 			// send query to the skipchain and 'wait' for all proofs' verification to be done
-			clientSkip := NewLeMalClient(elVNs.List[0], "test-skip-"+op)
+			clientSkip := NewDrynxClient(elVNs.List[0], "test-skip-"+op)
 
 			wg = libunlynx.StartParallelize(1)
 			go func(elVNs *onet.Roster) {
@@ -603,7 +603,7 @@ func TestServiceLeMalLogisticRegressionForSPECTF(t *testing.T) {
 		grp, aggr, err := client.SendSurveyQuery(sq)
 
 		if err != nil {
-			t.Fatal("'Lemal' service did not start.", err)
+			t.Fatal("'Drynx' service did not start.", err)
 		}
 
 		// Result printing
@@ -647,7 +647,7 @@ func TestServiceLeMalLogisticRegressionForSPECTF(t *testing.T) {
 	//encoding.PrintForLatex(meanAccuracy, meanPrecision, meanRecall, meanFscore, meanAUC)
 
 	if proofs != 0 {
-		clientSkip := NewLeMalClient(elVNs.List[0], "test-skip")
+		clientSkip := NewDrynxClient(elVNs.List[0], "test-skip")
 		for _, wg := range wgProofs {
 			libunlynx.EndParallelize(wg)
 		}
@@ -703,7 +703,7 @@ func TestServiceLeMalLogisticRegressionForSPECTF(t *testing.T) {
 	}
 }
 
-func TestServiceLeMalLogisticRegression(t *testing.T) {
+func TestServiceDrynxLogisticRegression(t *testing.T) {
 	t.Skip("Only use to locally train a specific dataset")
 	os.Remove("pre_compute_multiplications.gob")
 
@@ -739,7 +739,7 @@ func TestServiceLeMalLogisticRegression(t *testing.T) {
 	defer local.CloseAll()
 
 	// Create a client (querier) for the service)
-	client := NewLeMalClient(el.List[0], strconv.Itoa(0))
+	client := NewDrynxClient(el.List[0], strconv.Itoa(0))
 
 	// ---- simulation parameters -----
 	numberTrials := 10
@@ -894,7 +894,7 @@ func TestServiceLeMalLogisticRegression(t *testing.T) {
 		}
 
 		// query parameters recap
-		log.LLvl1("Service LeMal Test with suite: ", libunlynx.SuiTe.String(), " and query:")
+		log.LLvl1("Service Drynx Test with suite: ", libunlynx.SuiTe.String(), " and query:")
 		log.LLvl1("SELECT ", operation, " ... FROM DP0, ..., DP", len(el1.List), " WHERE ... GROUP BY ", dpData.GroupByValues)
 		if ranges == nil {
 			log.LLvl1("No input range validation")
@@ -923,7 +923,7 @@ func TestServiceLeMalLogisticRegression(t *testing.T) {
 		grp, aggr, err := client.SendSurveyQuery(sq)
 
 		if err != nil {
-			t.Fatal("'Lemal' service did not start.", err)
+			t.Fatal("'Drynx' service did not start.", err)
 		}
 
 		// Result printing

@@ -28,7 +28,6 @@ func TestCtks(t *testing.T) {
 
 	protocol := rootInstance.(*protocols.KeySwitchingProtocol)
 	aggregateKey := entityList.Aggregate
-	log.LLvl1("AGGREGATE ", aggregateKey)
 
 	//create data
 	expRes1 := []int64{1, 2, 3, 6}
@@ -61,14 +60,7 @@ func TestCtks(t *testing.T) {
 	case encryptedResult := <-feedback:
 		cv1 := encryptedResult
 		res := libunlynx.DecryptIntVector(clientPrivate, &cv1)
-		//resGrp := libunlynx.DecryptIntVector(clientPrivate, &cv1.GroupByEnc)
 		log.Lvl2("Received results (attributes) ", res)
-		//log.Lvl1("Received results (groups) ", resGrp)
-		/*cv2 := encryptedResult[1]
-		res1 := libunlynx.DecryptIntVector(clientPrivate, &cv2.AggregatingAttributes)
-		resGrp1 := libunlynx.DecryptIntVector(clientPrivate, &cv2.GroupByEnc)
-		log.Lvl1("Received results (attributes) ", res1)
-		log.Lvl1("Received results (groups) ", resGrp1)*/
 
 		if !reflect.DeepEqual(res, append(expRes1, expRes2...)) {
 			t.Fatal("Wrong results, expected", expRes1, "but got", res)
@@ -80,7 +72,7 @@ func TestCtks(t *testing.T) {
 	}
 }
 
-// NewKeySwitchingTest is a special purpose protocol constructor specific to tests.
+// NewCtksTest is a special purpose protocol constructor specific to tests.
 func NewCtksTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	pi, err := protocols.NewKeySwitchingProtocol(tni)
 	protocol := pi.(*protocols.KeySwitchingProtocol)

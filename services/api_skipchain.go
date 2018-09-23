@@ -26,6 +26,7 @@ func (c *API) SendSurveyQueryToVNs(entities *onet.Roster, query *libdrynx.Survey
 // Wait for proofs' verification
 //______________________________________________________________________________________________________________________
 
+// SendEndVerification enables the querier to send a message to wait on the query verification
 func (c *API) SendEndVerification(si *network.ServerIdentity, queryInfoID string) (*skipchain.SkipBlock, error) {
 	evm := libdrynx.EndVerificationRequest{QueryInfoID: queryInfoID}
 	reply := &libdrynx.Reply{}
@@ -39,6 +40,7 @@ func (c *API) SendEndVerification(si *network.ServerIdentity, queryInfoID string
 // Skipchain utilities
 //______________________________________________________________________________________________________________________
 
+// SendGetLatestBlock requests the last known block of the skipchain
 func (c *API) SendGetLatestBlock(roster *onet.Roster, sb *skipchain.SkipBlock) (*skipchain.SkipBlock, error) {
 	if roster == nil {
 		return nil, errors.New("No roster provided")
@@ -55,6 +57,7 @@ func (c *API) SendGetLatestBlock(roster *onet.Roster, sb *skipchain.SkipBlock) (
 	return reply.Latest, nil
 }
 
+// SendGetGenesis requests the genesis block
 func (c *API) SendGetGenesis(toAsk *network.ServerIdentity) (*skipchain.SkipBlock, error) {
 	reply := &libdrynx.Reply{}
 	err := c.SendProtobuf(toAsk, &libdrynx.GetGenesis{}, reply)
@@ -64,6 +67,7 @@ func (c *API) SendGetGenesis(toAsk *network.ServerIdentity) (*skipchain.SkipBloc
 	return reply.Latest, nil
 }
 
+// SendGetBlock requests the block for a specific query
 func (c *API) SendGetBlock(entities *onet.Roster, surveyID string) (*skipchain.SkipBlock, error) {
 	reply := &libdrynx.Reply{}
 	err := c.SendProtobuf(entities.List[0],
@@ -78,6 +82,7 @@ func (c *API) SendGetBlock(entities *onet.Roster, surveyID string) (*skipchain.S
 // DB utilities
 //______________________________________________________________________________________________________________________
 
+// SendGetProofs requests proofs for a specific query
 func (c *API) SendGetProofs(serverID *network.ServerIdentity, surveyID string) (map[string][]byte, error) {
 	result := libdrynx.ProofsAsMap{}
 
@@ -89,6 +94,7 @@ func (c *API) SendGetProofs(serverID *network.ServerIdentity, surveyID string) (
 	return result.Proofs, err
 }
 
+// SendCloseDB requests the closure of the DB of some nodes
 func (c *API) SendCloseDB(entities *onet.Roster, request *libdrynx.CloseDB) error {
 	for i := range entities.List {
 		err := c.SendProtobuf(entities.List[len(entities.List)-i-1], request, nil)

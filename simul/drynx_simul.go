@@ -20,11 +20,11 @@ import (
 )
 
 func init() {
-	onet.SimulationRegister("ServiceLeMal", NewSimulationLeMal)
+	onet.SimulationRegister("ServiceDrynx", NewSimulationDrynx)
 }
 
-// SimulationLeMal state of a simulation.
-type SimulationLeMal struct {
+// SimulationDrynx state of a simulation.
+type SimulationDrynx struct {
 	onet.SimulationBFTree
 
 	// Settings
@@ -68,9 +68,9 @@ type SimulationLeMal struct {
 	MaxIterations int
 }
 
-// NewSimulationLeMal constructs a full LeMal service simulation.
-func NewSimulationLeMal(config string) (onet.Simulation, error) {
-	sl := &SimulationLeMal{}
+// NewSimulationDrynx constructs a full Drynx service simulation.
+func NewSimulationDrynx(config string) (onet.Simulation, error) {
+	sl := &SimulationDrynx{}
 	_, err := toml.Decode(config, sl)
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func NewSimulationLeMal(config string) (onet.Simulation, error) {
 }
 
 // Setup creates the tree used for that simulation
-func (sim *SimulationLeMal) Setup(dir string, hosts []string) (*onet.SimulationConfig, error) {
+func (sim *SimulationDrynx) Setup(dir string, hosts []string) (*onet.SimulationConfig, error) {
 	sc := &onet.SimulationConfig{}
 	sim.CreateRoster(sc, hosts, 2000)
 	err := sim.CreateTree(sc)
@@ -95,7 +95,7 @@ func (sim *SimulationLeMal) Setup(dir string, hosts []string) (*onet.SimulationC
 }
 
 // Run starts the simulation.
-func (sim *SimulationLeMal) Run(config *onet.SimulationConfig) error {
+func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 	os.Remove("pre_compute_multiplications.gob")
 
 	// has to be set here because cannot be in toml file
@@ -340,7 +340,7 @@ func (sim *SimulationLeMal) Run(config *onet.SimulationConfig) error {
 	}
 
 	// Create a client (querier) for the service)
-	client := services.NewLeMalClient(rosterServers.List[0], "simul-lemal")
+	client := services.NewDrynxClient(rosterServers.List[0], "simul-Drynx")
 	log.LLvl1("CLIENT CREATED")
 	// query generation
 	surveyID := uuid.NewV4().String()
@@ -372,7 +372,7 @@ func (sim *SimulationLeMal) Run(config *onet.SimulationConfig) error {
 
 	if sim.Proofs != 0 {
 		// send query to the skipchain and 'wait' for all proofs' verification to be done
-		clientSkip := services.NewLeMalClient(elVNs[0], "simul-skip-"+sim.OperationName)
+		clientSkip := services.NewDrynxClient(elVNs[0], "simul-skip-"+sim.OperationName)
 
 		wg = libunlynx.StartParallelize(1)
 		go func(elVNs *onet.Roster) {
@@ -400,7 +400,7 @@ func (sim *SimulationLeMal) Run(config *onet.SimulationConfig) error {
 	grp, aggr, err := client.SendSurveyQuery(sq)
 
 	if err != nil {
-		log.Fatal("'Lemal' service did not start.", err)
+		log.Fatal("'Drynx' service did not start.", err)
 	}
 
 	// Result printing
@@ -412,7 +412,7 @@ func (sim *SimulationLeMal) Run(config *onet.SimulationConfig) error {
 		}
 	}
 
-	clientSkip := services.NewLeMalClient(elVNs[0], "simul-skip")
+	clientSkip := services.NewDrynxClient(elVNs[0], "simul-skip")
 	if sim.Proofs != 0 {
 		libunlynx.EndParallelize(wg)
 		// close DB

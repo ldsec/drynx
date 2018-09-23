@@ -22,19 +22,16 @@ type API struct {
 
 //init of the network messages
 func init() {
-	log.LLvl1("API init")
 	network.RegisterMessage(libdrynx.GetLatestBlock{})
 	network.RegisterMessage(libdrynx.RangeProofListBytes{})
 	network.RegisterMessage(libdrynx.PublishedShufflingProofBytes{})
 	network.RegisterMessage(libdrynx.PublishedKSListProofBytes{})
 	network.RegisterMessage(libdrynx.PublishAggregationProofBytes{})
 	network.RegisterMessage(libdrynx.PublishedListObfuscationProofBytes{})
-	//network.RegisterMessage(libdrynx.PublishObfuscationProofBytes{})
-	log.LLvl1("API init")
 }
 
-// NewLeMalClient constructor of a client.
-func NewLeMalClient(entryPoint *network.ServerIdentity, clientID string) *API {
+// NewDrynxClient constructor of a client.
+func NewDrynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 	keys := key.NewKeyPair(libunlynx.SuiTe)
 	newClient := &API{
 		Client:     onet.NewClient(libunlynx.SuiTe, ServiceName),
@@ -44,16 +41,16 @@ func NewLeMalClient(entryPoint *network.ServerIdentity, clientID string) *API {
 		private:    keys.Private,
 	}
 
-	limit := 10000
-	// we decrypt a big value to create the hashtable and have a constant decryption time
-	dummy := libunlynx.EncryptInt(newClient.public, int64(limit))
-	libunlynx.DecryptIntWithNeg(newClient.private, *dummy)
+
+	limit := int64(10000)
+	libdrynx.CreateDecryptionTable(limit, newClient.public, newClient.private)
 	return newClient
 }
 
 // Send Query
 //______________________________________________________________________________________________________________________
 
+// GenerateSurveyQuery generates a query with all the information in parameters
 func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToServer map[string]*[]network.ServerIdentity, idToPublic map[string]kyber.Point, surveyID string, operation libdrynx.Operation, ranges []*[]int64, ps []*[]libdrynx.PublishSignatureBytes, proofs int, obfuscation bool, thresholds []float64, diffP libdrynx.QueryDiffP, dpDataGen libdrynx.QueryDPDataGen, cuttingFactor int) libdrynx.SurveyQuery {
 	size1 := 0
 	size2 := 0
@@ -101,7 +98,7 @@ func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToSer
 
 // SendSurveyQuery creates a survey based on a set of entities (servers) and a survey description.
 func (c *API) SendSurveyQuery(sq libdrynx.SurveyQuery) (*[]string, *[][]float64, error) {
-	log.Lvl2("[API] <LEMAL> Client", c.clientID, "is creating a query with SurveyID: ", sq.SurveyID)
+	log.Lvl2("[API] <Drynx> Client", c.clientID, "is creating a query with SurveyID: ", sq.SurveyID)
 
 	//send the query and get the answer
 	sr := libdrynx.ResponseDP{}
@@ -110,11 +107,11 @@ func (c *API) SendSurveyQuery(sq libdrynx.SurveyQuery) (*[]string, *[][]float64,
 		return nil, nil, err
 	}
 
-	log.Lvl2("[API] <LEMAL> Client", c.clientID, "successfully executed the query with SurveyID ", sq.SurveyID)
+	log.Lvl2("[API] <Drynx> Client", c.clientID, "successfully executed the query with SurveyID ", sq.SurveyID)
 
 	// decrypt/decode the result
 	clientDecode := libunlynx.StartTimer("Decode")
-	log.Lvl2("[API] <LEMAL> Client", c.clientID, "is decrypting the results")
+	log.Lvl2("[API] <Drynx> Client", c.clientID, "is decrypting the results")
 
 	grp := make([]string, len(sr.Data))
 	aggr := make([][]float64, len(sr.Data))
@@ -126,6 +123,6 @@ func (c *API) SendSurveyQuery(sq libdrynx.SurveyQuery) (*[]string, *[][]float64,
 	}
 	libunlynx.EndTimer(clientDecode)
 
-	log.Lvl2("[API] <LEMAL> Client", c.clientID, "finished decrypting the results")
+	log.Lvl2("[API] <Drynx> Client", c.clientID, "finished decrypting the results")
 	return &grp, &aggr, nil
 }

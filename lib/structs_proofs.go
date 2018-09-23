@@ -102,7 +102,6 @@ func NewRangeProofRequest(proof *RangeProofList, ID, senderID, differInfo string
 	}
 
 	sig, err := schnorr.Sign(libunlynx.SuiTe, priv, dataToSend)
-	log.LLvl1("LOLOLOL ", len(sig))
 	if err != nil {
 		log.Fatal("Error when signing range proof")
 	}
@@ -156,7 +155,6 @@ func verifyRangeProofList(data []byte, sample float64, ranges []*[]int64, psb []
 
 		toVerify := &RangeProofList{}
 		toVerify.FromBytes(*proofs.(*RangeProofListBytes))
-		log.Lvl2("size of range proof ", len(toVerify.Data))
 		result := RangeProofListVerification(*toVerify, ranges, psb, p, verifThresold)
 		if result {
 			bmInt = PROOF_TRUE
