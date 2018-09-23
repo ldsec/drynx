@@ -152,7 +152,7 @@ func (p *ObfuscationProtocol) Start() error {
 	if p.ToObfuscateData == nil {
 		return errors.New("no data reference provided for aggregation")
 	}
-	log.Lvl2("[OBFUSCATION PROTOCOL] <LEMAL> Server", p.ServerIdentity(), " started an Obfuscation Protocol (", len(p.ToObfuscateData), "ciphertext(s) )")
+	log.Lvl2("[OBFUSCATION PROTOCOL] <Drynx> Server", p.ServerIdentity(), " started an Obfuscation Protocol (", len(p.ToObfuscateData), "ciphertext(s) )")
 	bytesMessage, length := p.ToObfuscateData.ToBytes()
 
 	p.SendToChildren(&ObfuscationLengthMessage{Length: length})
@@ -170,7 +170,7 @@ func (p *ObfuscationProtocol) Dispatch() error {
 	}
 	// 2. Ascending obfuscation phase
 	obfuscatededData := p.ascendingObfuscationPhase()
-	log.Lvl2("[OBFUSCATION PROTOCOL] <LEMAL> Server", p.ServerIdentity(), " completed obfuscation phase (", len(obfuscatededData), "group(s) )")
+	log.Lvl2("[OBFUSCATION PROTOCOL] <Drynx> Server", p.ServerIdentity(), " completed obfuscation phase (", len(obfuscatededData), "group(s) )")
 
 	// 3. Response reporting
 	if p.IsRoot() {

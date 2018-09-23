@@ -127,7 +127,7 @@ func (p *ShufflingProtocol) Start() error {
 	startT := time.Now()
 
 	nbrProcessResponses := len(*p.TargetOfShuffle)
-	log.Lvl2("[SHUFFLING PROTOCOL] <LEMAL> Server", p.ServerIdentity(), " started a Shuffling Protocol (", nbrProcessResponses, " responses)")
+	log.Lvl2("[SHUFFLING PROTOCOL] <Drynx> Server", p.ServerIdentity(), " started a Shuffling Protocol (", nbrProcessResponses, " responses)")
 
 	shuffleTarget := *p.TargetOfShuffle
 
@@ -151,7 +151,7 @@ func (p *ShufflingProtocol) Start() error {
 	roundShufflingStart := libunlynx.StartTimer(p.Name() + "_Shuffling(START-noProof)")
 
 	if p.Precomputed != nil {
-		log.Lvl2("[SHUFFLING PROTOCOL] <LEMAL> Server", p.ServerIdentity(), " uses pre-computation in shuffling")
+		log.Lvl2("[SHUFFLING PROTOCOL] <Drynx> Server", p.ServerIdentity(), " uses pre-computation in shuffling")
 	}
 
 	shuffledData, pi, beta := libdrynx.ShuffleSequence(shuffleTarget, nil, collectiveKey, p.Precomputed)
@@ -160,7 +160,7 @@ func (p *ShufflingProtocol) Start() error {
 
 	if p.Proofs != 0 {
 		go func() {
-			log.Lvl2("[SHUFFLING PROTOCOL] <LEMAL> Server", p.ServerIdentity(), "creates shuffling proof")
+			log.Lvl2("[SHUFFLING PROTOCOL] <Drynx> Server", p.ServerIdentity(), "creates shuffling proof")
 			proof := libdrynx.ShufflingProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
 
 			pi := p.MapPIs["shuffle/"+p.ServerIdentity().String()]
@@ -218,7 +218,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 	}
 
 	if p.Precomputed != nil {
-		log.Lvl2("[SHUFFLING PROTOCOL] <LEMAL> Server", p.ServerIdentity(), " uses pre-computation in shuffling")
+		log.Lvl2("[SHUFFLING PROTOCOL] <Drynx> Server", p.ServerIdentity(), " uses pre-computation in shuffling")
 	}
 
 	shuffledData := shufflingTarget
@@ -235,7 +235,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 
 		if p.Proofs != 0 {
 			go func(shufflingTarget []libunlynx.ProcessResponse, shuffledData []libunlynx.ProcessResponse) {
-				log.Lvl2("[SHUFFLING PROTOCOL] <LEMAL> Server", p.ServerIdentity(), "creates shuffling proof")
+				log.Lvl2("[SHUFFLING PROTOCOL] <Drynx> Server", p.ServerIdentity(), "creates shuffling proof")
 				proof := libdrynx.ShufflingProofCreation(shufflingTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
 
 				pi := p.MapPIs["shuffle/"+p.ServerIdentity().String()]
@@ -252,9 +252,9 @@ func (p *ShufflingProtocol) Dispatch() error {
 	shufflingTarget = shuffledData
 
 	if p.IsRoot() {
-		log.Lvl2("[SHUFFLING PROTOCOL] <LEMAL> Server", p.ServerIdentity(), " completed shuffling (", len(shufflingTarget), " responses)")
+		log.Lvl2("[SHUFFLING PROTOCOL] <Drynx> Server", p.ServerIdentity(), " completed shuffling (", len(shufflingTarget), " responses)")
 	} else {
-		log.Lvl2("[SHUFFLING PROTOCOL] <LEMAL> Server", p.ServerIdentity(), " carried on shuffling.")
+		log.Lvl2("[SHUFFLING PROTOCOL] <Drynx> Server", p.ServerIdentity(), " carried on shuffling.")
 	}
 
 	libunlynx.EndTimer(roundTotalComputation)

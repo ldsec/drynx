@@ -1,4 +1,4 @@
-ServiceLeMal bn256.g1 100 20
+ServiceDrynx bn256.g1 100 20
 1 false false true
 
 10.90.38.4 10.1.0.0/16 2

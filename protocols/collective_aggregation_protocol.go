@@ -117,7 +117,7 @@ func (p *CollectiveAggregationProtocol) Start() error {
 	if p.GroupedData == nil {
 		return errors.New("no data reference provided for aggregation")
 	}
-	log.Lvl2("[COLLECTIVE AGGREGATION PROTOCOL] <LEMAL> Server", p.ServerIdentity(), " started a Collective Aggregation Protocol (", len(*p.GroupedData), "local group(s) )")
+	log.Lvl2("[COLLECTIVE AGGREGATION PROTOCOL] <Drynx> Server", p.ServerIdentity(), " started a Collective Aggregation Protocol (", len(*p.GroupedData), "local group(s) )")
 	p.SendToChildren(&DataReferenceMessage{})
 	return nil
 }
@@ -133,7 +133,7 @@ func (p *CollectiveAggregationProtocol) Dispatch() error {
 
 	// 2. Ascending aggregation phase
 	aggregatedData := p.ascendingAggregationPhase()
-	log.Lvl2("[COLLECTIVE AGGREGATION PROTOCOL] <LEMAL> Server", p.ServerIdentity(), " completed aggregation phase (", len(*aggregatedData), "group(s) )")
+	log.Lvl2("[COLLECTIVE AGGREGATION PROTOCOL] <Drynx> Server", p.ServerIdentity(), " completed aggregation phase (", len(*aggregatedData), "group(s) )")
 
 	// 3. Response reporting
 	if p.IsRoot() {

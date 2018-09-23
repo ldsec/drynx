@@ -6,9 +6,9 @@ import (
 	"github.com/lca1/unlynx/simul/test_data/time_data"
 )
 
-const filenameRead = "../lemal.csv"
-const filenameWrite = "lemalBand40.txt"
-const filenameToml = "../../runfiles/lemalServersScaling.toml"
+const filenameRead = "../drynx.csv"
+const filenameWrite = "drynxBand40.txt"
+const filenameToml = "../../runfiles/drynxServersScaling.toml"
 
 var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 	"Simulation", "\n",

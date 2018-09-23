@@ -144,7 +144,7 @@ func (p *KeySwitchingProtocol) Start() error {
 		return errors.New("no new public key to be switched on provided")
 	}
 
-	log.Lvl2("[KEY SWITCHING PROTOCOL] <LEMAL> Server", p.ServerIdentity(), " started a Key Switching Protocol")
+	log.Lvl2("[KEY SWITCHING PROTOCOL] <Drynx> Server", p.ServerIdentity(), " started a Key Switching Protocol")
 
 	// Initializes the target ciphertext and extract the original ephemeral keys.
 	dataLength := len(*p.TargetOfSwitch)

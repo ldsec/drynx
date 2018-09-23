@@ -380,7 +380,7 @@ func (s *ServiceDrynx) CreateProofCollectionPIs(tree *onet.Tree, targetSurvey, n
 // Verifier Functions
 //______________________________________________________________________________________________________________________
 
-//verifyFuncBitmap is used in the Lemal framework to verify if a block's data is correct or not.
+//verifyFuncBitmap is used in the Drynx framework to verify if a block's data is correct or not.
 func (s *ServiceDrynx) verifyFuncBitmap(newID []byte, newSB *skipchain.SkipBlock) bool {
 
 	//Get data of the newBlock
