@@ -64,7 +64,7 @@ type DPdataFinished struct {
 	SurveyID string
 }
 
-// Service defines a service in drynx with a survey.
+// ServiceDrynx defines a service in drynx with a survey.
 type ServiceDrynx struct {
 	*onet.ServiceProcessor
 
@@ -604,6 +604,7 @@ func (s *ServiceDrynx) StartService(targetSurvey string) error {
 	return nil
 }
 
+// DataCollectionPhase is the phase where data are collected from DPs
 func (s *ServiceDrynx) DataCollectionPhase(targetSurvey string) error {
 	pi, err := s.StartProtocol(protocols.DataCollectionProtocolName, targetSurvey)
 	if err != nil {

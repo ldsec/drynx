@@ -23,6 +23,8 @@ import (
 // DataCollectionProtocolName is the registered name for the data provider protocol.
 const DataCollectionProtocolName = "DataCollection"
 
+var mutexGroups sync.Mutex
+
 func init() {
 	network.RegisterMessage(AnnouncementDCMessage{})
 	network.RegisterMessage(DataCollectionMessage{})
@@ -178,15 +180,17 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	for i, v := range p.Survey.Query.DPDataGen.GroupByValues {
 		numType[i] = v
 	}
+	mutexGroups.Lock()
 	data.Groups = make([][]int64, 0)
 	group := make([]int64, 0)
 	data.AllPossibleGroups(numType[:], group, 0)
 	groupsString := make([]string, len(data.Groups))
+
 	for i, v := range data.Groups {
 		groupsString[i] = fmt.Sprint(v)
 	}
 	data.Groups = make([][]int64, 0)
-
+	mutexGroups.Unlock()
 	// read the signatures needed to compute the range proofs
 	signatures := make([][]libdrynx.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize1)
 	for i := 0; i < p.Survey.Query.IVSigs.InputValidationSize1; i++ {

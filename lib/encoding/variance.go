@@ -16,13 +16,13 @@ func EncodeVariance(input []int64, pubKey kyber.Point) ([]libunlynx.CipherText, 
 func EncodeVarianceWithProofs(input []int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
 	//sum the local DP's query results, and their squares as well
 	sum := int64(0)
-	sum_squares := int64(0)
+	sumSquares := int64(0)
 	for _, el := range input {
 		sum += el
-		sum_squares += el * el
+		sumSquares += el * el
 	}
 	N := int64(len(input))
-	resultClear := []int64{sum, N, sum_squares}
+	resultClear := []int64{sum, N, sumSquares}
 
 	resultEncrypteds := make([]libunlynx.CipherText, len(resultClear))
 	resultRandomRS := make([]kyber.Scalar, len(resultClear))

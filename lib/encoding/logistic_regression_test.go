@@ -1,9 +1,8 @@
-package encoding_test
+package encoding
 
 import (
 	"github.com/cdipaolo/goml/base"
 	"github.com/cdipaolo/goml/linear"
-	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"gonum.org/v1/gonum/stat/combin"
@@ -13,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/dedis/kyber"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/drynx/lib"
 )
 
@@ -22,14 +20,14 @@ func TestComputeApproxCoefficients(t *testing.T) {
 	y := int64(1)
 	k := 1
 	expected := [][]float64{{0, 1, 2, 3, 4}}
-	actual := encoding.ComputeDistinctApproxCoefficients(X, y, k)
+	actual := ComputeDistinctApproxCoefficients(X, y, k)
 	assert.Equal(t, expected, actual)
 
 	X = []float64{0, 1, 2, 3, 4}
 	y = int64(0)
 	k = 1
 	expected = [][]float64{{0, -1, -2, -3, -4}}
-	actual = encoding.ComputeDistinctApproxCoefficients(X, y, k)
+	actual = ComputeDistinctApproxCoefficients(X, y, k)
 	assert.Equal(t, expected, actual)
 
 	X = []float64{0, 1, 2, 3, 4}
@@ -38,7 +36,7 @@ func TestComputeApproxCoefficients(t *testing.T) {
 	expected = [][]float64{
 		{0, 1, 2, 3, 4},
 		{0, 0, 0, 0, 0, -1, -2, -3, -4, -4, -6, -8, -9, -12, -16}}
-	actual = encoding.ComputeDistinctApproxCoefficients(X, y, k)
+	actual = ComputeDistinctApproxCoefficients(X, y, k)
 	assert.Equal(t, expected, actual)
 
 	X = []float64{0, 1, 2, 3, 4}
@@ -47,7 +45,7 @@ func TestComputeApproxCoefficients(t *testing.T) {
 	expected = [][]float64{
 		{0, -1, -2, -3, -4},
 		{0, 0, 0, 0, 0, 1, 2, 3, 4, 4, 6, 8, 9, 12, 16}}
-	actual = encoding.ComputeDistinctApproxCoefficients(X, y, k)
+	actual = ComputeDistinctApproxCoefficients(X, y, k)
 	assert.Equal(t, expected, actual)
 
 	X = []float64{0, 1, 2, 3, 4}
@@ -57,7 +55,7 @@ func TestComputeApproxCoefficients(t *testing.T) {
 		{0, 1, 2, 3, 4},
 		{0, 0, 0, 0, 0, -1, -2, -3, -4, -4, -6, -8, -9, -12, -16},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -2, -3, -4, -4, -6, -8, -9, -12, -16, -8, -12, -16, -18, -24, -32, -27, -36, -48, -64}}
-	actual = encoding.ComputeDistinctApproxCoefficients(X, y, k)
+	actual = ComputeDistinctApproxCoefficients(X, y, k)
 	assert.Equal(t, expected, actual)
 
 	X = []float64{0, 1, 2, 3, 4}
@@ -67,7 +65,7 @@ func TestComputeApproxCoefficients(t *testing.T) {
 		{0, -1, -2, -3, -4},
 		{0, 0, 0, 0, 0, 1, 2, 3, 4, 4, 6, 8, 9, 12, 16},
 		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -2, -3, -4, -4, -6, -8, -9, -12, -16, -8, -12, -16, -18, -24, -32, -27, -36, -48, -64}}
-	actual = encoding.ComputeDistinctApproxCoefficients(X, y, k)
+	actual = ComputeDistinctApproxCoefficients(X, y, k)
 	assert.Equal(t, expected, actual)
 }
 
@@ -81,8 +79,8 @@ func TestComputeEncryptedApproxCoefficients(t *testing.T) {
 	expected := make([][]int64, k)
 	actual := make([][]int64, k)
 
-	approxCoeffs := encoding.Float64ToInt642DArray(encoding.ComputeDistinctApproxCoefficients(X, y, k))
-	encryptedApproxCoeffs, _ := encoding.ComputeEncryptedApproxCoefficients(approxCoeffs, pubKey)
+	approxCoeffs := Float64ToInt642DArray(ComputeDistinctApproxCoefficients(X, y, k))
+	encryptedApproxCoeffs, _ := ComputeEncryptedApproxCoefficients(approxCoeffs, pubKey)
 
 	for j := 0; j < k; j++ {
 		expected[j] = approxCoeffs[j]
@@ -95,14 +93,13 @@ func TestComputeEncryptedApproxCoefficients(t *testing.T) {
 	y = int64(0)
 	k = 1
 
-	approxCoeffs = encoding.Float64ToInt642DArray(encoding.ComputeDistinctApproxCoefficients(X, y, k))
-	encryptedApproxCoeffs, _ = encoding.ComputeEncryptedApproxCoefficients(approxCoeffs, pubKey)
+	approxCoeffs = Float64ToInt642DArray(ComputeDistinctApproxCoefficients(X, y, k))
+	encryptedApproxCoeffs, _ = ComputeEncryptedApproxCoefficients(approxCoeffs, pubKey)
 
 	for j := 0; j < k; j++ {
 		expected[j] = libunlynx.DecryptIntVector(privKey, encryptedApproxCoeffs[j])
 		actual[j] = libunlynx.DecryptIntVector(privKey, libunlynx.EncryptIntVector(pubKey, approxCoeffs[j]))
 	}
-	log.LLvl1(actual)
 
 	assert.Equal(t, expected, actual)
 }
@@ -114,61 +111,61 @@ func TestCombinationsWithRepetitionEfficient(t *testing.T) {
 	n := int64(0)
 	k := int64(0)
 	expected := int64(1)
-	actual := encoding.CombinationsWithRepetition(n, k)
+	actual := CombinationsWithRepetition(n, k)
 	assert.Equal(t, expected, actual)
 
 	n = int64(3)
 	k = int64(4)
 	expected = int64(1)
-	actual = encoding.CombinationsWithRepetition(n, k)
+	actual = CombinationsWithRepetition(n, k)
 	assert.Equal(t, expected, actual)
 
 	n = int64(3)
 	k = int64(-1)
 	expected = int64(1)
-	actual = encoding.CombinationsWithRepetition(n, k)
+	actual = CombinationsWithRepetition(n, k)
 	assert.Equal(t, expected, actual)
 
 	n = int64(-1)
 	k = int64(3)
 	expected = int64(1)
-	actual = encoding.CombinationsWithRepetition(n, k)
+	actual = CombinationsWithRepetition(n, k)
 	assert.Equal(t, expected, actual)
 
 	n = int64(3)
 	k = int64(1)
 	expected = int64(3)
-	actual = encoding.CombinationsWithRepetition(n, k)
+	actual = CombinationsWithRepetition(n, k)
 	assert.Equal(t, expected, actual)
 
 	n = int64(5)
 	k = int64(3)
 	expected = int64(35)
-	actual = encoding.CombinationsWithRepetition(n, k)
+	actual = CombinationsWithRepetition(n, k)
 	assert.Equal(t, expected, actual)
 
 	n = int64(60)
 	k = int64(10)
 	expected = int64(340032449328)
-	actual = encoding.CombinationsWithRepetition(n, k)
+	actual = CombinationsWithRepetition(n, k)
 	assert.Equal(t, expected, actual)
 
 	n = int64(80)
 	k = int64(10)
 	expected = int64(5085018206136)
-	actual = encoding.CombinationsWithRepetition(n, k)
+	actual = CombinationsWithRepetition(n, k)
 	assert.Equal(t, expected, actual)
 
 	n = int64(100)
 	k = int64(10)
 	expected = int64(42634215112710)
-	actual = encoding.CombinationsWithRepetition(n, k)
+	actual = CombinationsWithRepetition(n, k)
 	assert.Equal(t, expected, actual)
 
 	n = int64(200)
 	k = int64(10)
 	expected = int64(35216131179263320)
-	actual = encoding.CombinationsWithRepetition(n, k)
+	actual = CombinationsWithRepetition(n, k)
 	assert.Equal(t, expected, actual)
 
 	//possibly overflows int64 during the computation
@@ -193,15 +190,15 @@ func TestAggregateEncryptedApproxCoefficients(t *testing.T) {
 
 	// compute the approximation coefficients and encrypt them
 	for i := 0; i < N; i++ {
-		approxCoefficients[i] = encoding.ComputeAllApproxCoefficients(X[i], y[i], k)
-		encryptedApproxCoefficients[i], _ = encoding.ComputeEncryptedApproxCoefficients(encoding.
+		approxCoefficients[i] = ComputeAllApproxCoefficients(X[i], y[i], k)
+		encryptedApproxCoefficients[i], _ = ComputeEncryptedApproxCoefficients(
 			Float64ToInt642DArray(approxCoefficients[i]), pubKey)
 	}
 
 	// aggregate the encrypted approximation coefficients
-	actual := encoding.AggregateEncryptedApproxCoefficients(encryptedApproxCoefficients)
+	actual := AggregateEncryptedApproxCoefficients(encryptedApproxCoefficients)
 	// aggregate the approximation coefficients
-	expected := encoding.Float64ToInt642DArray(encoding.AggregateApproxCoefficients(approxCoefficients))
+	expected := Float64ToInt642DArray(AggregateApproxCoefficients(approxCoefficients))
 
 	// compare the decrypted aggregated approximation coefficients
 	for j := 0; j < k; j++ {
@@ -215,19 +212,19 @@ func TestPredictWithInt(t *testing.T) {
 	X := []float64{0, 1, 2, 3, 4}
 	privKey, pubKey := libunlynx.GenKey()
 	libdrynx.CreateDecryptionTable(10000, pubKey, privKey)
-	encryptedData := libunlynx.EncryptIntVector(pubKey, encoding.Float64ToInt641DArray(X))
+	encryptedData := libunlynx.EncryptIntVector(pubKey, Float64ToInt641DArray(X))
 	precision := 1e1
 
 	weights := []float64{1, 2, 3, 4, 5, 6}
-	actual := encoding.Predict(*encryptedData, weights, privKey, precision, 1)
-	expected := encoding.PredictInClear(X, weights)
+	actual := Predict(*encryptedData, weights, privKey, precision, 1)
+	expected := PredictInClear(X, weights)
 	assert.Equal(t, expected, actual)
 }
 
 func TestPredictWithFloat(t *testing.T) {
 	X := []float64{0, 1, 2, 3, 4}
 	privKey, pubKey := libunlynx.GenKey()
-	encryptedData := libunlynx.EncryptIntVector(pubKey, encoding.Float64ToInt641DArray(X))
+	encryptedData := libunlynx.EncryptIntVector(pubKey, Float64ToInt641DArray(X))
 	precision := 1e1
 
 	// used to defined the maximal error allowed (?)
@@ -235,29 +232,29 @@ func TestPredictWithFloat(t *testing.T) {
 
 	// float weights
 	weights := []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6}
-	actual := encoding.Predict(*encryptedData, weights, privKey, precision, 1)
-	expected := encoding.PredictInClear(X, weights)
+	actual := Predict(*encryptedData, weights, privKey, precision, 1)
+	expected := PredictInClear(X, weights)
 	epsilon := expected * ratio
 	assert.Equal(t, true, math.Abs(actual-expected) < epsilon)
 	//showDetails(expected, actual, epsilon)
 
 	weights = []float64{0.5, 0.5, 0.5, 0.5, 0.5, 0.5}
-	actual = encoding.Predict(*encryptedData, weights, privKey, precision, 1)
-	expected = encoding.PredictInClear(X, weights)
+	actual = Predict(*encryptedData, weights, privKey, precision, 1)
+	expected = PredictInClear(X, weights)
 	epsilon = expected * ratio
 	assert.Equal(t, true, math.Abs(actual-expected) < epsilon)
 	//showDetails(expected, actual, epsilon)
 
 	weights = []float64{1.2, 2.4, 3.4, 4.6, 4.5, 1.4}
-	actual = encoding.Predict(*encryptedData, weights, privKey, precision, 1)
-	expected = encoding.PredictInClear(X, weights)
+	actual = Predict(*encryptedData, weights, privKey, precision, 1)
+	expected = PredictInClear(X, weights)
 	epsilon = expected * ratio
 	assert.Equal(t, true, math.Abs(actual-expected) < epsilon)
 	//showDetails(expected, actual, epsilon)
 
 	weights = []float64{-1.2, -2.4, -3.4, 4.6, 4.5, 1.4}
-	actual = encoding.Predict(*encryptedData, weights, privKey, precision, 1)
-	expected = encoding.PredictInClear(X, weights)
+	actual = Predict(*encryptedData, weights, privKey, precision, 1)
+	expected = PredictInClear(X, weights)
 	epsilon = expected * ratio
 	assert.Equal(t, true, math.Abs(actual-expected) < epsilon)
 	showDetails(expected, actual, epsilon)
@@ -267,11 +264,11 @@ func TestPredictWithIntHomomorphic(t *testing.T) {
 	// integer weights
 	X := []float64{0, 1, 2, 3, 4}
 	privKey, pubKey := libunlynx.GenKey()
-	encryptedData := libunlynx.EncryptIntVector(pubKey, encoding.Float64ToInt641DArray(X))
+	encryptedData := libunlynx.EncryptIntVector(pubKey, Float64ToInt641DArray(X))
 
 	weights := []float64{1, 2, 3, 4, 5, 6}
-	actual := encoding.PredictHomomorphic(*encryptedData, weights, privKey, 1, 1)
-	expected := encoding.PredictInClear(X, weights)
+	actual := PredictHomomorphic(*encryptedData, weights, privKey, 1, 1)
+	expected := PredictInClear(X, weights)
 	assert.Equal(t, expected, actual)
 	showDetails(expected, actual, 0)
 }
@@ -279,39 +276,39 @@ func TestPredictWithIntHomomorphic(t *testing.T) {
 func TestPredictWithFloatHomomorphic(t *testing.T) {
 	X := []float64{1, 2, 6, 5, 5}
 	privKey, pubKey := libunlynx.GenKey()
-	encryptedData := libunlynx.EncryptIntVector(pubKey, encoding.Float64ToInt641DArray(X))
+	encryptedData := libunlynx.EncryptIntVector(pubKey, Float64ToInt641DArray(X))
 
 	// used to defined the maximal error allowed (?)
 	ratio := 0.01
 
 	// float weights
 	weights := []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6}
-	actual := encoding.PredictHomomorphic(*encryptedData, weights, privKey, 1e1, 1e0)
-	expected := encoding.PredictInClear(X, weights)
+	actual := PredictHomomorphic(*encryptedData, weights, privKey, 1e1, 1e0)
+	expected := PredictInClear(X, weights)
 	epsilon := expected * ratio
 	assert.Equal(t, true, math.Abs(actual-expected) < epsilon)
 	showDetails(expected, actual, epsilon)
 
 	// float weights
 	weights = []float64{0.1111, 0.2222, 0.3333, 0.4444, 0.5555, 0.6666}
-	actual = encoding.PredictHomomorphic(*encryptedData, weights, privKey, 1e3, 1e0)
-	expected = encoding.PredictInClear(X, weights)
+	actual = PredictHomomorphic(*encryptedData, weights, privKey, 1e3, 1e0)
+	expected = PredictInClear(X, weights)
 	epsilon = expected * ratio
 	assert.Equal(t, true, math.Abs(actual-expected) < epsilon)
 	showDetails(expected, actual, epsilon)
 
 	// float weights
 	weights = []float64{0.1111, 0.2222, 0.3333, 0.4444, 0.5555, 0.6666}
-	actual = encoding.PredictHomomorphic(*encryptedData, weights, privKey, 1e4, 1e0)
-	expected = encoding.PredictInClear(X, weights)
+	actual = PredictHomomorphic(*encryptedData, weights, privKey, 1e4, 1e0)
+	expected = PredictInClear(X, weights)
 	epsilon = expected * ratio
 	assert.Equal(t, true, math.Abs(actual-expected) < epsilon)
 	showDetails(expected, actual, epsilon)
 
 	// float weights
 	weights = []float64{-0.1111, -0.2222, 0.3333, 0.4444, 0.5555, 0.6666}
-	actual = encoding.PredictHomomorphic(*encryptedData, weights, privKey, 1e4, 1e0)
-	expected = encoding.PredictInClear(X, weights)
+	actual = PredictHomomorphic(*encryptedData, weights, privKey, 1e4, 1e0)
+	expected = PredictInClear(X, weights)
 	epsilon = expected * ratio
 	assert.Equal(t, true, math.Abs(actual-expected) < epsilon)
 	showDetails(expected, actual, epsilon)
@@ -327,14 +324,14 @@ func showDetails(expected float64, actual float64, epsilon float64) {
 func TestInt64ToFloat641DArray(t *testing.T) {
 	arrayInt64 := []int64{0, 1, 2, 3, 4}
 	expected := []float64{0.0, 1.0, 2.0, 3.0, 4.0}
-	actual := encoding.Int64ToFloat641DArray(arrayInt64)
+	actual := Int64ToFloat641DArray(arrayInt64)
 	assert.Equal(t, expected, actual)
 }
 
 func TestInt64ToFloat642DArray(t *testing.T) {
 	arrayInt64 := [][]int64{{0, 1, 2, 3, 4}, {5, 6, 7, 8, 9}}
 	expected := [][]float64{{0.0, 1.0, 2.0, 3.0, 4.0}, {5.0, 6.0, 7.0, 8.0, 9.0}}
-	actual := encoding.Int64ToFloat642DArray(arrayInt64)
+	actual := Int64ToFloat642DArray(arrayInt64)
 	assert.Equal(t, expected, actual)
 }
 
@@ -350,25 +347,25 @@ func TestGradient(t *testing.T) {
 	maxIterations := 100000
 
 	weights := []float64{0.1, 0.2, 0.3, 0.4, 0.5}
-	approxCoeffs := encoding.ComputeAllApproxCoefficients(X[0], y[0], k)
+	approxCoeffs := ComputeAllApproxCoefficients(X[0], y[0], k)
 
 	// gradient for k = 1
 	expected := make([]float64, len(weights))
 	for i := 0; i < len(weights); i++ {
-		expected[i] = (1 / float64(N)) * encoding.PolyApproxCoefficients[k] * float64(approxCoeffs[k-1][i])
+		expected[i] = (1 / float64(N)) * PolyApproxCoefficients[k] * float64(approxCoeffs[k-1][i])
 		if i >= 0 {
 			expected[i] += (lambda / float64(N)) * weights[i]
 		}
 	}
-	actual := encoding.Gradient(weights, approxCoeffs, k, N_64, lambda)
+	actual := Gradient(weights, approxCoeffs, k, N_64, lambda)
 	assert.Equal(t, expected[1:], actual[1:])
 
 	// gradient for k = 2
 	k = 2
-	approxCoeffs = encoding.ComputeAllApproxCoefficients(X[0], y[0], k)
+	approxCoeffs = ComputeAllApproxCoefficients(X[0], y[0], k)
 
-	expected = encoding.GradientFor2(weights, approxCoeffs, k, N, lambda)
-	actual = encoding.Gradient(weights, approxCoeffs, k, N_64, lambda)
+	expected = GradientFor2(weights, approxCoeffs, k, N, lambda)
+	actual = Gradient(weights, approxCoeffs, k, N_64, lambda)
 	assert.Equal(t, expected[1:], actual[1:])
 
 	testX := make([][]float64, 1)
@@ -390,10 +387,10 @@ func TestCost(t *testing.T) {
 
 	lambda := 1.0
 
-	approxCoeffs := encoding.ComputeAllApproxCoefficients(X[0], y[0], k)
+	approxCoeffs := ComputeAllApproxCoefficients(X[0], y[0], k)
 	allApproxCoeffs := make([][][]float64, N)
 	allApproxCoeffs[0] = approxCoeffs
-	aggregatedApproxCoeffs := encoding.AggregateApproxCoefficients(allApproxCoeffs)
+	aggregatedApproxCoeffs := AggregateApproxCoefficients(allApproxCoeffs)
 
 	weights := []float64{0, 1, 2, 3, 4, 5}
 
@@ -401,15 +398,15 @@ func TestCost(t *testing.T) {
 	for i := 0; i < len(weights); i++ {
 		expectedCost += weights[i] * float64(aggregatedApproxCoeffs[0][i])
 	}
-	expectedCost *= (1 / float64(N)) * encoding.PolyApproxCoefficients[k]
-	expectedCost -= encoding.PolyApproxCoefficients[0]
+	expectedCost *= (1 / float64(N)) * PolyApproxCoefficients[k]
+	expectedCost -= PolyApproxCoefficients[0]
 
 	// l2-regularizer contribution
 	for i := 0; i < len(weights); i++ {
 		expectedCost += weights[i] * weights[i] * (lambda / 2 * float64(N))
 	}
 
-	actuaCost := encoding.Cost(weights, aggregatedApproxCoeffs, N_64, lambda)
+	actuaCost := Cost(weights, aggregatedApproxCoeffs, N_64, lambda)
 
 	assert.Equal(t, expectedCost, actuaCost)
 }
@@ -423,7 +420,7 @@ func TestLogisticCost(t *testing.T) {
 
 	weights := []float64{0.035, 0.00000, 0.03712, 0.07425, 0.11137, 0.14849}
 	expected := 0.29668003759705
-	actual := encoding.LogisticRegressionCost(weights, X, y, N, lambda)
+	actual := LogisticRegressionCost(weights, X, y, N, lambda)
 	assert.Equal(t, expected, actual)
 }
 
@@ -443,13 +440,13 @@ func TestFindMinimumWeightsDegreeOne(t *testing.T) {
 		initialWeights[i] = 0.1
 	}
 
-	approxCoeffs := encoding.ComputeAllApproxCoefficients(X[0], y[0], k)
+	approxCoeffs := ComputeAllApproxCoefficients(X[0], y[0], k)
 	allApproxCoeffs := make([][][]float64, N)
 	allApproxCoeffs[0] = approxCoeffs
-	aggregatedApproxCoeffs := encoding.AggregateApproxCoefficients(allApproxCoeffs)
+	aggregatedApproxCoeffs := AggregateApproxCoefficients(allApproxCoeffs)
 
-	expectedWeights := encoding.ComputeMinimumWeights(aggregatedApproxCoeffs, lambda)
-	actualWeights := encoding.FindMinimumWeights(aggregatedApproxCoeffs, initialWeights, N, lambda, step,
+	expectedWeights := ComputeMinimumWeights(aggregatedApproxCoeffs, lambda)
+	actualWeights := FindMinimumWeights(aggregatedApproxCoeffs, initialWeights, N, lambda, step,
 		maxIterations)
 
 	// cheating
@@ -467,8 +464,8 @@ func TestFindMinimumWeightsDegreeOne(t *testing.T) {
 	fmt.Println("actual weights:", actualWeights)
 	fmt.Println("max effective epsilon:", maxEpsilon)
 
-	costActualWeights := encoding.Cost(actualWeights, aggregatedApproxCoeffs, N, lambda)
-	costExpectedWeights := encoding.Cost(expectedWeights, aggregatedApproxCoeffs, N, lambda)
+	costActualWeights := Cost(actualWeights, aggregatedApproxCoeffs, N, lambda)
+	costExpectedWeights := Cost(expectedWeights, aggregatedApproxCoeffs, N, lambda)
 	fmt.Println("cost expected weights:", costExpectedWeights)
 	fmt.Println("cost actual weights:", costActualWeights)
 
@@ -494,17 +491,16 @@ func TestFindMinimumWeights(t *testing.T) {
 		initialWeights[i] = 0.2
 	}
 
-	approxCoeffs := encoding.ComputeAllApproxCoefficients(X[0], y[0], k)
+	approxCoeffs := ComputeAllApproxCoefficients(X[0], y[0], k)
 
 	allApproxCoeffs := make([][][]float64, N)
 	allApproxCoeffs[0] = approxCoeffs
-	aggregatedApproxCoeffs := encoding.AggregateApproxCoefficients(allApproxCoeffs)
+	aggregatedApproxCoeffs := AggregateApproxCoefficients(allApproxCoeffs)
 
-	weights := encoding.FindMinimumWeights(aggregatedApproxCoeffs, initialWeights, N, lambda, step, maxIterations)
-	cost := encoding.Cost(weights, aggregatedApproxCoeffs, N, lambda)
-	logisticCost := encoding.LogisticRegressionCost(weights, X, y, N, lambda)
+	weights := FindMinimumWeights(aggregatedApproxCoeffs, initialWeights, N, lambda, step, maxIterations)
+	cost := Cost(weights, aggregatedApproxCoeffs, N, lambda)
+	logisticCost := LogisticRegressionCost(weights, X, y, N, lambda)
 
-	log.LLvl1(aggregatedApproxCoeffs)
 	fmt.Println("approx. coeffs.:", approxCoeffs)
 	fmt.Println("weights:", weights)
 	fmt.Println("cost:", cost)
@@ -518,17 +514,17 @@ func TestFindMinimumWeights(t *testing.T) {
 
 	fmt.Println(model.Learn())
 	weightsPackage := []float64{0.035, 0.00000, 0.03712, 0.07425, 0.11137, 0.14849}
-	fmt.Println("cost:", encoding.Cost(weightsPackage, approxCoeffs, N, lambda))
-	fmt.Println("logistic cost:", encoding.LogisticRegressionCost(weightsPackage, X, y, N, lambda))
+	fmt.Println("cost:", Cost(weightsPackage, approxCoeffs, N, lambda))
+	fmt.Println("logistic cost:", LogisticRegressionCost(weightsPackage, X, y, N, lambda))
 }
 
 func TestRange(t *testing.T) {
 	expected := []int64{0, 1, 2, 3, 4, 5}
-	actual := encoding.Range(0, 6)
+	actual := Range(0, 6)
 	assert.Equal(t, expected, actual)
 
 	expected = []int64{10, 11, 12, 13}
-	actual = encoding.Range(10, 14)
+	actual = Range(10, 14)
 	assert.Equal(t, expected, actual)
 }
 
@@ -541,24 +537,24 @@ func TestCartesianProduct(t *testing.T) {
 	start := int64(0)
 	end := int64(2)
 	dim := 3
-	actual := encoding.CartesianProduct(start, end, dim)
+	actual := CartesianProduct(start, end, dim)
 	expected := [][]int64{{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {0, 1, 1}, {1, 0, 0}, {1, 0, 1}, {1, 1, 0}, {1, 1, 1}}
 	assert.Equal(t, expected, actual)
 
 	start = int64(0)
 	end = int64(3)
 	dim = 2
-	actual = encoding.CartesianProduct(start, end, dim)
+	actual = CartesianProduct(start, end, dim)
 	expected = [][]int64{{0, 0}, {0, 1}, {0, 2}, {1, 0}, {1, 1}, {1, 2}, {2, 0}, {2, 1}, {2, 2}}
 	assert.Equal(t, expected, actual)
 }
 
 func TestAddSub(t *testing.T) {
 	privKey, pubKey := libunlynx.GenKey()
-
+	libdrynx.CreateDecryptionTable(int64(10000), pubKey, privKey)
 	ct := libunlynx.NewCipherText()
 
-	m := int64(-6)
+	m := int64(6)
 	otherCt := libunlynx.EncryptInt(pubKey, m)
 
 	ct.Add(*ct, *otherCt)
@@ -578,12 +574,12 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 	labelColumn := 0
 
 	// features
-	X := encoding.RemoveColumn(data, labelColumn)
+	X := RemoveColumn(data, labelColumn)
 	// labels
-	y := encoding.Float64ToInt641DArray(encoding.GetColumn(data, labelColumn))
+	y := Float64ToInt641DArray(GetColumn(data, labelColumn))
 
-	XStandardised := encoding.Standardise(X)
-	XStandardised = encoding.Augment(XStandardised)
+	XStandardised := Standardise(X)
+	XStandardised = Augment(XStandardised)
 
 	N := len(X)
 	N_64 := int64(N)
@@ -603,13 +599,13 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 	// compute all approximation coefficients per record
 	approxCoefficients := make([][][]float64, N)
 	for i := range X {
-		approxCoefficients[i] = encoding.ComputeAllApproxCoefficients(XStandardised[i], y[i], k)
+		approxCoefficients[i] = ComputeAllApproxCoefficients(XStandardised[i], y[i], k)
 	}
 
 	// aggregate the approximation coefficients locally
-	aggregatedApproxCoefficients := encoding.AggregateApproxCoefficients(approxCoefficients)
+	aggregatedApproxCoefficients := AggregateApproxCoefficients(approxCoefficients)
 
-	expected := encoding.FindMinimumWeights(aggregatedApproxCoefficients, initialWeights, N_64, lambda, step,
+	expected := FindMinimumWeights(aggregatedApproxCoefficients, initialWeights, N_64, lambda, step,
 		maxIterations)
 
 	initialWeights = []float64{0.1, 0.2, 0.3, 0.4, 0.5} // FindMinimumWeights modifies the initial weights...
@@ -617,8 +613,8 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: N_64, NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
 		InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
 
-	resultEncrypted, _ := encoding.EncodeLogisticRegression(data, lrParameters, pubKey)
-	result := encoding.DecodeLogisticRegression(resultEncrypted, privKey, lrParameters)
+	resultEncrypted, _ := EncodeLogisticRegression(data, lrParameters, pubKey)
+	result := DecodeLogisticRegression(resultEncrypted, privKey, lrParameters)
 
 	// no equality because expected weights were computed in clear
 	// todo: consider computed weights using encrypted approx coefficients
@@ -640,12 +636,12 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 	labelColumn := 0
 
 	// features
-	X := encoding.RemoveColumn(data, labelColumn)
+	X := RemoveColumn(data, labelColumn)
 	// labels
-	y := encoding.Float64ToInt641DArray(encoding.GetColumn(data, labelColumn))
+	y := Float64ToInt641DArray(GetColumn(data, labelColumn))
 
-	XStandardised := encoding.Standardise(X)
-	XStandardised = encoding.Augment(XStandardised)
+	XStandardised := Standardise(X)
+	XStandardised = Augment(XStandardised)
 
 	N := len(X)
 	N_64 := int64(N)
@@ -665,13 +661,13 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 	// compute all approximation coefficients per record
 	approxCoefficients := make([][][]float64, N)
 	for i := range X {
-		approxCoefficients[i] = encoding.ComputeAllApproxCoefficients(XStandardised[i], y[i], k)
+		approxCoefficients[i] = ComputeAllApproxCoefficients(XStandardised[i], y[i], k)
 	}
 
 	// aggregate the approximation coefficients locally
-	aggregatedApproxCoefficients := encoding.AggregateApproxCoefficients(approxCoefficients)
+	aggregatedApproxCoefficients := AggregateApproxCoefficients(approxCoefficients)
 
-	expected := encoding.FindMinimumWeights(aggregatedApproxCoefficients, initialWeights, N_64, lambda, step,
+	expected := FindMinimumWeights(aggregatedApproxCoefficients, initialWeights, N_64, lambda, step,
 		maxIterations)
 
 	initialWeights = []float64{0.1, 0.2, 0.3, 0.4, 0.5} // FindMinimumWeights modifies the initial weights...
@@ -680,7 +676,7 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 		InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
 
 	//signatures needed to check the proof; create signatures for 2 servers and all DPs outputs
-	u := int64(2)
+	u := int64(4)
 	l := int64(10)
 	ps := make([][]libdrynx.PublishSignature, 2)
 
@@ -708,13 +704,11 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 
 	//function call
 
-	resultEncrypted, clear, prf := encoding.EncodeLogisticRegressionWithProofs(data, lrParameters, pubKey, ps, ranges)
-	result := encoding.DecodeLogisticRegression(resultEncrypted, privKey, lrParameters)
+	resultEncrypted, _, prf := EncodeLogisticRegressionWithProofs(data, lrParameters, pubKey, ps, ranges)
+	result := DecodeLogisticRegression(resultEncrypted, privKey, lrParameters)
 
-	for i := 0; i < 30; i++ {
-		log.LLvl1(clear[i])
-		log.LLvl1(libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[i]), (*ranges[i])[0], (*ranges[i])[1], yss[i], pubKey))
-	}
+	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[0]), (*ranges[0])[0], (*ranges[0])[1], yss[0], pubKey))
+
 	// no equality because expected weights were computed in clear
 	// todo: consider computed weights using encrypted approx coefficients
 	//assert.Equal(t, expected, result)
@@ -742,8 +736,8 @@ func TestStandardise(t *testing.T) {
 		}
 	}
 
-	XStandardised := encoding.Standardise(X)
-	XScaledStandardised := encoding.Standardise(XScaled)
+	XStandardised := Standardise(X)
+	XScaledStandardised := Standardise(XScaled)
 
 	epsilon := 1e-12
 	for i := 0; i < len(XStandardised); i++ {

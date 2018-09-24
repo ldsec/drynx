@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-//TestEncodeDecodeLinearRegressionDims tests EncodeLinearRegression_Dims and DecodeLinearRegression_Dims
+//TestEncodeDecodeLinearRegressionDims tests EncodeLinearRegressionDims and DecodeLinearRegressionDims
 func TestEncodeDecodeLinearRegressionDims(t *testing.T) {
 	//data
 	inputValuesX := [][]int64{{1, 2}, {0, 1}, {1, 0}, {2, 1}, {3, 5}}
@@ -116,16 +116,16 @@ func TestEncodeDecodeLinearRegressionDims(t *testing.T) {
 
 	//Actual results
 	var resultEncrypted []libunlynx.CipherText
-	resultEncrypted, _ = encoding.EncodeLinearRegression_Dims(inputValuesX, inputValuesY, pubKey)
+	resultEncrypted, _ = encoding.EncodeLinearRegressionDims(inputValuesX, inputValuesY, pubKey)
 	//Testing the length of the encrypted tuple that is sent
 	assert.Equal(t, (d*d+5*d+4)/2, len(resultEncrypted))
 
-	coeffsActual := encoding.DecodeLinearRegression_Dims(resultEncrypted, secKey)
+	coeffsActual := encoding.DecodeLinearRegressionDims(resultEncrypted, secKey)
 	//Testing the correctness of the coefficient values
 	assert.Equal(t, coeffsExpected, coeffsActual)
 }
 
-//TestEncodeDecodeLinearRegressionDimsWithProofs tests EncodeLinearRegression_DimsWithProofs and DecodeLinearRegression_DimsWithProofs
+//TestEncodeDecodeLinearRegressionDimsWithProofs tests EncodeLinearRegressionDimsWithProofs and DecodeLinearRegression_DimsWithProofs
 func TestEncodeDecodeLinearRegressionDimsWithProofs(t *testing.T) {
 	//data
 	inputValuesX := [][]int64{{1, 2}, {0, 1}, {1, 0}, {2, 1}, {3, 5}}
@@ -259,12 +259,12 @@ func TestEncodeDecodeLinearRegressionDimsWithProofs(t *testing.T) {
 
 	//Actual results
 	var resultEncrypted []libunlynx.CipherText
-	resultEncrypted, _, prf := encoding.EncodeLinearRegression_DimsWithProofs(inputValuesX, inputValuesY, pubKey, ps, ranges)
+	resultEncrypted, _, prf := encoding.EncodeLinearRegressionDimsWithProofs(inputValuesX, inputValuesY, pubKey, ps, ranges)
 
 	//Testing the length of the encrypted tuple that is sent
 	assert.Equal(t, (d*d+5*d+4)/2, len(resultEncrypted))
 
-	coeffsActual := encoding.DecodeLinearRegression_Dims(resultEncrypted, secKey)
+	coeffsActual := encoding.DecodeLinearRegressionDims(resultEncrypted, secKey)
 	//Testing the correctness of the coefficient values
 	assert.Equal(t, coeffsExpected, coeffsActual)
 

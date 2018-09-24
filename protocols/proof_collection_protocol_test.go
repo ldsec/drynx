@@ -134,7 +134,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			//check if all proofs are true
 			for _, v := range res.Bitmap {
-				assert.Equal(t, libdrynx.PROOF_TRUE, v, "There are some false range proofs")
+				assert.Equal(t, libdrynx.ProofTrue, v, "There are some false range proofs")
 			}
 		}(i)
 	}
@@ -162,7 +162,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			//check if all proofs are true
 			for _, v := range res.Bitmap {
-				assert.Equal(t, libdrynx.PROOF_TRUE, v, "There are some false aggregation proofs")
+				assert.Equal(t, libdrynx.ProofTrue, v, "There are some false aggregation proofs")
 			}
 
 		}(i)
@@ -191,7 +191,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			//check if all proofs are true
 			for _, v := range res.Bitmap {
-				assert.Equal(t, libdrynx.PROOF_TRUE, v, "There are some false obfuscation proofs")
+				assert.Equal(t, libdrynx.ProofTrue, v, "There are some false obfuscation proofs")
 			}
 
 		}(i)
@@ -220,7 +220,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			//check if all proofs are true
 			for _, v := range res.Bitmap {
-				assert.Equal(t, libdrynx.PROOF_TRUE, v, "There are some false shuffle proofs")
+				assert.Equal(t, libdrynx.ProofTrue, v, "There are some false shuffle proofs")
 			}
 		}(i)
 	}
@@ -248,7 +248,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			//check if all proofs are true
 			for _, v := range res.Bitmap {
-				assert.Equal(t, libdrynx.PROOF_TRUE, v, "There are some false key switch proofs")
+				assert.Equal(t, libdrynx.ProofTrue, v, "There are some false key switch proofs")
 			}
 		}(i)
 	}

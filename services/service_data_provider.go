@@ -11,6 +11,7 @@ import (
 // Query Handlers
 //______________________________________________________________________________________________________________________
 
+// HandleSurveyQueryToDP handles the reception of a query at a DP
 func (s *ServiceDrynx) HandleSurveyQueryToDP(recq *libdrynx.SurveyQueryToDP) (network.Message, error) {
 
 	recq.SQ.Query.IVSigs.InputValidationSigs = recreateRangeSignatures(recq.SQ.Query.IVSigs)

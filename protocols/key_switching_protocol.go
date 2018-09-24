@@ -38,7 +38,7 @@ type DownMessage struct {
 	Rbs    []kyber.Point
 }
 
-// DownMessage message sent down the tree containing all the rB (left part of ciphertexts)
+// DownMessageBytes message sent down the tree containing all the rB (left part of ciphertexts) in bytes
 type DownMessageBytes struct {
 	Data []byte
 }

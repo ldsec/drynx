@@ -7,15 +7,15 @@ import (
 )
 
 // EncodeModelEvaluation encodes the R-score statistic at data providers
-func EncodeModelEvaluation(inputY []int64, input_pred []int64, pubKey kyber.Point) ([]libunlynx.CipherText, []int64) {
-	resultEnc, resultClear, _ := EncodeModelEvaluationWithProofs(inputY, input_pred, pubKey, nil, nil)
+func EncodeModelEvaluation(inputY []int64, inputPreds []int64, pubKey kyber.Point) ([]libunlynx.CipherText, []int64) {
+	resultEnc, resultClear, _ := EncodeModelEvaluationWithProofs(inputY, inputPreds, pubKey, nil, nil)
 	return resultEnc, resultClear
 }
 
 // EncodeModelEvaluationWithProofs encodes the R-score statistic at data providers with range proofs
-func EncodeModelEvaluationWithProofs(input_y []int64, input_pred []int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, ranges []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
-	//input_y is the list of true y values
-	//input_pred is the list of predictions
+func EncodeModelEvaluationWithProofs(inputY []int64, inputPreds []int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, ranges []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
+	//inputY is the list of true y values
+	//inputPreds is the list of predictions
 
 	//sum the Ys and their squares, and the square of the differences between true and predicted Ys
 	sumY := int64(0)
@@ -26,16 +26,16 @@ func EncodeModelEvaluationWithProofs(input_y []int64, input_pred []int64, pubKey
 	r := make([]kyber.Scalar, 4)
 
 	//Encrypt the number of data samples considered
-	nEncrypted, r0 := libunlynx.EncryptIntGetR(pubKey, int64(len(input_y)))
+	nEncrypted, r0 := libunlynx.EncryptIntGetR(pubKey, int64(len(inputY)))
 	r[0] = r0
 
-	for i, el := range input_y {
+	for i, el := range inputY {
 		sumY += el
 		sumYSquare += el * el
-		sumDiffSquare += (input_pred[i] - el) * (input_pred[i] - el)
+		sumDiffSquare += (inputPreds[i] - el) * (inputPreds[i] - el)
 	}
 
-	plaintextValues[0] = int64(len(input_y))
+	plaintextValues[0] = int64(len(inputY))
 	plaintextValues[1] = sumY
 	plaintextValues[2] = sumYSquare
 	plaintextValues[3] = sumDiffSquare

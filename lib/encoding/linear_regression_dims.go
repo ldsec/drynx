@@ -9,14 +9,14 @@ import (
 	"github.com/tonestuff/quadratic"
 )
 
-//EncodeLinearRegression_Dims implements a d-dimensional linear regression algorithm on the query results
-func EncodeLinearRegression_Dims(input1 [][]int64, input2 []int64, pubKey kyber.Point) ([]libunlynx.CipherText, []int64) {
-	resultEnc, resultClear, _ := EncodeLinearRegression_DimsWithProofs(input1, input2, pubKey, nil, nil)
+//EncodeLinearRegressionDims implements a d-dimensional linear regression algorithm on the query results
+func EncodeLinearRegressionDims(input1 [][]int64, input2 []int64, pubKey kyber.Point) ([]libunlynx.CipherText, []int64) {
+	resultEnc, resultClear, _ := EncodeLinearRegressionDimsWithProofs(input1, input2, pubKey, nil, nil)
 	return resultEnc, resultClear
 }
 
-//EncodeLinearRegression_DimsWithProofs implements a d-dimensional linear regression algorithm on the query results with range proofs
-func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
+//EncodeLinearRegressionDimsWithProofs implements a d-dimensional linear regression algorithm on the query results with range proofs
+func EncodeLinearRegressionDimsWithProofs(input1 [][]int64, input2 []int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
 	//sum the Xs and their squares, the Ys and the product of every pair of X and Y
 	sumXj := int64(0)
 	sumY := int64(0)
@@ -78,10 +78,10 @@ func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pub
 	r = append(r, ry)
 
 	for j := 0; j < len(StoredVals); j++ {
-		sumXjYEncrypted, r_temp := libunlynx.EncryptIntGetR(pubKey, StoredVals[j])
+		sumXjYEncrypted, rTemp := libunlynx.EncryptIntGetR(pubKey, StoredVals[j])
 		CiphertextTuple = append(CiphertextTuple, *sumXjYEncrypted)
 		plaintextValues = append(plaintextValues, StoredVals[j])
-		r = append(r, r_temp)
+		r = append(r, rTemp)
 	}
 
 	if sigs == nil {
@@ -106,9 +106,9 @@ func EncodeLinearRegression_DimsWithProofs(input1 [][]int64, input2 []int64, pub
 	return CiphertextTuple, []int64{0}, createProofs
 }
 
-//DecodeLinearRegression_Dims implements a d-dimensional linear regression algorithm, in this encoding, we assume the system to have a perfect solution
+//DecodeLinearRegressionDims implements a d-dimensional linear regression algorithm, in this encoding, we assume the system to have a perfect solution
 //TODO least-square computation and not equality
-func DecodeLinearRegression_Dims(result []libunlynx.CipherText, secKey kyber.Scalar) []float64 {
+func DecodeLinearRegressionDims(result []libunlynx.CipherText, secKey kyber.Scalar) []float64 {
 	//get the the number of dimensions by solving the equation: d^2 + 5d + 4 = 2*len(result)
 	posSol, _ := quadratic.Solve(1, 5, complex128(complex(float32(4-2*len(result)), 0)))
 	d := int(real(posSol))

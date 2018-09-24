@@ -22,12 +22,17 @@ import (
 	"gonum.org/v1/gonum/stat"
 )
 
-// first taylor expansion coefficients of ln(1/(1+exp(x))
+// TaylorCoefficients are the taylor coefficients (first taylor expansion coefficients of ln(1/(1+exp(x)))
 var TaylorCoefficients = []float64{-math.Log(2), -0.5, -0.125, 0, 0.0052}
+
+// MinAreaCoefficients are the min area coefficients
 var MinAreaCoefficients = []float64{-0.714761, -0.5, -0.0976419}
 
+// PolyApproxCoefficients is the number of approximated coefficients
 var PolyApproxCoefficients = MinAreaCoefficients
-var NUMDPS = 10
+
+// NumDps is the number of DPs
+var NumDps = 10
 
 // -------------------------
 // UnLynx framework specific
@@ -53,11 +58,11 @@ func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRe
 		if lrParameters.Means != nil && lrParameters.StandardDeviations != nil &&
 			len(lrParameters.Means) > 0 && len(lrParameters.StandardDeviations) > 0 {
 			// using global means and standard deviations, if given
-			log.Lvl1("Standardising the training set with global means and standard deviations...")
+			log.Lvl2("Standardising the training set with global means and standard deviations...")
 			XStandardised = StandardiseWith(X, lrParameters.Means, lrParameters.StandardDeviations)
 		} else {
 			// using local means and standard deviations, if not given
-			log.Lvl1("Standardising the training set with local means and standard deviations...")
+			log.Lvl2("Standardising the training set with local means and standard deviations...")
 			XStandardised = Standardise(X)
 		}
 
@@ -100,8 +105,8 @@ func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRe
 		}
 	}
 
-	log.LLvl1("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
-	log.LLvl1("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
+	log.LLvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
+	log.LLvl2("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
 
 	return encryptedAggregatedApproxCoefficients, aggregatedApproxCoefficientsIntPacked
 }
@@ -133,11 +138,11 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.
 		if lrParameters.Means != nil && lrParameters.StandardDeviations != nil &&
 			len(lrParameters.Means) > 0 && len(lrParameters.StandardDeviations) > 0 {
 			// using global means and standard deviations, if given
-			log.Lvl1("Standardising the training set with global means and standard deviations...")
+			log.Lvl2("Standardising the training set with global means and standard deviations...")
 			XStandardised = StandardiseWith(X, lrParameters.Means, lrParameters.StandardDeviations)
 		} else {
 			// using local means and standard deviations, if not given
-			log.Lvl1("Standardising the training set with local means and standard deviations...")
+			log.Lvl2("Standardising the training set with local means and standard deviations...")
 			XStandardised = Standardise(X)
 		}
 
@@ -182,8 +187,8 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.
 		}
 	}
 
-	log.LLvl1("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
-	log.LLvl1("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
+	log.LLvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
+	log.LLvl2("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
 
 	createRangeProof := make([]libdrynx.CreateProof, len(aggregatedApproxCoefficientsIntPacked))
 	wg1 := libunlynx.StartParallelize(len(aggregatedApproxCoefficientsIntPacked))
@@ -243,8 +248,8 @@ func DecodeLogisticRegression(result []libunlynx.CipherText, privKey kyber.Scala
 		}
 	}
 
-	log.LLvl1("Number of approximation coefficients:", len(approxCoefficientsPacked))
-	log.LLvl1("Decrypted approximation coefficients:", approxCoefficientsPacked)
+	log.LLvl2("Number of approximation coefficients:", len(approxCoefficientsPacked))
+	log.LLvl2("Decrypted approximation coefficients:", approxCoefficientsPacked)
 
 	// convert the (aggregated) approximation coefficients to float
 	approxCoefficientsFloat := Int64ToFloat642DArray(approxCoefficients)
@@ -1272,7 +1277,7 @@ func String2DToFloat64(dataString [][]string) [][]float64 {
 			if err != nil {
 				log.LLvl1("Incorrect record formatting: record", idx, "will be ignored")
 				log.LLvl1("Cause:", err)
-				nbRecordsIgnored += 1
+				nbRecordsIgnored++
 				break
 			}
 			array = append(array, i)
@@ -1288,7 +1293,7 @@ func String2DToFloat64(dataString [][]string) [][]float64 {
 		}
 	}
 
-	log.LLvl1("Total number of records ignored:", nbRecordsIgnored)
+	log.LLvl2("Total number of records ignored:", nbRecordsIgnored)
 
 	return data
 }
@@ -1397,11 +1402,11 @@ func ReadFile(path string, separator string) [][]string {
 			result = append(result, row)
 		} else {
 			log.LLvl1("Incorrect record formatting: record", row, "will be ignored")
-			nbrRecordsIgnored += 1
+			nbrRecordsIgnored++
 		}
 	}
 
-	log.LLvl1("Total number of records ignored:", nbrRecordsIgnored)
+	log.LLvl2("Total number of records ignored:", nbrRecordsIgnored)
 
 	return result
 }
@@ -1520,7 +1525,7 @@ func GetDataForDataProvider(filename string, dataProviderIdentity network.Server
 
 	if err == nil {
 		for i := 0; i < len(data); i++ {
-			if i%NUMDPS == dpID {
+			if i%NumDps == dpID {
 				dataForDP = append(dataForDP, data[i])
 			}
 		}

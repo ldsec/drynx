@@ -1,14 +1,12 @@
-package timedata_test
+package timedata
 
 import (
 	"testing"
-
-	"github.com/lca1/unlynx/simul/test_data/time_data"
 )
 
-const filenameRead = "../drynx.csv"
+const filenameRead = "drynxVNScaling.csv"
 const filenameWrite = "drynxBand40.txt"
-const filenameToml = "../../runfiles/drynxServersScaling.toml"
+const filenameToml = "../runfiles/drynxVNScaling.toml"
 
 var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 	"Simulation", "\n",
@@ -16,20 +14,20 @@ var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 }
 
 func TestReadTomlSetup(t *testing.T) {
-	timedata.ReadTomlSetup(filenameToml, 1)
+	ReadTomlSetup(filenameToml, 1)
 }
 
 func TestReadDataFromCSV(t *testing.T) {
-	timedata.ReadDataFromCSVFile(filenameRead, ",")
+	ReadDataFromCSVFile(filenameRead, ",")
 }
 
 func TestWriteDataFromCSVFile(t *testing.T) {
-	lines := timedata.ReadDataFromCSVFile(filenameRead, ",")
-	testTimeData := timedata.ParseDataFromCSVFile(lines, flags)
+	lines := ReadDataFromCSVFile(filenameRead, ",")
+	testTimeData := ParseDataFromCSVFile(lines, flags)
 
-	timedata.CreateCSVFile(filenameWrite)
+	CreateCSVFile(filenameWrite)
 	for i := 0; i < len(testTimeData[flags[0]]); i++ {
-		setup := timedata.ReadTomlSetup(filenameToml, i)
-		timedata.WriteDataFromCSVFile(filenameWrite, flags, testTimeData, i, setup)
+		setup := ReadTomlSetup(filenameToml, i)
+		WriteDataFromCSVFile(filenameWrite, flags, testTimeData, i, setup)
 	}
 }

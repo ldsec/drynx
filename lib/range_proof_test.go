@@ -2,12 +2,14 @@ package libdrynx
 
 import (
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/lca1/unlynx/lib"
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestRangeProofVerification(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	if !CurvePairingTest() {
 		t.Skip("no pairing")
 	}
@@ -29,11 +31,12 @@ func TestRangeProofVerification(t *testing.T) {
 		encryption, _ := libunlynx.EncryptIntGetR(P, int64(25))
 		publishArgs[i] = CreatePredicateRangeProof(PublishSignature{}, 0, 0, 0, nil, nil, *encryption)
 		//publishArgsFalse := lib.CreatePredicateRangeProof(sig[i],u,l,int64(65),P)
-		assert.True(t,RangeProofVerification(publishArgs[i], 0, 0, nil, nil) )
+		assert.True(t, RangeProofVerification(publishArgs[i], 0, 0, nil, nil))
 	}
 }
 
 func TestOptimizedRangeProofVerification(t *testing.T) {
+	libunlynx.SuiTe = bn256.NewSuiteG1()
 	if !CurvePairingTest() {
 		t.Skip("no pairing")
 	}

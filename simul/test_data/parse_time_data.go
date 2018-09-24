@@ -166,8 +166,8 @@ func ReadDataFromCSVFile(filename string, sep string) [][]string {
 // buffered reader.
 func Readln(r *bufio.Reader) (string, error) {
 	var (
-		isPrefix       = true
-		err      error = nil
+		isPrefix = true
+		err      error
 		line, ln []byte
 	)
 	for isPrefix && err == nil {
@@ -179,16 +179,6 @@ func Readln(r *bufio.Reader) (string, error) {
 
 // ParseDataFromCSVFile reads data from the CSV file where the time values are stored and re-arranges everything in a key-value map
 func ParseDataFromCSVFile(lines [][]string, flags []string) map[string][]string {
-	/*fileHandle, err := os.Open(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer fileHandle.Close()
-
-	lines, err := csv.NewReader(fileHandle).ReadAll()
-	if err != nil {
-		log.Fatal(err)
-	}*/
 
 	result := make(map[string][]string)
 

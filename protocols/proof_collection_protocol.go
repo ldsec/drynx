@@ -324,7 +324,7 @@ func (p *ProofCollectionProtocol) storeProof(index int, typeProof, surveyID, sen
 		}
 
 		//Decrease size of proof expected for this type by 1
-		qi.TotalNbrProofs[index] -= 1
+		qi.TotalNbrProofs[index]--
 		p.Request.Replace(surveyID, qi)
 
 		//libunlynx.EndTimer(timeHandleProof)
@@ -383,9 +383,9 @@ func (p *ProofCollectionProtocol) storeProof(index int, typeProof, surveyID, sen
 				// if the message was sent by the go routine
 				if bitmap.ServerIdentity.String() == p.ServerIdentity().String() {
 					return nil, nil // terminate
-				} else {
-					p.SharedBMChannel <- bitmap.Bitmap
 				}
+
+				p.SharedBMChannel <- bitmap.Bitmap
 			}
 		}
 

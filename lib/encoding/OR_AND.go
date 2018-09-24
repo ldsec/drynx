@@ -71,7 +71,7 @@ func EncodeBitAND(input bool, pubKey kyber.Point) (*libunlynx.CipherText, int64)
 	return cipher, clear
 }
 
-//EncodeBitAND computes the encoding of bit Xi, under the AND operation with range proofs
+//EncodeBitANDWithProof computes the encoding of bit Xi, under the AND operation with range proofs
 func EncodeBitANDWithProof(input bool, pubKey kyber.Point, sigs []libdrynx.PublishSignature, l int64, u int64) (*libunlynx.CipherText, int64, libdrynx.CreateProof) {
 	cipher := libunlynx.CipherText{}
 	toEncrypt := int64(1)

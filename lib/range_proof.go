@@ -243,8 +243,6 @@ func (prf *RangeProof) FromBytes(prpb RangeProofBytes) {
 
 }
 
-
-
 // InitRangeProofSignatureDeterministic is used for simulation puposes to create deterministic servers' signatures
 func InitRangeProofSignatureDeterministic(u int64) PublishSignatureBytes {
 	suitePair := bn256.NewSuite()

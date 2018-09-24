@@ -41,7 +41,6 @@ func NewDrynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 		private:    keys.Private,
 	}
 
-
 	limit := int64(10000)
 	libdrynx.CreateDecryptionTable(limit, newClient.public, newClient.private)
 	return newClient

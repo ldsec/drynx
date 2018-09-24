@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var priv1, pub1 = libunlynx.GenKey()
+
 //TestObfuscation tests collective obfuscation protocol
 func TestObfuscation(t *testing.T) {
 	log.SetDebugVisible(2)
@@ -26,10 +28,14 @@ func TestObfuscation(t *testing.T) {
 	if err != nil {
 		t.Fatal("Couldn't start protocol:", err)
 	}
-	priv, pub := libunlynx.GenKey()
+
 	protocol := p.(*protocols.ObfuscationProtocol)
-	protocol.ToObfuscateData = *libunlynx.EncryptIntVector(pub, []int64{0, 1, 2})
-	protocol.Proofs = 0
+	/*tmp := *libunlynx.EncryptIntVector(pub, []int64{0, 1, 2})
+	mu := sync.Mutex{}
+	mu.Lock()
+	protocol.ToObfuscateData = tmp
+	//protocol.Proofs = 0
+	mu.Unlock()*/
 
 	//run protocol
 	go protocol.Start()
@@ -43,7 +49,7 @@ func TestObfuscation(t *testing.T) {
 	select {
 	case encryptedResult := <-feedback:
 		for i, v := range encryptedResult {
-			result[i] = libunlynx.DecryptCheckZero(priv, v)
+			result[i] = libunlynx.DecryptCheckZero(priv1, v)
 		}
 
 		assert.Equal(t, expresult, result)
@@ -57,7 +63,9 @@ func NewObfuscationTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, erro
 
 	pi, err := protocols.NewObfuscationProtocol(tni)
 	protocol := pi.(*protocols.ObfuscationProtocol)
-
+	if tni.IsRoot() {
+		protocol.ToObfuscateData = *libunlynx.EncryptIntVector(pub1, []int64{0, 1, 2})
+	}
 	protocol.Proofs = 0
 	return protocol, err
 }

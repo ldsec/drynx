@@ -23,25 +23,25 @@ func EncodeFreqCountWithProofs(input []int64, min int64, max int64, pubKey kyber
 	}
 	//get the frequency count for all integer values in the range {min, min+1, ..., max}
 	for _, el := range input {
-		freqcount[el-min] += 1
+		freqcount[el-min]++
 	}
 
 	//encrypt the local DP's query results
-	Ciphertext_Tuple := make([]libunlynx.CipherText, max-min+1)
+	ciphertextTuples := make([]libunlynx.CipherText, max-min+1)
 	wg := libunlynx.StartParallelize(int(max-min) + 1)
 	for i := int64(0); i <= max-min; i++ {
 		go func(i int64) {
 			defer wg.Done()
 			countIEncrypted, ri := libunlynx.EncryptIntGetR(pubKey, freqcount[i])
 			r[i] = ri
-			Ciphertext_Tuple[i] = *countIEncrypted
+			ciphertextTuples[i] = *countIEncrypted
 		}(i)
 
 	}
 	libunlynx.EndParallelize(wg)
 
 	if sigs == nil {
-		return Ciphertext_Tuple, []int64{0}, nil
+		return ciphertextTuples, []int64{0}, nil
 	}
 
 	createRangeProof := make([]libdrynx.CreateProof, len(freqcount))
@@ -51,15 +51,15 @@ func EncodeFreqCountWithProofs(input []int64, min int64, max int64, pubKey kyber
 			go func(i int, v int64) {
 				defer wg1.Done()
 				//input range validation proof
-				createRangeProof[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: Ciphertext_Tuple[i]}
+				createRangeProof[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: ciphertextTuples[i]}
 			}(i, v)
 		} else {
 			//input range validation proof
-			createRangeProof[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: Ciphertext_Tuple[i]}
+			createRangeProof[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: ciphertextTuples[i]}
 		}
 	}
 	libunlynx.EndParallelize(wg1)
-	return Ciphertext_Tuple, []int64{0}, createRangeProof
+	return ciphertextTuples, []int64{0}, createRangeProof
 }
 
 //DecodeFreqCount computes the frequency count of local DP's query results

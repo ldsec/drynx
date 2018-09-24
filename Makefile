@@ -28,7 +28,7 @@ test_lint:
 # for more than once in Travis. Change `make test` in .travis.yml
 # to `make test_playground`.
 test_verbose:
-	go test -v -race -p=1 ./...;
+	go test -v -race -p=1 -tags vartime ./...;
 
 test_playground:
 	cd protocols; \

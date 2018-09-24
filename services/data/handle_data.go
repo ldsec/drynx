@@ -15,7 +15,7 @@ import (
 	"github.com/lca1/unlynx/lib"
 )
 
-// Group identifies all different groups to be added to the test data file
+// Groups identifies all different groups to be added to the test data file
 var Groups [][]int64
 
 // FillInt64Slice fills a slice with the same value v
@@ -38,6 +38,7 @@ func randomFillInt64Slice(s []int64, max int64) {
 	}
 }
 
+// CreateInt64Slice creates a slice of int64 between min and max
 func CreateInt64Slice(size int64, min int64, max int64) []int64 {
 	slice := make([]int64, size)
 	for i := 0; i < int(size); i++ {

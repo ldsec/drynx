@@ -17,15 +17,15 @@ func Encode(datas [][]int64, pubKey kyber.Point, signatures [][]libdrynx.Publish
 
 	switch operation.NameOp {
 	case "sum":
-		tmp_encryptedResponse := &libunlynx.CipherText{}
-		tmp_prf := []libdrynx.CreateProof{}
+		tmpEncryptedResponse := &libunlynx.CipherText{}
+		tmpPrfs := []libdrynx.CreateProof{}
 		if withProofs {
-			tmp_encryptedResponse, clearResponse, tmp_prf = EncodeSumWithProofs(datas[0], pubKey, signatures[0], (*ranges[0])[1], (*ranges[0])[0])
+			tmpEncryptedResponse, clearResponse, tmpPrfs = EncodeSumWithProofs(datas[0], pubKey, signatures[0], (*ranges[0])[1], (*ranges[0])[0])
 		} else {
-			tmp_encryptedResponse, clearResponse = EncodeSum(datas[0], pubKey)
+			tmpEncryptedResponse, clearResponse = EncodeSum(datas[0], pubKey)
 		}
-		encryptedResponse = []libunlynx.CipherText{*tmp_encryptedResponse}
-		createPrf = tmp_prf
+		encryptedResponse = []libunlynx.CipherText{*tmpEncryptedResponse}
+		createPrf = tmpPrfs
 		break
 	case "cosim":
 		if withProofs {
@@ -50,24 +50,24 @@ func Encode(datas [][]int64, pubKey kyber.Point, signatures [][]libdrynx.Publish
 		break
 	case "lin_reg":
 		d := len(datas)
-		numb_values := len(datas[0])
+		numbValues := len(datas[0])
 
-		data_dimensions := make([][]int64, numb_values)
-		data_y := make([]int64, numb_values)
-		for j := 0; j < numb_values; j++ {
-			data_dimensions[j] = make([]int64, d-1)
+		dataDimensions := make([][]int64, numbValues)
+		dataYS := make([]int64, numbValues)
+		for j := 0; j < numbValues; j++ {
+			dataDimensions[j] = make([]int64, d-1)
 			for i := 0; i < d-1; i++ {
-				data_dimensions[j][i] = datas[i][j]
+				dataDimensions[j][i] = datas[i][j]
 			}
-			data_y[j] = datas[d-1][j]
+			dataYS[j] = datas[d-1][j]
 		}
 
 		if withProofs {
-			encryptedResponse, clearResponse, createPrf = EncodeLinearRegression_DimsWithProofs(data_dimensions, data_y, pubKey, signatures, ranges)
-			encryptedResponse, clearResponse, createPrf = EncodeLinearRegression_DimsWithProofs(data_dimensions, data_y, pubKey, signatures, ranges)
+			encryptedResponse, clearResponse, createPrf = EncodeLinearRegressionDimsWithProofs(dataDimensions, dataYS, pubKey, signatures, ranges)
+			encryptedResponse, clearResponse, createPrf = EncodeLinearRegressionDimsWithProofs(dataDimensions, dataYS, pubKey, signatures, ranges)
 
 		} else {
-			encryptedResponse, clearResponse = EncodeLinearRegression_Dims(data_dimensions, data_y, pubKey)
+			encryptedResponse, clearResponse = EncodeLinearRegressionDims(dataDimensions, dataYS, pubKey)
 		}
 		break
 	case "frequencyCount":
@@ -168,7 +168,7 @@ func Decode(ciphers []libunlynx.CipherText, secKey kyber.Scalar, operation libdr
 	case "variance":
 		return []float64{DecodeVariance(ciphers, secKey)}
 	case "lin_reg":
-		return DecodeLinearRegression_Dims(ciphers, secKey)
+		return DecodeLinearRegressionDims(ciphers, secKey)
 	case "frequencyCount":
 		freqCount := DecodeFreqCount(ciphers, secKey)
 		result := make([]float64, len(freqCount))

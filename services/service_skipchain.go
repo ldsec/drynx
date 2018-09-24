@@ -18,7 +18,10 @@ import (
 	"gopkg.in/satori/go.uuid.v1"
 )
 
+// VerifyBitmap is a unique ID
 var VerifyBitmap = skipchain.VerifierID(uuid.NewV5(uuid.NamespaceURL, "Bitmap"))
+
+// VerificationBitmap is a unique ID
 var VerificationBitmap = []skipchain.VerifierID{VerifyBitmap, skipchain.VerifyBase}
 
 // Query Handlers

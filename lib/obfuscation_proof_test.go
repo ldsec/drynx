@@ -11,7 +11,7 @@ func TestObfuscationProofVerification(t *testing.T) {
 	tab := int64(2)
 	ev := libunlynx.EncryptInt(pub, tab)
 	obfuscationFactor := sec
-	evo := libunlynx.CipherText{libunlynx.SuiTe.Point().Mul(obfuscationFactor, ev.K), libunlynx.SuiTe.Point().Mul(obfuscationFactor, ev.C)}
+	evo := libunlynx.CipherText{K: libunlynx.SuiTe.Point().Mul(obfuscationFactor, ev.K), C: libunlynx.SuiTe.Point().Mul(obfuscationFactor, ev.C)}
 	op := ObfuscationProofCreation(*ev, evo, obfuscationFactor)
 	assert.True(t, ObfuscationProofVerification(op))
 

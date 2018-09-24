@@ -28,6 +28,7 @@ type ProofRequest struct {
 	KeySwitchProof   *KeySwitchProofRequest
 }
 
+// ProofToStoreInDB is the proof format when stored in the DB
 type ProofToStoreInDB struct {
 	Data      []byte
 	Signature []byte
@@ -66,7 +67,7 @@ type ObfuscationProofRequest struct {
 	SB         *skipchain.SkipBlock
 }
 
-// ShuffleRangeProffRequest is the structure sent by the client to the VNs to verify and store a shuffle proof.
+// ShuffleProofRequest is the structure sent by the client to the VNs to verify and store a shuffle proof.
 type ShuffleProofRequest struct {
 	SurveyID           string
 	SenderID           string // the string address of the sender node
@@ -130,7 +131,7 @@ func (rpr *RangeProofRequest) VerifyProof(source network.ServerIdentity, sq Surv
 		defer wg.Done()
 		err = VerifyProofSignature(sq.IDtoPublic[rpr.SenderID], rpr.Data, rpr.Signature)
 		if err != nil {
-			verifSign = PROOF_FALSE_SIGN
+			verifSign = proofFalseSign
 		}
 	}()
 	verif := verifyRangeProofList(rpr.Data, sq.Threshold, sq.Query.Ranges, sq.Query.IVSigs.InputValidationSigs, sq.RosterServers.Aggregate, sq.RangeProofThreshold)
@@ -144,7 +145,7 @@ func (rpr *RangeProofRequest) VerifyProof(source network.ServerIdentity, sq Surv
 }
 
 func verifyRangeProofList(data []byte, sample float64, ranges []*[]int64, psb []*[]PublishSignatureBytes, p kyber.Point, verifThresold float64) int64 {
-	bmInt := PROOF_RECEIVED
+	bmInt := proofReceived
 	rando := rand.Float64()
 	if rando <= sample {
 		// we check the proof
@@ -157,12 +158,12 @@ func verifyRangeProofList(data []byte, sample float64, ranges []*[]int64, psb []
 		toVerify.FromBytes(*proofs.(*RangeProofListBytes))
 		result := RangeProofListVerification(*toVerify, ranges, psb, p, verifThresold)
 		if result {
-			bmInt = PROOF_TRUE
+			bmInt = ProofTrue
 		} else {
-			bmInt = PROOF_FALSE
+			bmInt = proofFalse
 		}
 	} else {
-		bmInt = PROOF_RECEIVED
+		bmInt = proofReceived
 	}
 
 	return bmInt
@@ -208,7 +209,7 @@ func (apr *AggregationProofRequest) VerifyProof(source network.ServerIdentity, s
 		defer wg.Done()
 		err = VerifyProofSignature(sq.IDtoPublic[apr.SenderID], apr.Data, apr.Signature)
 		if err != nil {
-			verifSign = PROOF_FALSE_SIGN
+			verifSign = proofFalseSign
 		}
 	}()
 
@@ -223,7 +224,7 @@ func (apr *AggregationProofRequest) VerifyProof(source network.ServerIdentity, s
 }
 
 func verifyAggregation(data []byte, sample float64) int64 {
-	bmInt := PROOF_RECEIVED
+	bmInt := proofReceived
 	if rand.Float64() <= sample {
 		_, proofs, err := network.Unmarshal(data, libunlynx.SuiTe)
 		toVerify := &PublishAggregationProof{}
@@ -234,12 +235,12 @@ func verifyAggregation(data []byte, sample float64) int64 {
 
 		result := ServerAggregationProofVerification(*toVerify)
 		if result {
-			bmInt = PROOF_TRUE
+			bmInt = ProofTrue
 		} else {
-			bmInt = PROOF_FALSE
+			bmInt = proofFalse
 		}
 	} else {
-		bmInt = PROOF_RECEIVED
+		bmInt = proofReceived
 	}
 
 	return bmInt
@@ -285,7 +286,7 @@ func (apr *ObfuscationProofRequest) VerifyProof(source network.ServerIdentity, s
 		defer wg.Done()
 		err = VerifyProofSignature(sq.IDtoPublic[apr.SenderID], apr.Data, apr.Signature)
 		if err != nil {
-			verifSign = PROOF_FALSE_SIGN
+			verifSign = proofFalseSign
 		}
 	}()
 
@@ -300,7 +301,7 @@ func (apr *ObfuscationProofRequest) VerifyProof(source network.ServerIdentity, s
 }
 
 func verifyObfuscation(data []byte, insideProofThresold, sample float64) int64 {
-	bmInt := PROOF_RECEIVED
+	bmInt := proofReceived
 	if rand.Float64() <= sample {
 		_, proof, err := network.Unmarshal(data, libunlynx.SuiTe)
 		toVerify := &PublishedListObfuscationProof{}
@@ -311,12 +312,12 @@ func verifyObfuscation(data []byte, insideProofThresold, sample float64) int64 {
 
 		result := ObfuscationListProofVerification(*toVerify, insideProofThresold)
 		if result {
-			bmInt = PROOF_TRUE
+			bmInt = ProofTrue
 		} else {
-			bmInt = PROOF_FALSE
+			bmInt = proofFalse
 		}
 	} else {
-		bmInt = PROOF_RECEIVED
+		bmInt = proofReceived
 	}
 
 	return bmInt
@@ -361,7 +362,7 @@ func (spr *ShuffleProofRequest) VerifyProof(source network.ServerIdentity, sq Su
 		defer wg.Done()
 		err = VerifyProofSignature(sq.IDtoPublic[spr.SenderID], spr.Data, spr.Signature)
 		if err != nil {
-			verifSign = PROOF_FALSE_SIGN
+			verifSign = proofFalseSign
 		}
 	}()
 
@@ -377,7 +378,7 @@ func (spr *ShuffleProofRequest) VerifyProof(source network.ServerIdentity, sq Su
 
 // verifyShuffle verifies a shuffle proof with a given probability
 func verifyShuffle(data []byte, sample float64, roster onet.Roster) int64 {
-	bmInt := PROOF_RECEIVED
+	bmInt := proofReceived
 	if rand.Float64() <= sample {
 		_, proofs, err := network.Unmarshal(data, libunlynx.SuiTe)
 		if err != nil {
@@ -389,12 +390,12 @@ func verifyShuffle(data []byte, sample float64, roster onet.Roster) int64 {
 		result := ShufflingProofVerification(*toVerify, roster.Aggregate)
 
 		if result {
-			bmInt = PROOF_TRUE
+			bmInt = ProofTrue
 		} else {
-			bmInt = PROOF_FALSE
+			bmInt = proofFalse
 		}
 	} else {
-		bmInt = PROOF_RECEIVED
+		bmInt = proofReceived
 	}
 
 	return bmInt
@@ -439,7 +440,7 @@ func (kpr *KeySwitchProofRequest) VerifyProof(source network.ServerIdentity, sq 
 		defer wg.Done()
 		err = VerifyProofSignature(sq.IDtoPublic[kpr.SenderID], kpr.Data, kpr.Signature)
 		if err != nil {
-			verifSign = PROOF_FALSE_SIGN
+			verifSign = proofFalseSign
 		}
 	}()
 
@@ -454,7 +455,7 @@ func (kpr *KeySwitchProofRequest) VerifyProof(source network.ServerIdentity, sq 
 }
 
 func verifyKeySwitch(data []byte, insideProofThresold, sample float64) int64 {
-	bmInt := PROOF_RECEIVED
+	bmInt := proofReceived
 	if rand.Float64() <= sample {
 		// we check the proof
 		_, proofs, err := network.Unmarshal(data, libunlynx.SuiTe)
@@ -467,12 +468,12 @@ func verifyKeySwitch(data []byte, insideProofThresold, sample float64) int64 {
 
 		result := KeySwitchListProofVerification(*toVerify, insideProofThresold)
 		if result {
-			bmInt = PROOF_TRUE
+			bmInt = ProofTrue
 		} else {
-			bmInt = PROOF_FALSE
+			bmInt = proofFalse
 		}
 	} else {
-		bmInt = PROOF_RECEIVED
+		bmInt = proofReceived
 	}
 
 	return bmInt

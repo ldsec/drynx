@@ -16,39 +16,39 @@ func EncodeCosim(rijs, riks []int64, pubKey kyber.Point) ([]libunlynx.CipherText
 // EncodeCosimWithProofs computes the elements needed to compute cosine similarity with the proof of range
 func EncodeCosimWithProofs(rijs, riks []int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
 	//sum the rijs
-	rijs_sum := int64(0)
-	riks_sum := int64(0)
-	rijs_2_sum := int64(0)
-	riks_2_sum := int64(0)
-	rijs_x_rijks_sum := int64(0)
+	rijsSum := int64(0)
+	riksSum := int64(0)
+	rijs2Sum := int64(0)
+	riks2Sum := int64(0)
+	rijsXRijksSum := int64(0)
 
 	for i, el := range rijs {
 		el2 := riks[i]
-		rijs_sum = rijs_sum + el
-		riks_sum = riks_sum + el2
-		rijs_2_sum = rijs_2_sum + el*el
-		riks_2_sum = riks_2_sum + el2*el2
-		rijs_x_rijks_sum = rijs_x_rijks_sum + el*el2
+		rijsSum = rijsSum + el
+		riksSum = riksSum + el2
+		rijs2Sum = rijs2Sum + el*el
+		riks2Sum = riks2Sum + el2*el2
+		rijsXRijksSum = rijsXRijksSum + el*el2
 
 	}
-	resultClear := []int64{rijs_sum, riks_sum, rijs_2_sum, riks_2_sum, rijs_x_rijks_sum}
+	resultClear := []int64{rijsSum, riksSum, rijs2Sum, riks2Sum, rijsXRijksSum}
 
-	result_encrypted := make([]libunlynx.CipherText, len(resultClear))
-	result_randomR := make([]kyber.Scalar, len(resultClear))
+	resultEncrypteds := make([]libunlynx.CipherText, len(resultClear))
+	resultRandomRS := make([]kyber.Scalar, len(resultClear))
 	wg := libunlynx.StartParallelize(len(resultClear))
 	for i, v := range resultClear {
 		go func(i int, v int64) {
 			defer wg.Done()
 			tmp, r := libunlynx.EncryptIntGetR(pubKey, v)
-			result_encrypted[i] = *tmp
-			result_randomR[i] = r
+			resultEncrypteds[i] = *tmp
+			resultRandomRS[i] = r
 		}(i, v)
 
 	}
 	libunlynx.EndParallelize(wg)
 
 	if sigs == nil {
-		return result_encrypted, resultClear, nil
+		return resultEncrypteds, resultClear, nil
 	}
 
 	createProofs := make([]libdrynx.CreateProof, len(resultClear))
@@ -58,33 +58,33 @@ func EncodeCosimWithProofs(rijs, riks []int64, pubKey kyber.Point, sigs [][]libd
 			go func(i int, v int64) {
 				defer wg.Done()
 				//input range validation proof
-				createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
+				createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: resultRandomRS[i], CaPub: pubKey, Cipher: resultEncrypteds[i]}
 			}(i, v)
 		} else {
 			//input range validation proof
-			createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: result_randomR[i], CaPub: pubKey, Cipher: result_encrypted[i]}
+			createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: resultRandomRS[i], CaPub: pubKey, Cipher: resultEncrypteds[i]}
 		}
 
 	}
 	libunlynx.EndParallelize(wg)
 
-	return result_encrypted, resultClear, createProofs
+	return resultEncrypteds, resultClear, createProofs
 }
 
 // DecodeCosim decodes (decrypts and computes) the cosine similarity result
 func DecodeCosim(result []libunlynx.CipherText, secKey kyber.Scalar) float64 {
-	results_clear := make([]int64, len(result))
+	resultsClears := make([]int64, len(result))
 	wg := libunlynx.StartParallelize(len(result))
 	for i, j := range result {
 		go func(i int, j libunlynx.CipherText) {
 			defer wg.Done()
-			results_clear[i] = libunlynx.DecryptIntWithNeg(secKey, j)
+			resultsClears[i] = libunlynx.DecryptIntWithNeg(secKey, j)
 		}(i, j)
 
 	}
 	libunlynx.EndParallelize(wg)
 
-	cosim := float64(results_clear[4]) / (math.Sqrt(float64(results_clear[2])) * math.Sqrt(float64(results_clear[3])))
+	cosim := float64(resultsClears[4]) / (math.Sqrt(float64(resultsClears[2])) * math.Sqrt(float64(resultsClears[3])))
 
 	return cosim
 

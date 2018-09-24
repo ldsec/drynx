@@ -36,13 +36,12 @@ func ServerAggregationProofVerification(pap PublishAggregationProof) bool {
 	for k, v := range proofAggrResult {
 		if _, ok := proofAggr[k]; !ok {
 			return false
-		} else {
-			tmpGrp := proofAggr[k].GroupByEnc
-			tmpAggr := proofAggr[k].AggregatingAttributes
+		}
+		tmpGrp := proofAggr[k].GroupByEnc
+		tmpAggr := proofAggr[k].AggregatingAttributes
 
-			if !v.GroupByEnc.Equal(&tmpGrp) || !v.AggregatingAttributes.Equal(&tmpAggr) {
-				return false
-			}
+		if !v.GroupByEnc.Equal(&tmpGrp) || !v.AggregatingAttributes.Equal(&tmpAggr) {
+			return false
 		}
 	}
 

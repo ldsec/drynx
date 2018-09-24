@@ -51,7 +51,7 @@ func EncodeMin(input []int64, max int64, min int64, pubKey kyber.Point) ([]libun
 }
 
 //DecodeMin decodes the global min
-func DecodeMin(result []libunlynx.CipherText, global_min int64, secKey kyber.Scalar) int64 {
+func DecodeMin(result []libunlynx.CipherText, globalMin int64, secKey kyber.Scalar) int64 {
 	var min int64
 
 	//decode the vector
@@ -69,7 +69,7 @@ func DecodeMin(result []libunlynx.CipherText, global_min int64, secKey kyber.Sca
 	for i := int64(0); i < int64(len(result)); i++ {
 		//return the index of the rightmost 1-bit
 		if bitIs[i] == true {
-			min = i + global_min
+			min = i + globalMin
 			break
 		}
 	}
@@ -119,7 +119,7 @@ func EncodeMaxWithProofs(input []int64, max int64, min int64, pubKey kyber.Point
 }
 
 //DecodeMax decodes the global max
-func DecodeMax(result []libunlynx.CipherText, global_min int64, secKey kyber.Scalar) int64 {
+func DecodeMax(result []libunlynx.CipherText, globalMin int64, secKey kyber.Scalar) int64 {
 	var max int64
 
 	//get the counts for all integer values in the range {1, 2, ..., max}
@@ -137,7 +137,7 @@ func DecodeMax(result []libunlynx.CipherText, global_min int64, secKey kyber.Sca
 	for i := int64(0); i < int64(len(result)); i++ {
 		//return the index of the rightmost 1-bit
 		if bitIs[i] == true {
-			max = i + global_min
+			max = i + globalMin
 			break
 		}
 	}

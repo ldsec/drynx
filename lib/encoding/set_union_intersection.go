@@ -69,9 +69,9 @@ func DecodeUnion(result []libunlynx.CipherText, secKey kyber.Scalar) []int64 {
 	for i := int64(0); i < int64(len(result)); i++ {
 		go func(i int64) {
 			defer wg.Done()
-			bit_i := DecodeBitOR(result[i], secKey)
+			bitI := DecodeBitOR(result[i], secKey)
 			//return the index of the rightmost 1-bit
-			if bit_i == true {
+			if bitI == true {
 				outputVectors[i] = 1
 			} else {
 				outputVectors[i] = 0

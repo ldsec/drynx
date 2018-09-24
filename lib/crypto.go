@@ -46,5 +46,5 @@ func NewKeySwitching(targetPubKey kyber.Point, rbs []kyber.Point, secretKey kybe
 
 // CurvePairingTest test the type of the curve.
 func CurvePairingTest() bool {
-	return libunlynx.SuiTe.String() == "combined:bn256.G1"
+	return libunlynx.SuiTe.String() == "bn256.G1"
 }

@@ -1,24 +1,25 @@
 package libdrynx
 
 import (
+	"github.com/coreos/bbolt"
 	"github.com/dedis/cothority/skipchain"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
+	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"sync"
 	"time"
-	"github.com/coreos/bbolt"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/network"
 )
 
-const PROOF_FALSE = int64(0)
-const PROOF_TRUE = int64(1)
-const PROOF_RECEIVED = int64(2)
-const PROOF_NOT_RECEIVED = int64(3)
-const PROOF_FALSE_SIGN = int64(4)
+const proofFalse = int64(0)
+
+// ProofTrue is the constant used to indicate that a proof is true in the bitmap
+const ProofTrue = int64(1)
+const proofReceived = int64(2)
+const proofFalseSign = int64(4)
 
 // QueryInfo is a structure used in the service to store information about a query in the concurrent map.
 // This information helps us to know how many proofs have been received and processed.
@@ -94,7 +95,7 @@ type BitMap struct {
 	BitMap map[string]int64
 }
 
-// ResponseDP contain the data to be sent to the server.
+// ResponseDPOneGroup contain the data to be sent to the server.
 type ResponseDPOneGroup struct {
 	Group string
 	Data  libunlynx.CipherVector
@@ -527,7 +528,7 @@ func (sm *ShufflingMessage) FromBytes(data *[]byte, gacbLength, aabLength, pgaeb
 	}
 }
 
-// AddFiffP checks if differential privacy is required or not
+// AddDiffP checks if differential privacy is required or not
 func AddDiffP(qdf QueryDiffP) bool {
 	return !(qdf.LapMean == 0.0 && qdf.LapScale == 0.0 && qdf.NoiseListSize == 0 && qdf.Quanta == 0.0 && qdf.Scale == 0 && qdf.Limit == 0)
 }
