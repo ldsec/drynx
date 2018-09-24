@@ -27,7 +27,7 @@ The version in the `master`-branch is stable for simulation purposes and has no 
 
 ## License
 
-UnLynx is licensed under a End User Software License Agreement ('EULA') for non-commercial use. If you need more information, please contact us.
+Drynx is licensed under a End User Software License Agreement ('EULA') for non-commercial use. If you need more information, please contact us.
 
 ## Contact
 You can contact any of the developers for more information or any other member of [lca1](http://lca.epfl.ch/people/lca1/):
