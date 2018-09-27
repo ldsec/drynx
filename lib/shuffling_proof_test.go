@@ -1,11 +1,10 @@
 package libdrynx
 
 import (
-	"testing"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
-
 
 func TestShufflingProof(t *testing.T) {
 	_, pubKey := libunlynx.GenKey()

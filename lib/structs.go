@@ -170,6 +170,7 @@ type QueryDiffP struct {
 	Quanta        float64
 	Scale         float64
 	Limit         float64
+	Optimized     bool
 }
 
 // QueryDPDataGen contains the query information for the generation of data at DP

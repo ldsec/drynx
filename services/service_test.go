@@ -64,7 +64,7 @@ func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 //______________________________________________________________________________________________________________________
 /// Test service Drynx for all operations
 func TestServiceDrynx(t *testing.T) {
-	log.SetDebugVisible(2)
+	log.SetDebugVisible(1)
 
 	//------SET PARAMS--------
 
@@ -72,8 +72,8 @@ func TestServiceDrynx(t *testing.T) {
 	rangeProofs := true
 	obfuscation := false
 
-	diffPri := false
-
+	diffPri := true
+	diffPriOpti := true
 	nbrRows := int64(1)
 	nbrServers := 3
 	nbrDPs := 5
@@ -175,9 +175,9 @@ func TestServiceDrynx(t *testing.T) {
 		// choosing the limit is done by drawing the curve (e.g. wolframalpha)
 		diffP := libdrynx.QueryDiffP{}
 		if diffPri {
-			diffP = libdrynx.QueryDiffP{LapMean: 0, LapScale: 15.0, NoiseListSize: 1000, Limit: 65, Scale: 1}
+			diffP = libdrynx.QueryDiffP{LapMean: 0, LapScale: 15.0, NoiseListSize: 1000, Limit: 65, Scale: 1, Optimized: diffPriOpti}
 		} else {
-			diffP = libdrynx.QueryDiffP{LapMean: 0.0, LapScale: 0.0, NoiseListSize: 0, Quanta: 0.0, Scale: 0}
+			diffP = libdrynx.QueryDiffP{LapMean: 0.0, LapScale: 0.0, NoiseListSize: 0, Quanta: 0.0, Scale: 0, Optimized: diffPriOpti}
 		}
 
 		// DPs signatures for Input Range Validation

@@ -26,7 +26,6 @@ func init() {
 // SimulationDrynx state of a simulation.
 type SimulationDrynx struct {
 	onet.SimulationBFTree
-
 	// Settings
 	// Topology
 	NbrServers      int
@@ -57,6 +56,7 @@ type SimulationDrynx struct {
 	DiffPQuanta  float64
 	DiffPScale   float64
 	DiffPLimit   float64
+	DiffPOpti    bool
 
 	// Data and query response
 	GroupByValues []int64
@@ -100,7 +100,7 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 
 	// has to be set here because cannot be in toml file
 	dpData := libdrynx.QueryDPDataGen{GroupByValues: sim.GroupByValues, GenerateRows: int64(sim.DPRows), GenerateDataMin: sim.MinData, GenerateDataMax: sim.MaxData}
-	diffP := libdrynx.QueryDiffP{LapMean: sim.DiffPEpsilon, LapScale: sim.DiffPDelta, Quanta: sim.DiffPQuanta, NoiseListSize: sim.DiffPSize, Scale: sim.DiffPScale, Limit: sim.DiffPLimit}
+	diffP := libdrynx.QueryDiffP{LapMean: sim.DiffPEpsilon, LapScale: sim.DiffPDelta, Quanta: sim.DiffPQuanta, NoiseListSize: sim.DiffPSize, Scale: sim.DiffPScale, Limit: sim.DiffPLimit, Optimized: sim.DiffPOpti}
 
 	//logistic regression
 	m := int64(sim.DPRows) - 1

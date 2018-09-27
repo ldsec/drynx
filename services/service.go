@@ -320,7 +320,12 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 		go func() {
 			//diffPTimer := libDrynx.StartTimer(s.ServerIdentity().String() + "_DiffPPhase")
 			if libdrynx.AddDiffP(castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.Query.DiffP) {
-				s.DROPhase(castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.SurveyID)
+				if castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.Query.DiffP.Optimized {
+					s.DROLocalPhase(castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.SurveyID)
+				} else {
+					s.DROPhase(castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.SurveyID)
+				}
+
 			}
 			//libDrynx.EndTimer(diffPTimer)
 		}()
@@ -476,27 +481,53 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 	case protocolsunlynx.DROProtocolName:
 		survey := castToSurvey(s.Survey.Get(target))
 		log.Lvl2("SERVICE] <drynx> Server", s.ServerIdentity(), " Servers collectively add noise for differential privacy")
-		pi, err := protocols.NewShufflingProtocol(tn)
-		if err != nil {
-			return nil, err
-		}
 
-		shuffle := pi.(*protocols.ShufflingProtocol)
-		shuffle.Proofs = survey.SurveyQuery.Query.Proofs
-		shuffle.Precomputed = survey.ShufflePrecompute
-		shuffle.Query = &survey.SurveyQuery
-		shuffle.MapPIs = survey.MapPIs
+		// TODO remove duplicate code
+		if castToSurvey(s.Survey.Get(target)).SurveyQuery.Query.DiffP.Optimized {
+			pi, err = protocols.NewShufflingLocalProtocol(tn)
+			if err != nil {
+				return nil, err
+			}
+			shuffle := pi.(*protocols.ShufflingLocalProtocol)
+			shuffle.Proofs = survey.SurveyQuery.Query.Proofs
+			shuffle.Precomputed = survey.ShufflePrecompute
+			shuffle.Query = &survey.SurveyQuery
+			shuffle.MapPIs = survey.MapPIs
 
-		if tn.IsRoot() {
 			clientResponses := make([]libunlynx.ProcessResponse, 0)
 			if survey.SurveyQuery.Query.DiffP.Scale == 0 {
 				survey.SurveyQuery.Query.DiffP.Scale = 1
 			}
 			noiseArray := libdrynx.GenerateNoiseValuesScale(int64(survey.SurveyQuery.Query.DiffP.NoiseListSize), survey.SurveyQuery.Query.DiffP.LapMean, survey.SurveyQuery.Query.DiffP.LapScale, survey.SurveyQuery.Query.DiffP.Quanta, survey.SurveyQuery.Query.DiffP.Scale, survey.SurveyQuery.Query.DiffP.Limit)
+
 			for _, v := range noiseArray {
 				clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
 			}
 			shuffle.TargetOfShuffle = &clientResponses
+
+		} else {
+			pi, err = protocols.NewShufflingProtocol(tn)
+			if err != nil {
+				return nil, err
+			}
+			shuffle := pi.(*protocols.ShufflingProtocol)
+
+			shuffle.Proofs = survey.SurveyQuery.Query.Proofs
+			shuffle.Precomputed = survey.ShufflePrecompute
+			shuffle.Query = &survey.SurveyQuery
+			shuffle.MapPIs = survey.MapPIs
+
+			if tn.IsRoot() {
+				clientResponses := make([]libunlynx.ProcessResponse, 0)
+				if survey.SurveyQuery.Query.DiffP.Scale == 0 {
+					survey.SurveyQuery.Query.DiffP.Scale = 1
+				}
+				noiseArray := libdrynx.GenerateNoiseValuesScale(int64(survey.SurveyQuery.Query.DiffP.NoiseListSize), survey.SurveyQuery.Query.DiffP.LapMean, survey.SurveyQuery.Query.DiffP.LapScale, survey.SurveyQuery.Query.DiffP.Quanta, survey.SurveyQuery.Query.DiffP.Scale, survey.SurveyQuery.Query.DiffP.Limit)
+				for _, v := range noiseArray {
+					clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
+				}
+				shuffle.TargetOfShuffle = &clientResponses
+			}
 		}
 		return pi, nil
 
@@ -664,6 +695,24 @@ func (s *ServiceDrynx) DROPhase(targetSurvey string) error {
 
 	shufflingResult := <-pi.(*protocols.ShufflingProtocol).FeedbackChannel
 
+	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
+	noises := *libunlynx.NewCipherVector(len(shufflingResult))
+	for i, v := range shufflingResult {
+		noises[i] = v.AggregatingAttributes[0]
+	}
+	survey.Noises = noises
+	survey.DiffPChannel <- 1
+	s.Survey.Put(string(targetSurvey), survey)
+	return nil
+}
+
+// DROLocalPhase shuffles the list of noise values.
+func (s *ServiceDrynx) DROLocalPhase(targetSurvey string) error {
+	pi, err := s.StartProtocol(protocolsunlynx.DROProtocolName, targetSurvey)
+	if err != nil {
+		return err
+	}
+	shufflingResult := <-pi.(*protocols.ShufflingLocalProtocol).FeedbackChannel
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 	noises := *libunlynx.NewCipherVector(len(shufflingResult))
 	for i, v := range shufflingResult {
