@@ -87,7 +87,7 @@ type ProofCollectionProtocol struct {
 	Request *concurrent.ConcurrentMap
 	//the name of DB and the DB in itself is dedicated to the server.
 	DBPath string
-	DB     *bolt.DB
+	DB     *bbolt.DB
 	//To make everything thread safe (database access and updating parameters)
 	Mutex *sync.Mutex
 	// -------------------

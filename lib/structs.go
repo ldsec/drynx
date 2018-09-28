@@ -678,8 +678,8 @@ func QueryToProofsNbrs(q SurveyQuery) []int {
 }
 
 // UpdateDB put in a given bucket the value as byte with given key.
-func UpdateDB(db *bolt.DB, bucketName string, key string, value []byte) {
-	if err := db.Batch(func(tx *bolt.Tx) error {
+func UpdateDB(db *bbolt.DB, bucketName string, key string, value []byte) {
+	if err := db.Batch(func(tx *bbolt.Tx) error {
 		//Bucket with SurveyID server Adress
 		b, err := tx.CreateBucketIfNotExists([]byte(bucketName))
 		if err != nil {

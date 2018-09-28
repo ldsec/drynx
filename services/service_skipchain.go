@@ -166,7 +166,7 @@ func (s *ServiceDrynx) HandleEndVerification(msg *libdrynx.EndVerificationReques
 func (s *ServiceDrynx) HandleGetGenesis(request *libdrynx.GetGenesis) (network.Message, error) {
 
 	genesisBytes := make([]byte, 0)
-	err := s.DB.View(func(tx *bolt.Tx) error {
+	err := s.DB.View(func(tx *bbolt.Tx) error {
 		b := tx.Bucket([]byte("genesis"))
 		genesisBytes = b.Get([]byte("genesis"))
 		return nil
@@ -205,7 +205,7 @@ func (s *ServiceDrynx) HandleGetBlock(request *libdrynx.GetBlock) (network.Messa
 		s.DB = db
 	}
 
-	err := s.DB.View(func(tx *bolt.Tx) error {
+	err := s.DB.View(func(tx *bbolt.Tx) error {
 		b := tx.Bucket([]byte("genesis"))
 		blockIDbytes := b.Get([]byte(request.ID))
 		if len(blockIDbytes) == 0 {
@@ -243,7 +243,7 @@ func (s *ServiceDrynx) HandleGetProofs(request *libdrynx.GetProofs) (network.Mes
 	//Iterate over each bucket
 	result := make(map[string][]byte)
 
-	if err := s.DB.View(func(tx *bolt.Tx) error {
+	if err := s.DB.View(func(tx *bbolt.Tx) error {
 		b := tx.Bucket([]byte(request.ID + "/range"))
 		if b == nil {
 			log.Info("No bucket - range")
@@ -399,7 +399,7 @@ func (s *ServiceDrynx) verifyFuncBitmap(newID []byte, newSB *skipchain.SkipBlock
 	bitMapFromServ := make(map[string]int64)
 
 	//Read operation on the bitmap stored on DB of the server
-	err = s.DB.View(func(tx *bolt.Tx) error {
+	err = s.DB.View(func(tx *bbolt.Tx) error {
 		b := tx.Bucket([]byte(s.ServerIdentity().Address))
 		if b == nil {
 			log.Fatal("No bucket")
@@ -463,8 +463,8 @@ func (s *ServiceDrynx) generateMapPIs(query *libdrynx.SurveyQuery) map[string]on
 }
 
 //OpenDB opens/creates a database
-func OpenDB(path string) (*bolt.DB, error) {
-	db, err := bolt.Open(path, 0600, nil)
+func OpenDB(path string) (*bbolt.DB, error) {
+	db, err := bbolt.Open(path, 0600, nil)
 	if err != nil {
 		return nil, err
 	}
