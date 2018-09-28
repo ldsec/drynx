@@ -35,11 +35,3 @@ You can contact any of the developers for more information or any other member o
 * [David Froelicher](https://github.com/froelich) (PHD student) - david.froelicher@epfl.ch
 * [Joao Andre Sa](https://github.com/JoaoAndreSa) (Software Engineer) - joao.gomesdesaesousa@epfl.ch
 
-
-# TODO
-1. key switching test
-2. crypto_test
-3. common_structs_test
-4. remove drynx things from unlynx if any --> finish the crypto part, almost everything in drynx should leave and remain in unlynx
-5. master travis (make local) should work completely
-
