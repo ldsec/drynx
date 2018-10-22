@@ -92,6 +92,7 @@ func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToSer
 			CuttingFactor: cuttingFactor,
 		},
 	}
+
 	return sq
 }
 

@@ -1,10 +1,11 @@
 package services
 
 import (
+	"errors"
 	"fmt"
-
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
+	"github.com/dedis/onet/app"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/drynx/lib/encoding"
@@ -61,32 +62,54 @@ func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 	return dpToServers
 }
 
+
+func openGroupToml(tomlFileName string) (*onet.Roster, error) {
+	f, err := os.Open(tomlFileName)
+	if err != nil {
+		return nil, err
+	}
+	el, err := app.ReadGroupDescToml(f)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(el.Roster.List) <= 0 {
+		return nil, errors.New("Empty or invalid drynx group file:" + tomlFileName)
+	}
+
+	return el.Roster, nil
+}
+
 //______________________________________________________________________________________________________________________
 /// Test service Drynx for all operations
 func TestServiceDrynx(t *testing.T) {
+	//elDPs, _ := openGroupToml("/Users/jstephan/go/src/github.com/lca1/drynx/app/groupDPs.toml")
+	elServers, _ := openGroupToml("/Users/jstephan/go/src/github.com/lca1/drynx/app/groupServers.toml")
+	encryptedInt := libunlynx.EncryptInt(elServers.Aggregate, 3841)
+	encryptedInt.Add(*encryptedInt, *libunlynx.EncryptInt(elServers.Aggregate, 1))
+	log.LLvl1("HELLLOOO " + encryptedInt.C.String() + " " + encryptedInt.K.String())
+
 	log.SetDebugVisible(1)
 
 	//------SET PARAMS--------
 
-	proofs := 1 // 0 is not proof, 1 is proofs, 2 is optimized proofs
-	rangeProofs := true
+	proofs := 0 // 0 is not proof, 1 is proofs, 2 is optimized proofs
+	rangeProofs := false
 	obfuscation := false
 
-	diffPri := true
-	diffPriOpti := true
+	diffPri := false
+	diffPriOpti := false
 	nbrRows := int64(1)
 	nbrServers := 3
 	nbrDPs := 5
-	nbrVNs := 3
+	nbrVNs := 0
 	repartition := []int64{2, 1, 2} //repartition: server1: 1 DPs, server2: 1 DPs, server3: 1 DPs
 
 	//simulation
 	cuttingFactor := 0
 
-	operationList := []string{"sum"} //, "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
-	//operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "lin_reg"}
-	//operationList := []string{"bool_AND", "bool_OR", "min", "max", "union", "inter"}
-	//operationList := []string{"variance"}
+	//operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
+	operationList := []string{"sum"}
 	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 	//------------------------
 
@@ -108,6 +131,7 @@ func TestServiceDrynx(t *testing.T) {
 	}
 	defer local.CloseAll()
 
+	//Create dpToServers manually based on the group tomls
 	dpToServers := repartitionDPs(elServers, elDPs, repartition)
 
 	// Create a client (querier) for the service)
@@ -237,8 +261,7 @@ func TestServiceDrynx(t *testing.T) {
 		// query generation
 
 		surveyID := "query-" + op
-
-		sq := client.GenerateSurveyQuery(elServers, elVNs, dpToServers, idToPublic, surveyID, operation, ranges, ps, proofs, obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor)
+		sq := client.GenerateSurveyQuery(elServers, nil, dpToServers, idToPublic, surveyID, operation, ranges, ps, proofs, obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor)
 		if !libdrynx.CheckParameters(sq, diffPri) {
 			log.Fatal("Oups!")
 		}

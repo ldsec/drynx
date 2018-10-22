@@ -3,9 +3,7 @@ package services
 import (
 	"os"
 	"sync"
-
 	"time"
-
 	"github.com/coreos/bbolt"
 	"github.com/dedis/cothority/skipchain"
 	"github.com/dedis/onet"

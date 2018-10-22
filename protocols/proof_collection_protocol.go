@@ -1,8 +1,6 @@
 package protocols
 
 import (
-	"sync"
-
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/coreos/bbolt"
 	"github.com/dedis/cothority/skipchain"
@@ -11,6 +9,7 @@ import (
 	"github.com/dedis/onet/network"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/drynx/lib"
+	"sync"
 )
 
 // ProofCollectionProtocolName is the registered name for the proofs collection by the skipchain protocol.

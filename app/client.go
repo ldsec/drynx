@@ -1,0 +1,320 @@
+package main
+
+import (
+	"os"
+	"github.com/btcsuite/goleveldb/leveldb/errors"
+	"github.com/dedis/onet"
+	"github.com/dedis/onet/app"
+	"github.com/dedis/onet/log"
+	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/services/default"
+	"gopkg.in/urfave/cli.v1"
+	"regexp"
+	"strconv"
+	"strings"
+	"github.com/lca1/drynx/lib"
+	"github.com/dedis/kyber"
+	"github.com/dedis/onet/network"
+	"github.com/lca1/drynx/services"
+)
+
+// BEGIN CLIENT: QUERIER ----------
+func startQuery(el *onet.Roster, proofs bool, sum []string, count bool, whereQueryValues []libunlynx.WhereQueryAttribute, predicate string, groupBy []string) {
+	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+
+	// Generate Survey Data
+	nbrDPs := make(map[string]int64)
+	//how many data providers for each server
+	for _, server := range el.List {
+		nbrDPs[server.String()] = 1 // 1 DP for each server
+	}
+
+	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofs, true, sum, count, whereQueryValues, predicate, groupBy)
+
+	if err != nil {
+		log.Fatal("Service did not start.", err)
+	}
+
+	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
+	if err != nil {
+		log.Fatal("Service could not output the results.")
+	}
+
+	// Print Output
+	log.Lvl1("Service output:")
+	var tabVerify [][]int64
+	tabVerify = *grp
+	for i := range tabVerify {
+		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
+	}
+}
+
+// how to repartition the DPs: each server as a list of data providers
+func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []int64) map[string]*[]network.ServerIdentity {
+
+	if len(dpRepartition) > len(elServers.List) {
+		log.Fatal("Cannot assign the DPs to", len(dpRepartition), "servers (", len(elServers.List), ")")
+	}
+
+	dpToServers := make(map[string]*[]network.ServerIdentity, 0)
+	count := 0
+	for i, v := range elServers.List {
+		index := v.String()
+		value := make([]network.ServerIdentity, dpRepartition[i])
+		dpToServers[index] = &value
+		for j := range *dpToServers[index] {
+			val := elDPs.List[count]
+			count = count + 1
+			(*dpToServers[index])[j] = *val
+		}
+	}
+	return dpToServers
+}
+
+func runDrynx(c *cli.Context) error {
+	//tomlFileName := c.String("file")
+	elServers, _ := openGroupToml("/Users/jstephan/go/src/github.com/lca1/drynx/app/groupServers.toml")
+	elDPs, _ := openGroupToml("/Users/jstephan/go/src/github.com/lca1/drynx/app/groupDPs.toml")
+
+	proofs := 0 // 0 is not proof, 1 is proofs, 2 is optimized proofs
+	rangeProofs := false
+	obfuscation := false
+
+	diffPri := false
+	diffPriOpti := false
+	nbrRows := int64(1)
+	//repartition: server1: 1 DP, server2: 1 DP, server3: 1 DP
+	repartition := []int64{1, 1, 1}
+
+	//simulation
+	cuttingFactor := 0
+
+	//operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
+	operationList := []string{"sum"}
+	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
+
+	if proofs == 1 {
+		if obfuscation {
+			thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 1.0}
+		} else {
+			thresholdEntityProofsVerif = []float64{1.0, 1.0, 0.0, 1.0}
+		}
+	} else {
+		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
+	}
+
+	//Create dpToServers hashmap manually based on the group tomls
+	dpToServers := repartitionDPs(elServers, elDPs, repartition)
+
+	// Create a client (querier) for the service)
+	client := services.NewDrynxClient(elServers.List[0], "test-Drynx")
+
+
+	for _, op := range operationList {
+		// data providers data generation
+		minGenerateData := 3
+		maxGenerateData := 4
+		dimensions := 5
+		operation := libdrynx.ChooseOperation(op, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
+
+		// define the number of groups for groupBy (1 per default)
+		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateRows: nbrRows, GenerateDataMin: int64(minGenerateData), GenerateDataMax: int64(maxGenerateData)}
+
+		// define the ranges for the input validation (1 range per data provider output)
+		var u, l int64
+		if proofs == 0 {
+			rangeProofs = false
+		} else {
+			if op == "bool_AND" || op == "bool_OR" || op == "min" || op == "max" || op == "union" || op == "inter" {
+				if obfuscation {
+					rangeProofs = true
+					u = int64(2)
+					l = int64(1)
+				} else {
+					rangeProofs = true
+					u = int64(0)
+					l = int64(0)
+				}
+
+			} else {
+				obfuscation = false
+
+				if rangeProofs {
+					u = int64(16)
+					l = int64(16)
+				} else {
+					rangeProofs = true
+					u = int64(0)
+					l = int64(0)
+				}
+			}
+		}
+
+		ranges := make([]*[]int64, operation.NbrOutput)
+		if rangeProofs {
+			for i := range ranges {
+				ranges[i] = &[]int64{u, l}
+			}
+		} else {ranges = nil}
+
+		// choose if differential privacy or not, no diffP by default
+		// choosing the limit is done by drawing the curve (e.g. wolframalpha)
+		diffP := libdrynx.QueryDiffP{}
+		if diffPri {
+			diffP = libdrynx.QueryDiffP{LapMean: 0, LapScale: 15.0, NoiseListSize: 1000, Limit: 65, Scale: 1, Optimized: diffPriOpti}
+		} else {diffP = libdrynx.QueryDiffP{LapMean: 0.0, LapScale: 0.0, NoiseListSize: 0, Quanta: 0.0, Scale: 0, Optimized: diffPriOpti}}
+
+		// DPs signatures for Input Range Validation
+		ps := make([]*[]libdrynx.PublishSignatureBytes, len(elServers.List))
+
+		if ranges != nil && u != int64(0) && l != int64(0) {
+			for i := range elServers.List {
+				temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
+				for j := 0; j < len(ranges); j++ {
+					if cuttingFactor != 0 {
+						temp[j] = libdrynx.InitRangeProofSignatureDeterministic((*ranges[j])[0])
+					} else {
+						temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+					}
+				}
+				ps[i] = &temp
+			}
+		} else {
+			ps = nil
+		}
+
+		// QUERY RECAP
+		log.LLvl1("\n")
+		log.LLvl1("#----- QUERY -----#")
+		log.LLvl1("Service Drynx Test with suite:", libunlynx.SuiTe.String(), "and query:")
+		log.LLvl1("SELECT ", operation, " ... FROM DP1, ..., DP", len(elDPs.List), " WHERE ... GROUP BY ", dpData.GroupByValues)
+		if ranges == nil || (u == int64(0) && l == int64(0)) {
+			log.LLvl1("No input range validation")
+		} else {
+			log.LLvl1("with input range validation (", len(ps), " x ", len(*ps[0]), ")")
+		}
+		if libdrynx.AddDiffP(diffP) {
+			log.LLvl1(" with differential privacy with epsilon=", diffP.LapMean, " and delta=", diffP.LapScale)
+		} else {
+			log.LLvl1(" no differential privacy")
+		}
+		log.LLvl1("#-----------------#\n")
+		//-----------
+
+		idToPublic := make(map[string]kyber.Point)
+		for _, v := range elServers.List {
+			idToPublic[v.String()] = v.Public
+		}
+		for _, v := range elDPs.List {
+			idToPublic[v.String()] = v.Public
+		}
+
+		// query generation
+		surveyID := "query-" + op
+
+		sq := client.GenerateSurveyQuery(elServers, nil, dpToServers, idToPublic, surveyID, operation, ranges, ps, proofs, obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor)
+		if !libdrynx.CheckParameters(sq, diffPri) {
+			log.Fatal("Oups!")
+		}
+
+		// send query and receive results
+		grp, aggr, _ := client.SendSurveyQuery(sq)
+
+		// Result printing
+		if len(*grp) != 0 && len(*grp) != len(*aggr) {
+			//t.Fatal("Results format problem")
+		} else {for i, v := range *aggr {log.LLvl1((*grp)[i], ": ", v)}}
+	}
+
+	return nil
+}
+
+func openGroupToml(tomlFileName string) (*onet.Roster, error) {
+	f, err := os.Open(tomlFileName)
+	if err != nil {
+		return nil, err
+	}
+	el, err := app.ReadGroupDescToml(f)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(el.Roster.List) <= 0 {
+		return nil, errors.New("Empty or invalid drynx group file:" + tomlFileName)
+	}
+
+	return el.Roster, nil
+}
+
+func checkRegex(input, expression, errorMessage string) {
+	var aux = regexp.MustCompile(expression)
+
+	correct := aux.MatchString(input)
+
+	if !correct {
+		log.Fatal(errorMessage)
+	}
+}
+
+func parseQuery(el *onet.Roster, sum string, count bool, where, predicate, groupBy string) ([]string, bool, []libunlynx.WhereQueryAttribute, string, []string) {
+
+	if sum == "" || (where != "" && predicate == "") || (where == "" && predicate != "") {
+		log.Fatal("Wrong query! Please check the sum, where and the predicate parameters")
+	}
+
+	sumRegex := "{s[0-9]+(,\\s*s[0-9]+)*}"
+	whereRegex := "{(w[0-9]+(,\\s*[0-9]+))*(,\\s*w[0-9]+(,\\s*[0-9]+))*}"
+	groupByRegex := "{g[0-9]+(,\\s*g[0-9]+)*}"
+
+	checkRegex(sum, sumRegex, "Error parsing the sum parameter(s)")
+	sum = strings.Replace(sum, " ", "", -1)
+	sum = strings.Replace(sum, "{", "", -1)
+	sum = strings.Replace(sum, "}", "", -1)
+	sumFinal := strings.Split(sum, ",")
+
+	if count {
+		check := false
+		for _, el := range sumFinal {
+			if el == "count" {
+				check = true
+			}
+		}
+
+		if !check {
+			log.Fatal("No 'count' attribute in the sum variables")
+		}
+	}
+
+	checkRegex(where, whereRegex, "Error parsing the where parameter(s)")
+	where = strings.Replace(where, " ", "", -1)
+	where = strings.Replace(where, "{", "", -1)
+	where = strings.Replace(where, "}", "", -1)
+	tmp := strings.Split(where, ",")
+
+	whereFinal := make([]libunlynx.WhereQueryAttribute, 0)
+
+	var variable string
+	for i := range tmp {
+		// if is a variable (w1, w2...)
+		if i%2 == 0 {
+			variable = tmp[i]
+		} else { // if it is a value
+			value, err := strconv.Atoi(tmp[i])
+			if err != nil {
+				log.Fatal("Something wrong with the where value")
+			}
+
+			whereFinal = append(whereFinal, libunlynx.WhereQueryAttribute{Name: variable, Value: *libunlynx.EncryptInt(el.Aggregate, int64(value))})
+		}
+	}
+
+	checkRegex(groupBy, groupByRegex, "Error parsing the groupBy parameter(s)")
+	groupBy = strings.Replace(groupBy, " ", "", -1)
+	groupBy = strings.Replace(groupBy, "{", "", -1)
+	groupBy = strings.Replace(groupBy, "}", "", -1)
+	groupByFinal := strings.Split(groupBy, ",")
+
+	return sumFinal, count, whereFinal, predicate, groupByFinal
+}
+
+// CLIENT END: QUERIER ----------
