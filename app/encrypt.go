@@ -1,14 +1,14 @@
 package main
 
 import (
+	"errors"
+	"github.com/dedis/onet/app"
+	"github.com/dedis/onet/log"
+	"github.com/lca1/unlynx/lib"
+	"gopkg.in/urfave/cli.v1"
 	"io"
 	"os"
-	"github.com/dedis/onet/log"
-	"gopkg.in/urfave/cli.v1"
 	"strconv"
-	"github.com/dedis/onet/app"
-	"github.com/lca1/unlynx/lib"
-	"errors"
 )
 
 func encryptIntFromApp(c *cli.Context) error {
@@ -47,24 +47,6 @@ func encryptIntFromApp(c *cli.Context) error {
 
 	// encrypt
 	encryptedInt := libunlynx.EncryptInt(el.Roster.Aggregate, toEncryptInt)
-
-	// test encryption for ETL
-	/*originalDatasetNbr := 250000
-	start := time.Now()
-	for i:=0; i< originalDatasetNbr; i++ {
-		lib.EncryptInt(el.Aggregate, toEncryptInt)
-	}
-	log.LLvl1("1x: ", time.Since(start))
-	start = time.Now()
-	for i:=0; i< originalDatasetNbr*2; i++ {
-		lib.EncryptInt(el.Aggregate, toEncryptInt)
-	}
-	log.LLvl1("2x: ", time.Since(start))
-	start = time.Now()
-	for i:=0; i< originalDatasetNbr*3; i++ {
-		lib.EncryptInt(el.Aggregate, toEncryptInt)
-	}
-	log.LLvl1("4x: ", time.Since(start))*/
 
 	// output in xml format on stdout
 	resultString := "<encrypted>" + (*encryptedInt).Serialize() + "</encrypted>\n"

@@ -1,11 +1,11 @@
 package main
 
 import (
+	"github.com/dedis/onet/app"
 	"github.com/dedis/onet/log"
+	"github.com/lca1/unlynx/lib"
 	"gopkg.in/urfave/cli.v1"
 	"os"
-	"github.com/lca1/unlynx/lib"
-	"github.com/dedis/onet/app"
 )
 
 const (
@@ -28,21 +28,6 @@ const (
 	optionProofs = "proofs"
 
 	// query flags
-	optionSum      = "sum"
-	optionSumShort = "s"
-
-	optionCount      = "count"
-	optionCountShort = "c"
-
-	optionWhere      = "where"
-	optionWhereShort = "w"
-
-	optionPredicate      = "predicate"
-	optionPredicateShort = "p"
-
-	optionGroupBy      = "groupBy"
-	optionGroupByShort = "g"
-
 	optionDecryptKey      = "key"
 	optionDecryptKeyShort = "k"
 
@@ -108,41 +93,6 @@ func main() {
 		},
 	}
 
-	/*querierFlags := []cli.Flag{
-		cli.StringFlag{
-			Name:  optionGroupFile + ", " + optionGroupFileShort,
-			Value: DefaultGroupFile,
-			Usage: "Drynx group definition file",
-		},
-		cli.BoolFlag{
-			Name:  optionProofs,
-			Usage: "With proofs",
-		},
-
-		// query flags
-
-		cli.StringFlag{
-			Name:  optionSum + ", " + optionSumShort,
-			Usage: "SELECT s1, s2 -> {s1, s2}",
-		},
-		cli.BoolFlag{
-			Name:  optionCount + ", " + optionCountShort,
-			Usage: "Toggle count query",
-		},
-		cli.StringFlag{
-			Name:  optionWhere + ", " + optionWhereShort,
-			Usage: "WHERE w1 ... (attributes) -> {w1, 1, w2, 27}",
-		},
-		cli.StringFlag{
-			Name:  optionPredicate + ", " + optionPredicateShort,
-			Usage: "WHERE x AND y OR z (predicate) -> (v0 == v1 || v2 == v3) && v4 == v5",
-		},
-		cli.StringFlag{
-			Name:  optionGroupBy + ", " + optionGroupByShort,
-			Usage: "GROUP BY g1, g2, g3 -> {g1, g2, g3}",
-		},
-	}*/
-
 	serverFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  optionConfig + ", " + optionConfigShort,
@@ -174,13 +124,12 @@ func main() {
 		},
 		// CLIENT END: DATA DECRYPTION ------------
 
-
 		// BEGIN CLIENT: QUERIER ----------
 		{
 			Name:    "run",
 			Aliases: []string{"r"},
 			Usage:   "Run Drynx service",
-			Action:  runDrynx,
+			Action:  RunDrynx,
 		},
 		// CLIENT END: QUERIER ----------
 

@@ -26,7 +26,7 @@ type nodeTools struct {
 	request     *concurrent.ConcurrentMap
 	dataOfBlock *concurrent.ConcurrentMap
 	dbPath      string
-	db          *bolt.DB
+	db          *bbolt.DB
 	mutex       *sync.Mutex
 }
 
@@ -100,7 +100,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 		request.Put(surveyID, &libdrynx.QueryInfo{Bitmap: make(map[string]int64), TotalNbrProofs: sizeQuery, Query: &testSQ, EndVerificationChannel: make(chan skipchain.SkipBlock, 100)})
 
 		dbPath := "test" + strconv.FormatInt(int64(i), 10)
-		db, err := bolt.Open(dbPath, 0600, nil)
+		db, err := bbolt.Open(dbPath, 0600, nil)
 		if err != nil {
 			log.Fatal("Open database failed:", err)
 		}

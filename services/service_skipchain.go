@@ -1,9 +1,6 @@
 package services
 
 import (
-	"os"
-	"sync"
-	"time"
 	"github.com/coreos/bbolt"
 	"github.com/dedis/cothority/skipchain"
 	"github.com/dedis/onet"
@@ -14,6 +11,9 @@ import (
 	"github.com/lca1/drynx/protocols"
 	"github.com/lca1/unlynx/lib"
 	"gopkg.in/satori/go.uuid.v1"
+	"os"
+	"sync"
+	"time"
 )
 
 // VerifyBitmap is a unique ID

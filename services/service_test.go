@@ -62,7 +62,6 @@ func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 	return dpToServers
 }
 
-
 func openGroupToml(tomlFileName string) (*onet.Roster, error) {
 	f, err := os.Open(tomlFileName)
 	if err != nil {

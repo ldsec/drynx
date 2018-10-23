@@ -1,54 +1,66 @@
 package main
 
 import (
-	"os"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
+	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/encoding"
+	"github.com/dedis/kyber/util/key"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/app"
 	"github.com/dedis/onet/log"
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/default"
-	"gopkg.in/urfave/cli.v1"
-	"regexp"
-	"strconv"
-	"strings"
-	"github.com/lca1/drynx/lib"
-	"github.com/dedis/kyber"
 	"github.com/dedis/onet/network"
+	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/services"
+	"github.com/lca1/unlynx/lib"
+	"gopkg.in/urfave/cli.v1"
+	"os"
 )
 
-// BEGIN CLIENT: QUERIER ----------
-func startQuery(el *onet.Roster, proofs bool, sum []string, count bool, whereQueryValues []libunlynx.WhereQueryAttribute, predicate string, groupBy []string) {
-	client := servicesunlynxdefault.NewUnLynxClient(el.List[0], strconv.Itoa(0))
+// BEGIN SERVER: DP or COMPUTING NODE ----------
 
-	// Generate Survey Data
-	nbrDPs := make(map[string]int64)
-	//how many data providers for each server
-	for _, server := range el.List {
-		nbrDPs[server.String()] = 1 // 1 DP for each server
+// NonInteractiveSetup is used to setup the cothority node for unlynx in a non-interactive way (and without error checks)
+func NonInteractiveSetup(c *cli.Context) error {
+
+	// cli arguments
+	serverBindingStr := c.String("serverBinding")
+	description := c.String("description")
+	privateTomlPath := c.String("privateTomlPath")
+	publicTomlPath := c.String("publicTomlPath")
+
+	if serverBindingStr == "" || description == "" || privateTomlPath == "" || publicTomlPath == "" {
+		err := errors.New("arguments not OK")
+		log.Error(err)
+		return cli.NewExitError(err, 3)
 	}
 
-	surveyID, err := client.SendSurveyCreationQuery(el, servicesunlynxdefault.SurveyID(""), nil, nbrDPs, proofs, true, sum, count, whereQueryValues, predicate, groupBy)
+	kp := key.NewKeyPair(libunlynx.SuiTe)
 
+	privStr, _ := encoding.ScalarToStringHex(libunlynx.SuiTe, kp.Private)
+	pubStr, _ := encoding.PointToStringHex(libunlynx.SuiTe, kp.Public)
+	public, _ := encoding.StringHexToPoint(libunlynx.SuiTe, pubStr)
+
+	serverBinding := network.NewTLSAddress(serverBindingStr)
+	conf := &app.CothorityConfig{
+		Public:      pubStr,
+		Private:     privStr,
+		Address:     serverBinding,
+		Description: description,
+	}
+
+	server := app.NewServerToml(libunlynx.SuiTe, public, serverBinding, conf.Description)
+	group := app.NewGroupToml(server)
+
+	err := conf.Save(privateTomlPath)
 	if err != nil {
-		log.Fatal("Service did not start.", err)
+		log.Fatal(err)
 	}
 
-	grp, aggr, err := client.SendSurveyResultsQuery(*surveyID)
-	if err != nil {
-		log.Fatal("Service could not output the results.")
-	}
+	group.Save(publicTomlPath)
 
-	// Print Output
-	log.Lvl1("Service output:")
-	var tabVerify [][]int64
-	tabVerify = *grp
-	for i := range tabVerify {
-		log.Lvl1(i, ")", (*grp)[i], "->", (*aggr)[i])
-	}
+	return nil
 }
 
+// BEGIN CLIENT: QUERIER ----------
 // how to repartition the DPs: each server as a list of data providers
 func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []int64) map[string]*[]network.ServerIdentity {
 
@@ -71,10 +83,11 @@ func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 	return dpToServers
 }
 
-func runDrynx(c *cli.Context) error {
+// RunDrynx runs a query
+func RunDrynx(c *cli.Context) error {
 	//tomlFileName := c.String("file")
-	elServers, _ := openGroupToml("/Users/jstephan/go/src/github.com/lca1/drynx/app/groupServers.toml")
-	elDPs, _ := openGroupToml("/Users/jstephan/go/src/github.com/lca1/drynx/app/groupDPs.toml")
+	elServers, _ := openGroupToml("groupServers.toml")
+	elDPs, _ := openGroupToml("groupDPs.toml")
 
 	proofs := 0 // 0 is not proof, 1 is proofs, 2 is optimized proofs
 	rangeProofs := false
@@ -102,13 +115,10 @@ func runDrynx(c *cli.Context) error {
 	} else {
 		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
 	}
-
-	//Create dpToServers hashmap manually based on the group tomls
 	dpToServers := repartitionDPs(elServers, elDPs, repartition)
 
 	// Create a client (querier) for the service)
 	client := services.NewDrynxClient(elServers.List[0], "test-Drynx")
-
 
 	for _, op := range operationList {
 		// data providers data generation
@@ -155,14 +165,18 @@ func runDrynx(c *cli.Context) error {
 			for i := range ranges {
 				ranges[i] = &[]int64{u, l}
 			}
-		} else {ranges = nil}
+		} else {
+			ranges = nil
+		}
 
 		// choose if differential privacy or not, no diffP by default
 		// choosing the limit is done by drawing the curve (e.g. wolframalpha)
 		diffP := libdrynx.QueryDiffP{}
 		if diffPri {
 			diffP = libdrynx.QueryDiffP{LapMean: 0, LapScale: 15.0, NoiseListSize: 1000, Limit: 65, Scale: 1, Optimized: diffPriOpti}
-		} else {diffP = libdrynx.QueryDiffP{LapMean: 0.0, LapScale: 0.0, NoiseListSize: 0, Quanta: 0.0, Scale: 0, Optimized: diffPriOpti}}
+		} else {
+			diffP = libdrynx.QueryDiffP{LapMean: 0.0, LapScale: 0.0, NoiseListSize: 0, Quanta: 0.0, Scale: 0, Optimized: diffPriOpti}
+		}
 
 		// DPs signatures for Input Range Validation
 		ps := make([]*[]libdrynx.PublishSignatureBytes, len(elServers.List))
@@ -222,8 +236,12 @@ func runDrynx(c *cli.Context) error {
 
 		// Result printing
 		if len(*grp) != 0 && len(*grp) != len(*aggr) {
-			//t.Fatal("Results format problem")
-		} else {for i, v := range *aggr {log.LLvl1((*grp)[i], ": ", v)}}
+			log.Fatal("Results format problem")
+		} else {
+			for i, v := range *aggr {
+				log.LLvl1((*grp)[i], ": ", v)
+			}
+		}
 	}
 
 	return nil
@@ -244,77 +262,6 @@ func openGroupToml(tomlFileName string) (*onet.Roster, error) {
 	}
 
 	return el.Roster, nil
-}
-
-func checkRegex(input, expression, errorMessage string) {
-	var aux = regexp.MustCompile(expression)
-
-	correct := aux.MatchString(input)
-
-	if !correct {
-		log.Fatal(errorMessage)
-	}
-}
-
-func parseQuery(el *onet.Roster, sum string, count bool, where, predicate, groupBy string) ([]string, bool, []libunlynx.WhereQueryAttribute, string, []string) {
-
-	if sum == "" || (where != "" && predicate == "") || (where == "" && predicate != "") {
-		log.Fatal("Wrong query! Please check the sum, where and the predicate parameters")
-	}
-
-	sumRegex := "{s[0-9]+(,\\s*s[0-9]+)*}"
-	whereRegex := "{(w[0-9]+(,\\s*[0-9]+))*(,\\s*w[0-9]+(,\\s*[0-9]+))*}"
-	groupByRegex := "{g[0-9]+(,\\s*g[0-9]+)*}"
-
-	checkRegex(sum, sumRegex, "Error parsing the sum parameter(s)")
-	sum = strings.Replace(sum, " ", "", -1)
-	sum = strings.Replace(sum, "{", "", -1)
-	sum = strings.Replace(sum, "}", "", -1)
-	sumFinal := strings.Split(sum, ",")
-
-	if count {
-		check := false
-		for _, el := range sumFinal {
-			if el == "count" {
-				check = true
-			}
-		}
-
-		if !check {
-			log.Fatal("No 'count' attribute in the sum variables")
-		}
-	}
-
-	checkRegex(where, whereRegex, "Error parsing the where parameter(s)")
-	where = strings.Replace(where, " ", "", -1)
-	where = strings.Replace(where, "{", "", -1)
-	where = strings.Replace(where, "}", "", -1)
-	tmp := strings.Split(where, ",")
-
-	whereFinal := make([]libunlynx.WhereQueryAttribute, 0)
-
-	var variable string
-	for i := range tmp {
-		// if is a variable (w1, w2...)
-		if i%2 == 0 {
-			variable = tmp[i]
-		} else { // if it is a value
-			value, err := strconv.Atoi(tmp[i])
-			if err != nil {
-				log.Fatal("Something wrong with the where value")
-			}
-
-			whereFinal = append(whereFinal, libunlynx.WhereQueryAttribute{Name: variable, Value: *libunlynx.EncryptInt(el.Aggregate, int64(value))})
-		}
-	}
-
-	checkRegex(groupBy, groupByRegex, "Error parsing the groupBy parameter(s)")
-	groupBy = strings.Replace(groupBy, " ", "", -1)
-	groupBy = strings.Replace(groupBy, "{", "", -1)
-	groupBy = strings.Replace(groupBy, "}", "", -1)
-	groupByFinal := strings.Split(groupBy, ",")
-
-	return sumFinal, count, whereFinal, predicate, groupByFinal
 }
 
 // CLIENT END: QUERIER ----------
