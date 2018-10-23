@@ -260,7 +260,6 @@ func (s *ServiceDrynx) HandleDPdataFinished(recq *DPdataFinished) (network.Messa
 
 // HandleSurveyQuery handles the reception of a survey creation query by instantiating the corresponding survey.
 func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Message, error) {
-
 	log.Lvl2("[SERVICE] <drynx> Server", s.ServerIdentity().String(), "received a Survey Query")
 
 	recq.Query.IVSigs.InputValidationSigs = recreateRangeSignatures(recq.Query.IVSigs)

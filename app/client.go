@@ -39,8 +39,10 @@ func NonInteractiveSetup(c *cli.Context) error {
 	pubStr, _ := encoding.PointToStringHex(libunlynx.SuiTe, kp.Public)
 	public, _ := encoding.StringHexToPoint(libunlynx.SuiTe, pubStr)
 
-	serverBinding := network.NewTLSAddress(serverBindingStr)
+	//serverBinding := network.NewTLSAddress(serverBindingStr)
+	serverBinding := network.NewTCPAddress(serverBindingStr)
 	conf := &app.CothorityConfig{
+		Suite:       libunlynx.SuiTe.String(),
 		Public:      pubStr,
 		Private:     privStr,
 		Address:     serverBinding,
@@ -86,8 +88,14 @@ func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 // RunDrynx runs a query
 func RunDrynx(c *cli.Context) error {
 	//tomlFileName := c.String("file")
-	elServers, _ := openGroupToml("groupServers.toml")
-	elDPs, _ := openGroupToml("groupDPs.toml")
+	elServers, err := openGroupToml("test/groupServers.toml")
+	if err != nil {
+		log.Fatal("Could not read groupServers.toml")
+	}
+	elDPs, err := openGroupToml("test/groupDPs.toml")
+	if err != nil {
+		log.Fatal("Could not read groupDPs.toml")
+	}
 
 	proofs := 0 // 0 is not proof, 1 is proofs, 2 is optimized proofs
 	rangeProofs := false
@@ -225,7 +233,7 @@ func RunDrynx(c *cli.Context) error {
 
 		// query generation
 		surveyID := "query-" + op
-
+		log.LLvl1(dpToServers)
 		sq := client.GenerateSurveyQuery(elServers, nil, dpToServers, idToPublic, surveyID, operation, ranges, ps, proofs, obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor)
 		if !libdrynx.CheckParameters(sq, diffPri) {
 			log.Fatal("Oups!")

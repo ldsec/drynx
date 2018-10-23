@@ -82,14 +82,6 @@ func openGroupToml(tomlFileName string) (*onet.Roster, error) {
 //______________________________________________________________________________________________________________________
 /// Test service Drynx for all operations
 func TestServiceDrynx(t *testing.T) {
-	//elDPs, _ := openGroupToml("/Users/jstephan/go/src/github.com/lca1/drynx/app/groupDPs.toml")
-	elServers, _ := openGroupToml("/Users/jstephan/go/src/github.com/lca1/drynx/app/groupServers.toml")
-	encryptedInt := libunlynx.EncryptInt(elServers.Aggregate, 3841)
-	encryptedInt.Add(*encryptedInt, *libunlynx.EncryptInt(elServers.Aggregate, 1))
-	log.LLvl1("HELLLOOO " + encryptedInt.C.String() + " " + encryptedInt.K.String())
-
-	log.SetDebugVisible(1)
-
 	//------SET PARAMS--------
 
 	proofs := 0 // 0 is not proof, 1 is proofs, 2 is optimized proofs
