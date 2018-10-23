@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-./compileMac.sh
+bash compileMac.sh
 
-mkdir test
+mkdir -p test
 
 ./drynx server setupNonInteractive --serverBinding "127.0.0.1:2000" --description "Drynx Server 1" \
         --privateTomlPath "test/srv1-private.toml" --publicTomlPath "test/srv1-public.toml"
