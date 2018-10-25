@@ -745,7 +745,7 @@ func ChooseOperation(operationName string, queryMin, queryMax, d int64, cuttingF
 	}
 
 	if cuttingFactor != 0 {
-		operation.NbrOutput *= int64(cuttingFactor)
+		operation.NbrOutput *= cuttingFactor
 	}
 
 	return operation
