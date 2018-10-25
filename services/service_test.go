@@ -84,7 +84,7 @@ func openGroupToml(tomlFileName string) (*onet.Roster, error) {
 func TestServiceDrynx(t *testing.T) {
 	//------SET PARAMS--------
 
-	proofs := 0 // 0 is not proof, 1 is proofs, 2 is optimized proofs
+	proofs := int64(0) // 0 is not proof, 1 is proofs, 2 is optimized proofs
 	rangeProofs := false
 	obfuscation := false
 
@@ -97,7 +97,7 @@ func TestServiceDrynx(t *testing.T) {
 	repartition := []int64{2, 1, 2} //repartition: server1: 1 DPs, server2: 1 DPs, server3: 1 DPs
 
 	//simulation
-	cuttingFactor := 0
+	cuttingFactor := int64(0)
 
 	//operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
 	operationList := []string{"sum"}
@@ -366,7 +366,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 
 	//------SET PARAMS--------
 
-	proofs := 0 // 0 is not proof, 1 is proofs, 2 is optimized proofs
+	proofs := int64(0) // 0 is not proof, 1 is proofs, 2 is optimized proofs
 	rangeProofs := true
 	obfuscation := false
 
@@ -379,7 +379,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	repartition := []int64{2, 1, 2} //repartition: server1: 1 DPs, server2: 1 DPs, server3: 1 DPs
 
 	//simulation
-	cuttingFactor := 0
+	cuttingFactor := int64(0)
 
 	// ---- simulation parameters -----
 	numberTrials := 1
@@ -747,7 +747,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 		}
 	}
 
-	proofs := 0 // 0 is not proof, 1 is proofs, 2 is optimized proofs
+	proofs := int64(0) // 0 is not proof, 1 is proofs, 2 is optimized proofs
 
 	defer local.CloseAll()
 
@@ -931,7 +931,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 
 		thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 		// query sending + results receiving
-		cuttingFactor := 0
+		cuttingFactor := int64(0)
 		sq := client.GenerateSurveyQuery(el, elVNs, dpToServers, idToPublic, uuid.NewV4().String(), operation, ranges, ps, proofs, false, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor)
 		grp, aggr, err := client.SendSurveyQuery(sq)
 

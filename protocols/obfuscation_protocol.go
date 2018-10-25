@@ -114,7 +114,7 @@ type ObfuscationProtocol struct {
 
 	// Protocol state data
 	ToObfuscateData libunlynx.CipherVector
-	Proofs          int
+	Proofs          int64
 	Query           *libdrynx.SurveyQuery
 
 	// Protocol proof data

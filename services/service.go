@@ -646,7 +646,7 @@ func (s *ServiceDrynx) DataCollectionPhase(targetSurvey string) error {
 	// we convert the map into an object of [Group + CipherVector] to avoid later problems with protobuf
 	for key, value := range dataDPs {
 		if survey.SurveyQuery.Query.CuttingFactor != 0 {
-			survey.QueryResponseState.Data = append(survey.QueryResponseState.Data, libdrynx.ResponseDPOneGroup{Group: key, Data: value[:int(len(value)/survey.SurveyQuery.Query.CuttingFactor)]})
+			survey.QueryResponseState.Data = append(survey.QueryResponseState.Data, libdrynx.ResponseDPOneGroup{Group: key, Data: value[:int(int64(len(value))/survey.SurveyQuery.Query.CuttingFactor)]})
 		} else {
 			survey.QueryResponseState.Data = append(survey.QueryResponseState.Data, libdrynx.ResponseDPOneGroup{Group: key, Data: value})
 
@@ -790,7 +790,7 @@ func recreateRangeSignatures(ivSigs libdrynx.QueryIVSigs) []*[]libdrynx.PublishS
 	// transform the one-dimensional array (because of protobuf) to the original two-dimensional array
 	indexInit := 0
 	for i := 1; i <= len(ivSigs.InputValidationSigs); i++ {
-		if i%ivSigs.InputValidationSize2 == 0 {
+		if int64(i) % ivSigs.InputValidationSize2 == int64(0) {
 			tmp := make([]libdrynx.PublishSignatureBytes, ivSigs.InputValidationSize2)
 			for j := range tmp {
 				tmp[j] = (*ivSigs.InputValidationSigs[indexInit])[0]

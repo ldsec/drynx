@@ -193,9 +193,9 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	mutexGroups.Unlock()
 	// read the signatures needed to compute the range proofs
 	signatures := make([][]libdrynx.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize1)
-	for i := 0; i < p.Survey.Query.IVSigs.InputValidationSize1; i++ {
+	for i := 0; int64(i) < p.Survey.Query.IVSigs.InputValidationSize1; i++ {
 		signatures[i] = make([]libdrynx.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize2)
-		for j := 0; j < p.Survey.Query.IVSigs.InputValidationSize2; j++ {
+		for j := 0; int64(j) < p.Survey.Query.IVSigs.InputValidationSize2; j++ {
 			signatures[i][j] = libdrynx.PublishSignatureBytesToPublishSignatures((*p.Survey.Query.IVSigs.InputValidationSigs[i])[j])
 		}
 	}
@@ -260,7 +260,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 		// scaling for simulation purposes
 		qr := queryResponse[v]
-		for i := 0; i < p.Survey.Query.CuttingFactor-1; i++ {
+		for i := 0; int64(i) < p.Survey.Query.CuttingFactor-1; i++ {
 			queryResponse[v] = append(queryResponse[v], qr...)
 		}
 		if p.Survey.Query.Proofs != 0 {
@@ -282,10 +282,10 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 				// scaling for simulation purposes
 				if p.Survey.Query.CuttingFactor != 0 {
 					rplNew := libdrynx.RangeProofList{}
-					rplNew.Data = make([]libdrynx.RangeProof, len(rpl.Data)*p.Survey.Query.CuttingFactor)
+					rplNew.Data = make([]libdrynx.RangeProof, int64(len(rpl.Data)) * p.Survey.Query.CuttingFactor)
 					counter := 0
 					suitePair := bn256.NewSuite()
-					for j := 0; j < p.Survey.Query.CuttingFactor; j++ {
+					for j := 0; int64(j) < p.Survey.Query.CuttingFactor; j++ {
 						for _, v := range rpl.Data {
 
 							rplNew.Data[counter].RP = &libdrynx.RangeProofData{}

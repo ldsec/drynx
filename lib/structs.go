@@ -166,7 +166,7 @@ type PublishSignatureBytes struct { //need this because of G2 in protobuf not wo
 type QueryDiffP struct {
 	LapMean       float64
 	LapScale      float64
-	NoiseListSize int
+	NoiseListSize int64
 	Quanta        float64
 	Scale         float64
 	Limit         float64
@@ -184,8 +184,8 @@ type QueryDPDataGen struct {
 // QueryIVSigs contains parameters for input validation
 type QueryIVSigs struct {
 	InputValidationSigs  []*[]PublishSignatureBytes
-	InputValidationSize1 int
-	InputValidationSize2 int
+	InputValidationSize1 int64
+	InputValidationSize2 int64
 }
 
 // QuerySQL contains SQL parameters of the query
@@ -201,7 +201,7 @@ type Query struct {
 	// query statement
 	Operation   Operation
 	Ranges      []*[]int64
-	Proofs      int
+	Proofs      int64
 	Obfuscation bool
 	DiffP       QueryDiffP
 
@@ -216,7 +216,7 @@ type Query struct {
 	SQL QuerySQL
 
 	//simulation
-	CuttingFactor int
+	CuttingFactor int64
 }
 
 // Operation defines the operation in the query
@@ -698,7 +698,7 @@ func UpdateDB(db *bbolt.DB, bucketName string, key string, value []byte) {
 }
 
 // ChooseOperation sets the parameters according to the operation
-func ChooseOperation(operationName string, queryMin, queryMax, d int64, cuttingFactor int) Operation {
+func ChooseOperation(operationName string, queryMin, queryMax, d int64, cuttingFactor int64) Operation {
 	operation := Operation{}
 
 	operation.NameOp = operationName

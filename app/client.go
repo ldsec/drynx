@@ -97,7 +97,7 @@ func RunDrynx(c *cli.Context) error {
 		log.Fatal("Could not read groupDPs.toml")
 	}
 
-	proofs := 0 // 0 is not proof, 1 is proofs, 2 is optimized proofs
+	proofs := int64(0) // 0 is not proof, 1 is proofs, 2 is optimized proofs
 	rangeProofs := false
 	obfuscation := false
 
@@ -108,7 +108,7 @@ func RunDrynx(c *cli.Context) error {
 	repartition := []int64{1, 1, 1}
 
 	//simulation
-	cuttingFactor := 0
+	cuttingFactor := int64(0)
 
 	 operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
 	//operationList := []string{"sum"}
