@@ -25,7 +25,7 @@ const proofFalseSign = int64(4)
 // This information helps us to know how many proofs have been received and processed.
 type QueryInfo struct {
 	Bitmap         map[string]int64
-	TotalNbrProofs []int
+	TotalNbrProofs []int64
 	Query          *SurveyQuery
 
 	// channels
@@ -222,8 +222,8 @@ type Query struct {
 // Operation defines the operation in the query
 type Operation struct {
 	NameOp       string
-	NbrInput     int
-	NbrOutput    int
+	NbrInput     int64
+	NbrOutput    int64
 	QueryMin     int64
 	QueryMax     int64
 	LRParameters LogisticRegressionParameters
@@ -241,11 +241,11 @@ type LogisticRegressionParameters struct {
 	// parameters
 	Lambda         float64
 	Step           float64
-	MaxIterations  int
+	MaxIterations  int64
 	InitialWeights []float64
 
 	// approximation
-	K                           int
+	K                           int64
 	PrecisionApproxCoefficients float64
 }
 
@@ -592,7 +592,7 @@ func CheckParameters(sq SurveyQuery, diffP bool) bool {
 		}
 
 		if sq.Query.IVSigs.InputValidationSigs != nil && sq.Query.Ranges != nil {
-			if sq.Query.Operation.NbrOutput != len(*sq.Query.IVSigs.InputValidationSigs[0]) || sq.Query.Operation.NbrOutput != len(sq.Query.Ranges) {
+			if sq.Query.Operation.NbrOutput != int64(len(*sq.Query.IVSigs.InputValidationSigs[0])) || sq.Query.Operation.NbrOutput != int64(len(sq.Query.Ranges)) {
 				result = false
 				message = message + "ranges or signatures length do not match with nbr output \n"
 			}
@@ -643,7 +643,7 @@ func CheckParameters(sq SurveyQuery, diffP bool) bool {
 }
 
 // QueryToProofsNbrs creates the number of required proofs from the query parameters
-func QueryToProofsNbrs(q SurveyQuery) []int {
+func QueryToProofsNbrs(q SurveyQuery) []int64 {
 	nbrDPs := 0
 
 	for _, v := range q.ServerToDP {
@@ -674,7 +674,7 @@ func QueryToProofsNbrs(q SurveyQuery) []int {
 
 	// key switching
 	prfKS := nbrServers
-	return []int{prfRange, prfShuffling, prfAggr, prfObf, prfKS}
+	return []int64{int64(prfRange), int64(prfShuffling), int64(prfAggr), int64(prfObf), int64(prfKS)}
 }
 
 // UpdateDB put in a given bucket the value as byte with given key.
@@ -698,7 +698,7 @@ func UpdateDB(db *bbolt.DB, bucketName string, key string, value []byte) {
 }
 
 // ChooseOperation sets the parameters according to the operation
-func ChooseOperation(operationName string, queryMin, queryMax, d int, cuttingFactor int) Operation {
+func ChooseOperation(operationName string, queryMin, queryMax, d int64, cuttingFactor int) Operation {
 	operation := Operation{}
 
 	operation.NameOp = operationName
@@ -745,7 +745,7 @@ func ChooseOperation(operationName string, queryMin, queryMax, d int, cuttingFac
 	}
 
 	if cuttingFactor != 0 {
-		operation.NbrOutput = operation.NbrOutput * cuttingFactor
+		operation.NbrOutput *= int64(cuttingFactor)
 	}
 
 	return operation

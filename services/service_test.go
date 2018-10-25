@@ -138,9 +138,9 @@ func TestServiceDrynx(t *testing.T) {
 	for i, op := range operationList {
 
 		// data providers data generation
-		minGenerateData := 3
-		maxGenerateData := 4
-		dimensions := 5
+		minGenerateData := int64(3)
+		maxGenerateData := int64(4)
+		dimensions := int64(5)
 		operation := libdrynx.ChooseOperation(op, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
 
 		// define the number of groups for groupBy (1 per default)
@@ -463,11 +463,10 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	}
 
 	for i, op := range operationList {
-
 		// data providers data generation
-		minGenerateData := 3
-		maxGenerateData := 4
-		dimensions := 5
+		minGenerateData := int64(3)
+		maxGenerateData := int64(4)
+		dimensions := int64(5)
 		operation := libdrynx.ChooseOperation(op, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
 		operation.LRParameters = lrParameters
 		// define the number of groups for groupBy (1 per default)

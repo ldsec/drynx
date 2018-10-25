@@ -245,7 +245,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	// for all different groups
 	for _, v := range groupsString {
 		if p.Survey.Query.CuttingFactor != 0 {
-			p.Survey.Query.Operation.NbrOutput = int(p.Survey.Query.Operation.NbrOutput / p.Survey.Query.CuttingFactor)
+			p.Survey.Query.Operation.NbrOutput = p.Survey.Query.Operation.NbrOutput / int64(p.Survey.Query.CuttingFactor)
 		}
 		if p.Survey.Query.Operation.NameOp == "logistic regression" {
 			//p.Survey.Query.Ranges = nil

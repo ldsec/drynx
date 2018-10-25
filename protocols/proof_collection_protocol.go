@@ -331,7 +331,7 @@ func (p *ProofCollectionProtocol) storeProof(index int, typeProof, surveyID, sen
 		//--------------------------------------------------------------------------------------------------------------
 
 		//Check if all proofs has been processed.
-		proofsRemaining := 0
+		proofsRemaining := int64(0)
 		for _, count := range CastToQueryInfo(p.Request.Get(surveyID)).TotalNbrProofs {
 			proofsRemaining += count
 		}

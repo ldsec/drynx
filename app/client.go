@@ -110,8 +110,8 @@ func RunDrynx(c *cli.Context) error {
 	//simulation
 	cuttingFactor := 0
 
-	//operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
-	operationList := []string{"sum"}
+	 operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
+	//operationList := []string{"sum"}
 	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 
 	if proofs == 1 {
@@ -130,9 +130,9 @@ func RunDrynx(c *cli.Context) error {
 
 	for _, op := range operationList {
 		// data providers data generation
-		minGenerateData := 3
-		maxGenerateData := 4
-		dimensions := 5
+		minGenerateData := int64(3)
+		maxGenerateData := int64(4)
+		dimensions := int64(5)
 		operation := libdrynx.ChooseOperation(op, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
 
 		// define the number of groups for groupBy (1 per default)
@@ -250,7 +250,11 @@ func RunDrynx(c *cli.Context) error {
 				log.LLvl1((*grp)[i], ": ", v)
 			}
 		}
+
+		log.LLvl1("Operation " + op + " is done successfully.")
 	}
+
+	log.LLvl1("All done.")
 
 	return nil
 }

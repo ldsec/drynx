@@ -31,7 +31,7 @@ func (s *ServiceDrynx) HandleSurveyQueryToVN(recq *libdrynx.SurveyQueryToVN) (ne
 	recq.SQ.Query.IVSigs.InputValidationSigs = recreateRangeSignatures(recq.SQ.Query.IVSigs)
 
 	s.Mutex.Lock()
-	var totalNbrProofs int
+	var totalNbrProofs int64
 	log.Lvl2("[SERVICE] <VN> Server", s.ServerIdentity().String(), "received a Survey Query")
 
 	s.Survey.Put(recq.SQ.SurveyID, Survey{
@@ -44,7 +44,7 @@ func (s *ServiceDrynx) HandleSurveyQueryToVN(recq *libdrynx.SurveyQueryToVN) (ne
 		s.Request = concurrent.NewConcurrentMap()
 	}
 
-	sizeQuery := make([]int, 0)
+	sizeQuery := make([]int64, 0)
 	proofsVerified := make(map[string]int64)
 	//Put in the concurrent map the info that were calculated.
 	size := libdrynx.QueryToProofsNbrs(recq.SQ)
@@ -93,7 +93,7 @@ func (s *ServiceDrynx) HandleSurveyQueryToVN(recq *libdrynx.SurveyQueryToVN) (ne
 			}
 
 			// terminate all protocols
-			for i := 0; i < totalNbrProofs; i++ {
+			for i := 0; int64(i) < totalNbrProofs; i++ {
 				protocols.CastToQueryInfo(s.Request.Get(recq.SQ.SurveyID)).SharedBMChannelToTerminate <- struct{}{}
 			}
 
