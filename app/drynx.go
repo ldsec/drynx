@@ -25,6 +25,9 @@ const (
 	optionGroupFile      = "file"
 	optionGroupFileShort = "f"
 
+	optionOperation = "operation"
+	optionOperationShort = "o"
+
 	optionProofs = "proofs"
 
 	// query flags
@@ -99,6 +102,15 @@ func main() {
 			Usage: "Configuration file of the server",
 		},
 	}
+
+
+	querierFlags := []cli.Flag{
+		cli.StringFlag{
+			Name:  optionOperation + ", " + optionOperationShort,
+			Usage: "Operation to be run by querier",
+		},
+	}
+
 	cliApp.Commands = []cli.Command{
 		// BEGIN CLIENT: DATA PROVIDER ----------
 
@@ -130,6 +142,7 @@ func main() {
 			Aliases: []string{"r"},
 			Usage:   "Run Drynx service",
 			Action:  RunDrynx,
+			Flags: querierFlags,
 		},
 		// CLIENT END: QUERIER ----------
 

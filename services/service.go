@@ -2,9 +2,7 @@ package services
 
 import (
 	"time"
-
 	"sync"
-
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/coreos/bbolt"
 	"github.com/dedis/cothority/skipchain"

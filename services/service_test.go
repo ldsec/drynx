@@ -11,13 +11,11 @@ import (
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
 	"gopkg.in/satori/go.uuid.v1"
-
 	"math"
 	"os"
 	"strconv"
 	"sync"
 	"testing"
-
 	"github.com/dedis/cothority/skipchain"
 	"github.com/lca1/drynx/lib"
 	"github.com/stretchr/testify/assert"
@@ -99,8 +97,8 @@ func TestServiceDrynx(t *testing.T) {
 	//simulation
 	cuttingFactor := int64(0)
 
-	//operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
-	operationList := []string{"sum"}
+	operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
+	//operationList := []string{"sum"}
 	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 	//------------------------
 
@@ -136,7 +134,6 @@ func TestServiceDrynx(t *testing.T) {
 	}
 
 	for i, op := range operationList {
-
 		// data providers data generation
 		minGenerateData := int64(3)
 		maxGenerateData := int64(4)

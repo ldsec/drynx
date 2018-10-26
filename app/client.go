@@ -87,15 +87,12 @@ func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 
 // RunDrynx runs a query
 func RunDrynx(c *cli.Context) error {
+
 	//tomlFileName := c.String("file")
 	elServers, err := openGroupToml("test/groupServers.toml")
-	if err != nil {
-		log.Fatal("Could not read groupServers.toml")
-	}
+	if err != nil {log.Fatal("Could not read groupServers.toml")}
 	elDPs, err := openGroupToml("test/groupDPs.toml")
-	if err != nil {
-		log.Fatal("Could not read groupDPs.toml")
-	}
+	if err != nil {log.Fatal("Could not read groupDPs.toml")}
 
 	proofs := int64(0) // 0 is not proof, 1 is proofs, 2 is optimized proofs
 	rangeProofs := false
@@ -110,8 +107,14 @@ func RunDrynx(c *cli.Context) error {
 	//simulation
 	cuttingFactor := int64(0)
 
-	 operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
-	//operationList := []string{"sum"}
+	//Get the query operation to be executed
+	operationQuery := c.Args().Get(0)
+	var operationList []string
+	if operationQuery == "all" {
+		operationList = []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
+	} else {operationList = []string{operationQuery}}
+
+
 	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 
 	if proofs == 1 {
@@ -247,6 +250,7 @@ func RunDrynx(c *cli.Context) error {
 			log.Fatal("Results format problem")
 		} else {
 			for i, v := range *aggr {
+				//log.LLvl1("Value " + string(i) + " is: " + string(v[0]))
 				log.LLvl1((*grp)[i], ": ", v)
 			}
 		}

@@ -2,13 +2,9 @@ package protocols
 
 import (
 	"errors"
-
 	"fmt"
-
 	"math/rand"
-
 	"sync"
-
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/dedis/onet"
