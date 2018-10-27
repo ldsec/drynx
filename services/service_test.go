@@ -1,24 +1,22 @@
 package services
 
 import (
-	"errors"
 	"fmt"
+	"github.com/dedis/cothority/skipchain"
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
-	"github.com/dedis/onet/app"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
+	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
+	"github.com/stretchr/testify/assert"
 	"gopkg.in/satori/go.uuid.v1"
 	"math"
 	"os"
 	"strconv"
 	"sync"
 	"testing"
-	"github.com/dedis/cothority/skipchain"
-	"github.com/lca1/drynx/lib"
-	"github.com/stretchr/testify/assert"
 )
 
 func generateNodes(local *onet.LocalTest, nbrServers int, nbrDPs int, nbrVNs int) (*onet.Roster, *onet.Roster, *onet.Roster) {
@@ -60,23 +58,6 @@ func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 	return dpToServers
 }
 
-func openGroupToml(tomlFileName string) (*onet.Roster, error) {
-	f, err := os.Open(tomlFileName)
-	if err != nil {
-		return nil, err
-	}
-	el, err := app.ReadGroupDescToml(f)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(el.Roster.List) <= 0 {
-		return nil, errors.New("Empty or invalid drynx group file:" + tomlFileName)
-	}
-
-	return el.Roster, nil
-}
-
 //______________________________________________________________________________________________________________________
 /// Test service Drynx for all operations
 func TestServiceDrynx(t *testing.T) {
@@ -97,8 +78,8 @@ func TestServiceDrynx(t *testing.T) {
 	//simulation
 	cuttingFactor := int64(0)
 
-	operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
-	//operationList := []string{"sum"}
+	//operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
+	operationList := []string{"mean"}
 	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 	//------------------------
 
@@ -294,10 +275,11 @@ func TestServiceDrynx(t *testing.T) {
 			t.Fatal("Results format problem")
 		} else {
 			for i, v := range *aggr {
-				log.LLvl1((*grp)[i], ": ", v)
+				log.LLvl1((*grp)[i], ": ", v, v[0])
 			}
-		}
 
+			log.LLvl1((*aggr)[0][0])
+		}
 	}
 
 	if proofs != 0 {

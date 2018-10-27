@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/encoding"
@@ -14,6 +15,9 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"gopkg.in/urfave/cli.v1"
 	"os"
+	"os/exec"
+	"strconv"
+	"time"
 )
 
 // BEGIN SERVER: DP or COMPUTING NODE ----------
@@ -87,6 +91,7 @@ func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 
 // RunDrynx runs a query
 func RunDrynx(c *cli.Context) error {
+	scriptPopulateDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/db.py"
 
 	//tomlFileName := c.String("file")
 	elServers, err := openGroupToml("test/groupServers.toml")
@@ -108,7 +113,8 @@ func RunDrynx(c *cli.Context) error {
 	cuttingFactor := int64(0)
 
 	//Get the query operation to be executed
-	operationQuery := c.Args().Get(0)
+	operationQuery := c.String("operation")
+
 	var operationList []string
 	if operationQuery == "all" {
 		operationList = []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
@@ -256,10 +262,16 @@ func RunDrynx(c *cli.Context) error {
 		}
 
 		log.LLvl1("Operation " + op + " is done successfully.")
+
+		log.LLvl1("Update database.")
+		queryAnswer := strconv.FormatFloat((*aggr)[0][0], 'f', 6, 64)
+		cmd := exec.Command("python", scriptPopulateDB, queryAnswer, time.Now().String(), operation.NameOp, "BPM")
+		out, err := cmd.Output()
+		if err != nil {println(err.Error())}
+		fmt.Println(string(out))
 	}
 
 	log.LLvl1("All done.")
-
 	return nil
 }
 
