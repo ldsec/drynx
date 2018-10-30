@@ -262,10 +262,10 @@ func RunDrynx(c *cli.Context) error {
 		}
 
 		log.LLvl1("Operation " + op + " is done successfully.")
-
 		log.LLvl1("Update database.")
+
 		queryAnswer := strconv.FormatFloat((*aggr)[0][0], 'f', 6, 64)
-		cmd := exec.Command("python", scriptPopulateDB, queryAnswer, time.Now().String(), operation.NameOp, "BPM")
+		cmd := exec.Command("python", scriptPopulateDB, queryAnswer, strconv.Itoa(int(time.Now().Unix())), operation.NameOp, "BPM")
 		out, err := cmd.Output()
 		if err != nil {println(err.Error())}
 		fmt.Println(string(out))
