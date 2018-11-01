@@ -17,6 +17,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -62,7 +63,6 @@ func NonInteractiveSetup(c *cli.Context) error {
 	}
 
 	group.Save(publicTomlPath)
-
 	return nil
 }
 
@@ -92,8 +92,8 @@ func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 // RunDrynx runs a query
 func RunDrynx(c *cli.Context) error {
 	scriptPopulateDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/db.py"
+	queryAnswer := ""
 
-	//tomlFileName := c.String("file")
 	elServers, err := openGroupToml("test/groupServers.toml")
 	if err != nil {log.Fatal("Could not read groupServers.toml")}
 	elDPs, err := openGroupToml("test/groupDPs.toml")
@@ -120,7 +120,6 @@ func RunDrynx(c *cli.Context) error {
 		operationList = []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
 	} else {operationList = []string{operationQuery}}
 
-
 	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 
 	if proofs == 1 {
@@ -140,7 +139,7 @@ func RunDrynx(c *cli.Context) error {
 	for _, op := range operationList {
 		// data providers data generation
 		minGenerateData := int64(3)
-		maxGenerateData := int64(4)
+		maxGenerateData := int64(5)
 		dimensions := int64(5)
 		operation := libdrynx.ChooseOperation(op, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
 
@@ -182,9 +181,7 @@ func RunDrynx(c *cli.Context) error {
 			for i := range ranges {
 				ranges[i] = &[]int64{u, l}
 			}
-		} else {
-			ranges = nil
-		}
+		} else {ranges = nil}
 
 		// choose if differential privacy or not, no diffP by default
 		// choosing the limit is done by drawing the curve (e.g. wolframalpha)
@@ -210,9 +207,7 @@ func RunDrynx(c *cli.Context) error {
 				}
 				ps[i] = &temp
 			}
-		} else {
-			ps = nil
-		}
+		} else {ps = nil}
 
 		// QUERY RECAP
 		log.LLvl1("\n")
@@ -233,20 +228,14 @@ func RunDrynx(c *cli.Context) error {
 		//-----------
 
 		idToPublic := make(map[string]kyber.Point)
-		for _, v := range elServers.List {
-			idToPublic[v.String()] = v.Public
-		}
-		for _, v := range elDPs.List {
-			idToPublic[v.String()] = v.Public
-		}
+		for _, v := range elServers.List {idToPublic[v.String()] = v.Public}
+		for _, v := range elDPs.List {idToPublic[v.String()] = v.Public}
 
 		// query generation
 		surveyID := "query-" + op
 		log.LLvl1(dpToServers)
 		sq := client.GenerateSurveyQuery(elServers, nil, dpToServers, idToPublic, surveyID, operation, ranges, ps, proofs, obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor)
-		if !libdrynx.CheckParameters(sq, diffPri) {
-			log.Fatal("Oups!")
-		}
+		if !libdrynx.CheckParameters(sq, diffPri) {log.Fatal("Oups!")}
 
 		// send query and receive results
 		grp, aggr, _ := client.SendSurveyQuery(sq)
@@ -258,14 +247,16 @@ func RunDrynx(c *cli.Context) error {
 			for i, v := range *aggr {
 				//log.LLvl1("Value " + string(i) + " is: " + string(v[0]))
 				log.LLvl1((*grp)[i], ": ", v)
+				for j := range v {queryAnswer += strconv.FormatFloat(v[j], 'f', 6, 64) + ", "}
 			}
+			queryAnswer = strings.TrimSuffix(queryAnswer, ", ")
 		}
-
 		log.LLvl1("Operation " + op + " is done successfully.")
-		log.LLvl1("Update database.")
 
-		queryAnswer := strconv.FormatFloat((*aggr)[0][0], 'f', 6, 64)
-		cmd := exec.Command("python", scriptPopulateDB, queryAnswer, strconv.Itoa(int(time.Now().Unix())), operation.NameOp, "BPM")
+		//Store query answer in local database
+		log.LLvl1("Update local database.")
+		cmd := exec.Command("python", scriptPopulateDB, queryAnswer,
+			strconv.Itoa(int(time.Now().Unix())), operation.NameOp, "BPM")
 		out, err := cmd.Output()
 		if err != nil {println(err.Error())}
 		fmt.Println(string(out))
