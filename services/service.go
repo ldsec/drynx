@@ -305,6 +305,8 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 
 	// to the DPs
 	listDPs := generateDataCollectionRoster(s.ServerIdentity(), recq.ServerToDP)
+	//Filter the list of DPs at every server depending on the DPs over which the query is executed
+	listDPs = checkIfDPisUsedinQuery(s.ServerIdentity(), recq.DPsUsed, listDPs)
 	if listDPs != nil {
 		err := libunlynx.SendISMOthers(s.ServiceProcessor, listDPs, &libdrynx.SurveyQueryToDP{SQ: *recq, Root: s.ServerIdentity()})
 		if err != nil {
@@ -778,9 +780,29 @@ func generateDataCollectionRoster(root *network.ServerIdentity, serverToDP map[s
 			return onet.NewRoster(roster)
 		}
 	}
-
 	return nil
 }
+
+
+func checkIfDPisUsedinQuery(root *network.ServerIdentity, dpsUsed []*network.ServerIdentity, listDPs *onet.Roster) *onet.Roster {
+	roster := make([]*network.ServerIdentity, 0)
+	roster = append(roster, root)
+
+	for i, dp := range listDPs.List {
+		if i != 0 {
+			for _, dpUsed := range dpsUsed {
+				if dpUsed.ID == dp.ID {
+					tmp := dp
+					roster = append(roster, tmp)
+				}
+			}
+		}
+	}
+
+	if len(onet.NewRoster(roster).List) > 1 {return onet.NewRoster(roster)}
+	return nil
+}
+
 
 func recreateRangeSignatures(ivSigs libdrynx.QueryIVSigs) []*[]libdrynx.PublishSignatureBytes {
 	recreate := make([]*[]libdrynx.PublishSignatureBytes, 0)

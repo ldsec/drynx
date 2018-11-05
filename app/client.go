@@ -69,7 +69,6 @@ func NonInteractiveSetup(c *cli.Context) error {
 // BEGIN CLIENT: QUERIER ----------
 // how to repartition the DPs: each server as a list of data providers
 func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []int64) map[string]*[]network.ServerIdentity {
-
 	if len(dpRepartition) > len(elServers.List) {
 		log.Fatal("Cannot assign the DPs to", len(dpRepartition), "servers (", len(elServers.List), ")")
 	}
@@ -92,7 +91,6 @@ func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 // RunDrynx runs a query
 func RunDrynx(c *cli.Context) error {
 	scriptPopulateDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/db.py"
-	queryAnswer := ""
 
 	elServers, err := openGroupToml("test/groupServers.toml")
 	if err != nil {log.Fatal("Could not read groupServers.toml")}
@@ -137,9 +135,11 @@ func RunDrynx(c *cli.Context) error {
 	client := services.NewDrynxClient(elServers.List[0], "test-Drynx")
 
 	for _, op := range operationList {
+		queryAnswer := ""
+
 		// data providers data generation
 		minGenerateData := int64(3)
-		maxGenerateData := int64(5)
+		maxGenerateData := int64(4)
 		dimensions := int64(5)
 		operation := libdrynx.ChooseOperation(op, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
 
@@ -234,7 +234,12 @@ func RunDrynx(c *cli.Context) error {
 		// query generation
 		surveyID := "query-" + op
 		log.LLvl1(dpToServers)
-		sq := client.GenerateSurveyQuery(elServers, nil, dpToServers, idToPublic, surveyID, operation, ranges, ps, proofs, obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor)
+
+		//DPs over which the query is executed
+		dpsUsed := []*network.ServerIdentity{elDPs.List[0], elDPs.List[1]}
+
+		sq := client.GenerateSurveyQuery(elServers, nil, dpToServers, idToPublic, surveyID, operation,
+			ranges, ps, proofs, obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor, dpsUsed)
 		if !libdrynx.CheckParameters(sq, diffPri) {log.Fatal("Oups!")}
 
 		// send query and receive results

@@ -265,6 +265,7 @@ type SurveyQuery struct {
 	ObfuscationProofThreshold  float64
 	RangeProofThreshold        float64
 	KeySwitchingProofThreshold float64
+	DPsUsed []*network.ServerIdentity
 }
 
 // SurveyQueryToVN is the version of the query sent to the VNs

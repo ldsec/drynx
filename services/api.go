@@ -50,7 +50,10 @@ func NewDrynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 //______________________________________________________________________________________________________________________
 
 // GenerateSurveyQuery generates a query with all the information in parameters
-func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToServer map[string]*[]network.ServerIdentity, idToPublic map[string]kyber.Point, surveyID string, operation libdrynx.Operation, ranges []*[]int64, ps []*[]libdrynx.PublishSignatureBytes, proofs int64, obfuscation bool, thresholds []float64, diffP libdrynx.QueryDiffP, dpDataGen libdrynx.QueryDPDataGen, cuttingFactor int64) libdrynx.SurveyQuery {
+func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToServer map[string]*[]network.ServerIdentity,
+	idToPublic map[string]kyber.Point, surveyID string, operation libdrynx.Operation, ranges []*[]int64,
+	ps []*[]libdrynx.PublishSignatureBytes, proofs int64, obfuscation bool, thresholds []float64,
+	diffP libdrynx.QueryDiffP, dpDataGen libdrynx.QueryDPDataGen, cuttingFactor int64, dpsUsed []*network.ServerIdentity) libdrynx.SurveyQuery {
 	size1 := int64(0)
 	size2 := int64(0)
 	if ps != nil {
@@ -75,6 +78,7 @@ func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToSer
 		RangeProofThreshold:        thresholds[1],
 		ObfuscationProofThreshold:  thresholds[2],
 		KeySwitchingProofThreshold: thresholds[3],
+		DPsUsed:					dpsUsed,
 
 		// query statement
 		Query: libdrynx.Query{
