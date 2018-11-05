@@ -222,6 +222,7 @@ type Query struct {
 // Operation defines the operation in the query
 type Operation struct {
 	NameOp       string
+	Attribute	 string
 	NbrInput     int64
 	NbrOutput    int64
 	QueryMin     int64
@@ -699,10 +700,11 @@ func UpdateDB(db *bbolt.DB, bucketName string, key string, value []byte) {
 }
 
 // ChooseOperation sets the parameters according to the operation
-func ChooseOperation(operationName string, queryMin, queryMax, d int64, cuttingFactor int64) Operation {
+func ChooseOperation(operationName string, attribute string, queryMin, queryMax, d int64, cuttingFactor int64) Operation {
 	operation := Operation{}
 
 	operation.NameOp = operationName
+	operation.Attribute = attribute
 	operation.NbrInput = 0
 	operation.NbrOutput = 0
 	operation.QueryMax = int64(queryMax)

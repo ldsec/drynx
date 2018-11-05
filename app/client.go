@@ -114,7 +114,10 @@ func RunDrynx(c *cli.Context) error {
 	//Get the query operation to be executed
 	operationQuery := c.String("operation")
 
-	//Get the DPs over which the query is executed
+	//Get the attribute over which the query should be executed
+	queryAttribute := c.String("attribute")
+
+	//Get the DPs over which the query should be executed
 	dpsQuery := c.String("dps")
 	s := strings.Split(dpsQuery, ",")
 	//DPs over which the query is executed
@@ -149,10 +152,10 @@ func RunDrynx(c *cli.Context) error {
 		queryAnswer := ""
 
 		// data providers data generation
-		minGenerateData := int64(2)
-		maxGenerateData := int64(4)
+		minGenerateData := int64(0)
+		maxGenerateData := int64(100)
 		dimensions := int64(5)
-		operation := libdrynx.ChooseOperation(op, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
+		operation := libdrynx.ChooseOperation(op, queryAttribute, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
 
 		// define the number of groups for groupBy (1 per default)
 		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateRows: nbrRows, GenerateDataMin: int64(minGenerateData), GenerateDataMax: int64(maxGenerateData)}
@@ -269,7 +272,7 @@ func RunDrynx(c *cli.Context) error {
 		//Store query answer in local database
 		log.LLvl1("Update local database.")
 		cmd := exec.Command("python", scriptPopulateDB, dbLocation, queryAnswer,
-			strconv.Itoa(int(time.Now().Unix())), operation.NameOp, c.String("attribute"), dpsQuery)
+			strconv.Itoa(int(time.Now().Unix())), operation.NameOp, queryAttribute, dpsQuery)
 		out, err := cmd.Output()
 		if err != nil {println(err.Error())}
 		fmt.Println(out)

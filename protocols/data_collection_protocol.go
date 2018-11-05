@@ -379,7 +379,7 @@ func createFakeDataForOperation(operation libdrynx.Operation, nbrRows, min, max 
 func fetchDataFromDB(operation libdrynx.Operation, min, max int64) [][]int64 {
 	scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData.py"
 	dbLocation := "/Users/jstephan/Desktop/Client1.db"
-	cmd := exec.Command("python", scriptFetchDataDB, dbLocation, strconv.FormatInt(min, 10),
+	cmd := exec.Command("python", scriptFetchDataDB, dbLocation, operation.Attribute, strconv.FormatInt(min, 10),
 		strconv.FormatInt(max, 10))
 	out, err := cmd.Output()
 
