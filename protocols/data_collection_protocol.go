@@ -201,8 +201,8 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 	// generate fake random data depending on the operation
 	//fakeData := createFakeDataForOperation(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
-	fakeData := fetchDataFromDB(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
-	log.LLvl1(fakeData)
+	dpData := fetchDataFromDB(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
+	log.LLvl1(dpData)
 
 	// logistic regression specific
 	var datasFloat [][]float64
@@ -252,7 +252,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 			//p.Survey.Query.Ranges = nil
 			encryptedResponse, clearResponse, cprf = encoding.EncodeForFloat(datasFloat, lrParameters, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation.NameOp)
 		} else {
-			encryptedResponse, clearResponse, cprf = encoding.Encode(fakeData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
+			encryptedResponse, clearResponse, cprf = encoding.Encode(dpData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
 		}
 
 		log.Lvl2("Data Provider", p.Name(), "computes the query response", clearResponse, "for groups:", groupsString, "with operation:", p.Survey.Query.Operation)
@@ -376,9 +376,10 @@ func createFakeDataForOperation(operation libdrynx.Operation, nbrRows, min, max 
 }
 
 // fetchDataFromDB fetches the DPs' data from their databases
-func fetchDataFromDB(operation libdrynx.Operation, nbrRows, min, max int64) [][]int64 {
+func fetchDataFromDB(operation libdrynx.Operation, min, max int64) [][]int64 {
 	scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData.py"
-	cmd := exec.Command("python", scriptFetchDataDB)
+	cmd := exec.Command("python", scriptFetchDataDB, strconv.FormatInt(min, 10),
+		strconv.FormatInt(max, 10))
 	out, err := cmd.Output()
 
 	if err != nil {println(err.Error())}

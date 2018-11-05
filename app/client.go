@@ -148,7 +148,7 @@ func RunDrynx(c *cli.Context) error {
 		queryAnswer := ""
 
 		// data providers data generation
-		minGenerateData := int64(3)
+		minGenerateData := int64(2)
 		maxGenerateData := int64(4)
 		dimensions := int64(5)
 		operation := libdrynx.ChooseOperation(op, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
