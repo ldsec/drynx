@@ -103,7 +103,7 @@ func RunDrynx(c *cli.Context) error {
 
 	diffPri := false
 	diffPriOpti := false
-	nbrRows := int64(1)
+	nbrRows := int64(2)
 	//repartition: server1: 1 DP, server2: 1 DP, server3: 1 DP
 	repartition := []int64{1, 1, 1}
 
@@ -122,8 +122,6 @@ func RunDrynx(c *cli.Context) error {
 		index, _ := strconv.Atoi(indexString)
 		dpsUsed[i] = elDPs.List[index]
 		}
-
-	//dpsUsed := []*network.ServerIdentity{elDPs.List[0], elDPs.List[1]}
 
 	var operationList []string
 	if operationQuery == "all" {
@@ -273,7 +271,7 @@ func RunDrynx(c *cli.Context) error {
 			strconv.Itoa(int(time.Now().Unix())), operation.NameOp, c.String("attribute"), dpsQuery)
 		out, err := cmd.Output()
 		if err != nil {println(err.Error())}
-		fmt.Println(string(out))
+		fmt.Println(out)
 	}
 
 	log.LLvl1("All done.")

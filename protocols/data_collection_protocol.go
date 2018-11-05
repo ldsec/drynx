@@ -3,8 +3,6 @@ package protocols
 import (
 	"errors"
 	"fmt"
-	"math/rand"
-	"sync"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/dedis/onet"
@@ -14,6 +12,11 @@ import (
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/drynx/services/data"
 	"github.com/lca1/unlynx/lib"
+	"math/rand"
+	"os/exec"
+	"strconv"
+	"strings"
+	"sync"
 )
 
 // DataCollectionProtocolName is the registered name for the data provider protocol.
@@ -197,7 +200,9 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	}
 
 	// generate fake random data depending on the operation
-	fakeData := createFakeDataForOperation(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
+	//fakeData := createFakeDataForOperation(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
+	fakeData := fetchDataFromDB(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
+	log.LLvl1(fakeData)
 
 	// logistic regression specific
 	var datasFloat [][]float64
@@ -367,5 +372,24 @@ func createFakeDataForOperation(operation libdrynx.Operation, nbrRows, min, max 
 
 	}
 	libunlynx.EndParallelize(wg)
+	return tab
+}
+
+// fetchDataFromDB fetches the DPs' data from their databases
+func fetchDataFromDB(operation libdrynx.Operation, nbrRows, min, max int64) [][]int64 {
+	scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData.py"
+	cmd := exec.Command("python", scriptFetchDataDB)
+	out, err := cmd.Output()
+
+	if err != nil {println(err.Error())}
+	dpData := strings.Split(string(out), "\n")
+	dpValues := make([]int64, len(dpData)-1)
+	for i := range dpValues {
+		n, _ := strconv.ParseInt(dpData[i], 10, 64)
+		dpValues[i] = n
+		}
+
+	tab := make([][]int64, operation.NbrInput)
+	tab[0] = dpValues
 	return tab
 }
