@@ -28,6 +28,9 @@ const (
 	optionOperation = "operation"
 	optionOperationShort = "o"
 
+	optionDPs = "d"
+	optionDPsShort = "dps"
+
 	optionProofs = "proofs"
 
 	// query flags
@@ -108,6 +111,11 @@ func main() {
 		cli.StringFlag{
 			Name:  optionOperation + ", " + optionOperationShort,
 			Usage: "Operation to be run by querier",
+		},
+
+		cli.StringFlag{
+			Name:  optionDPs + ", " + optionDPsShort,
+			Usage: "DPs over which query is run",
 		},
 	}
 

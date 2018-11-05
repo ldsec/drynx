@@ -113,6 +113,18 @@ func RunDrynx(c *cli.Context) error {
 	//Get the query operation to be executed
 	operationQuery := c.String("operation")
 
+	//Get the DPs over which the query is executed
+	dpsQuery := c.String("dps")
+	s := strings.Split(dpsQuery, ",")
+	//DPs over which the query is executed
+	dpsUsed := make([]*network.ServerIdentity, len(s))
+	for i, indexString := range s {
+		index, _ := strconv.Atoi(indexString)
+		dpsUsed[i] = elDPs.List[index]
+		}
+
+	//dpsUsed := []*network.ServerIdentity{elDPs.List[0], elDPs.List[1]}
+
 	var operationList []string
 	if operationQuery == "all" {
 		operationList = []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
@@ -234,9 +246,6 @@ func RunDrynx(c *cli.Context) error {
 		// query generation
 		surveyID := "query-" + op
 		log.LLvl1(dpToServers)
-
-		//DPs over which the query is executed
-		dpsUsed := []*network.ServerIdentity{elDPs.List[0], elDPs.List[1]}
 
 		sq := client.GenerateSurveyQuery(elServers, nil, dpToServers, idToPublic, surveyID, operation,
 			ranges, ps, proofs, obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor, dpsUsed)
