@@ -90,7 +90,8 @@ func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 
 // RunDrynx runs a query
 func RunDrynx(c *cli.Context) error {
-	scriptPopulateDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/db.py"
+	scriptPopulateDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/insertDB.py"
+	dbLocation := "/Users/jstephan/go/src/github.com/lca1/drynx/app/Stats.db"
 
 	elServers, err := openGroupToml("test/groupServers.toml")
 	if err != nil {log.Fatal("Could not read groupServers.toml")}
@@ -267,7 +268,7 @@ func RunDrynx(c *cli.Context) error {
 
 		//Store query answer in local database
 		log.LLvl1("Update local database.")
-		cmd := exec.Command("python", scriptPopulateDB, queryAnswer,
+		cmd := exec.Command("python", scriptPopulateDB, dbLocation, queryAnswer,
 			strconv.Itoa(int(time.Now().Unix())), operation.NameOp, c.String("attribute"), dpsQuery)
 		out, err := cmd.Output()
 		if err != nil {println(err.Error())}
