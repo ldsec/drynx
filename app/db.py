@@ -6,6 +6,6 @@ db = sqlite3.connect('/Users/jstephan/go/src/github.com/lca1/drynx/app/Stats.db'
 # Get a cursor object
 cursor = db.cursor()
 cursor.execute('''INSERT INTO History (queryAnswer, timest,
-	operation, attribute) VALUES (?, ?, ?, ?)''',
-	(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]))
+	operation, attribute, clientIDs) VALUES (?, ?, ?, ?, ?)''',
+	(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]))
 db.commit()
