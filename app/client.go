@@ -151,7 +151,7 @@ func RunDrynx(c *cli.Context) error {
 	for _, op := range operationList {
 		queryAnswer := ""
 
-		// data providers data generation
+		// data providers data fetch
 		minGenerateData := int64(0)
 		maxGenerateData := int64(100)
 		dimensions := int64(5)

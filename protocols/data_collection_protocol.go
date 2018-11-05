@@ -201,7 +201,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 	// generate fake random data depending on the operation
 	//fakeData := createFakeDataForOperation(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
-	dpData := fetchDataFromDB(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
+	dpData := fetchDataFromDB(p.Survey.Query.Operation)
 	log.LLvl1(dpData)
 
 	// logistic regression specific
@@ -376,11 +376,11 @@ func createFakeDataForOperation(operation libdrynx.Operation, nbrRows, min, max 
 }
 
 // fetchDataFromDB fetches the DPs' data from their databases
-func fetchDataFromDB(operation libdrynx.Operation, min, max int64) [][]int64 {
+func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 	scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData.py"
 	dbLocation := "/Users/jstephan/Desktop/Client1.db"
-	cmd := exec.Command("python", scriptFetchDataDB, dbLocation, operation.Attribute, strconv.FormatInt(min, 10),
-		strconv.FormatInt(max, 10))
+	cmd := exec.Command("python", scriptFetchDataDB, dbLocation, operation.Attribute, strconv.FormatInt(operation.QueryMin, 10),
+		strconv.FormatInt(operation.QueryMax, 10))
 	out, err := cmd.Output()
 
 	if err != nil {println(err.Error())}
