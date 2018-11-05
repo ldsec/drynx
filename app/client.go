@@ -117,6 +117,12 @@ func RunDrynx(c *cli.Context) error {
 	//Get the attribute over which the query should be executed
 	queryAttribute := c.String("attribute")
 
+	//Get the query min and max values over which the query should be executed
+	queryMinString := c.String("min")
+	queryMaxString := c.String("max")
+	queryMin, _ := strconv.ParseInt(queryMinString, 10, 64)
+	queryMax, _ :=  strconv.ParseInt(queryMaxString, 10, 64)
+
 	//Get the DPs over which the query should be executed
 	dpsQuery := c.String("dps")
 	s := strings.Split(dpsQuery, ",")
@@ -152,13 +158,13 @@ func RunDrynx(c *cli.Context) error {
 		queryAnswer := ""
 
 		// data providers data fetch
-		minGenerateData := int64(0)
-		maxGenerateData := int64(100)
+		/*minGenerateData := int64(0)
+		maxGenerateData := int64(100)*/
 		dimensions := int64(5)
-		operation := libdrynx.ChooseOperation(op, queryAttribute, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
+		operation := libdrynx.ChooseOperation(op, queryAttribute, queryMin, queryMax, dimensions, cuttingFactor)
 
 		// define the number of groups for groupBy (1 per default)
-		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateRows: nbrRows, GenerateDataMin: int64(minGenerateData), GenerateDataMax: int64(maxGenerateData)}
+		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateRows: nbrRows, GenerateDataMin: queryMin, GenerateDataMax: queryMax}
 
 		// define the ranges for the input validation (1 range per data provider output)
 		var u, l int64

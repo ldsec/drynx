@@ -34,6 +34,12 @@ const (
 	optionAttribute = "a"
 	optionAttributeShort = "attribute"
 
+	optionQueryMin = "m"
+	optionQueryMinShort = "min"
+
+	optionQueryMax = "M"
+	optionQueryMaxShort = "max"
+
 	optionProofs = "proofs"
 
 	// query flags
@@ -124,6 +130,16 @@ func main() {
 		cli.StringFlag{
 			Name:  optionAttribute + ", " + optionAttributeShort,
 			Usage: "Attribute over which query is run",
+		},
+
+		cli.StringFlag{
+			Name:  optionQueryMin + ", " + optionQueryMinShort,
+			Usage: "Minimum of data to be examined while executing query",
+		},
+
+		cli.StringFlag{
+			Name:  optionQueryMax + ", " + optionQueryMaxShort,
+			Usage: "Maximum of data to be examined while executing query",
 		},
 	}
 
