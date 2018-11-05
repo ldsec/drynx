@@ -31,6 +31,9 @@ const (
 	optionDPs = "d"
 	optionDPsShort = "dps"
 
+	optionAttribute = "a"
+	optionAttributeShort = "attribute"
+
 	optionProofs = "proofs"
 
 	// query flags
@@ -116,6 +119,11 @@ func main() {
 		cli.StringFlag{
 			Name:  optionDPs + ", " + optionDPsShort,
 			Usage: "DPs over which query is run",
+		},
+
+		cli.StringFlag{
+			Name:  optionAttribute + ", " + optionAttributeShort,
+			Usage: "Attribute over which query is run",
 		},
 	}
 
