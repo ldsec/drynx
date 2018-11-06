@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/encoding"
@@ -199,9 +198,7 @@ func RunDrynx(c *cli.Context) error {
 
 		ranges := make([]*[]int64, operation.NbrOutput)
 		if rangeProofs {
-			for i := range ranges {
-				ranges[i] = &[]int64{u, l}
-			}
+			for i := range ranges {ranges[i] = &[]int64{u, l}}
 		} else {ranges = nil}
 
 		// choose if differential privacy or not, no diffP by default
@@ -280,9 +277,8 @@ func RunDrynx(c *cli.Context) error {
 		log.LLvl1("Update local database.")
 		cmd := exec.Command("python", scriptPopulateDB, dbLocation, queryAnswer, strconv.Itoa(int(time.Now().Unix())),
 			operation.NameOp, queryAttributes, dpsQuery, queryMinString, queryMaxString)
-		out, err := cmd.Output()
+		_, err := cmd.Output()
 		if err != nil {println(err.Error())}
-		fmt.Println(out)
 	}
 
 	log.LLvl1("All done.")
