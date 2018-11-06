@@ -277,8 +277,8 @@ func RunDrynx(c *cli.Context) error {
 
 		//Store query answer in local database
 		log.LLvl1("Update local database.")
-		cmd := exec.Command("python", scriptPopulateDB, dbLocation, queryAnswer,
-			strconv.Itoa(int(time.Now().Unix())), operation.NameOp, queryAttribute, dpsQuery)
+		cmd := exec.Command("python", scriptPopulateDB, dbLocation, queryAnswer, strconv.Itoa(int(time.Now().Unix())),
+			operation.NameOp, queryAttribute, dpsQuery, queryMinString, queryMaxString)
 		out, err := cmd.Output()
 		if err != nil {println(err.Error())}
 		fmt.Println(out)
