@@ -115,7 +115,7 @@ func RunDrynx(c *cli.Context) error {
 	operationQuery := c.String("operation")
 
 	//Get the attribute over which the query should be executed
-	queryAttribute := c.String("attribute")
+	queryAttributes := c.String("attributes")
 
 	//Get the query min and max values over which the query should be executed
 	queryMinString := c.String("min")
@@ -156,12 +156,13 @@ func RunDrynx(c *cli.Context) error {
 
 	for _, op := range operationList {
 		queryAnswer := ""
-
 		// data providers data fetch
 		/*minGenerateData := int64(0)
-		maxGenerateData := int64(100)*/
-		dimensions := int64(5)
-		operation := libdrynx.ChooseOperation(op, queryAttribute, queryMin, queryMax, dimensions, cuttingFactor)
+		maxGenerateData := int64(100)
+		dimensions := int64(5)*/
+		//The number of dimensions is exactly the number of attributes - 1
+		dimensions := int64(len(strings.Split(queryAttributes, ",")) - 1)
+		operation := libdrynx.ChooseOperation(op, queryAttributes, queryMin, queryMax, dimensions, cuttingFactor)
 
 		// define the number of groups for groupBy (1 per default)
 		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateRows: nbrRows, GenerateDataMin: queryMin, GenerateDataMax: queryMax}
@@ -278,7 +279,7 @@ func RunDrynx(c *cli.Context) error {
 		//Store query answer in local database
 		log.LLvl1("Update local database.")
 		cmd := exec.Command("python", scriptPopulateDB, dbLocation, queryAnswer, strconv.Itoa(int(time.Now().Unix())),
-			operation.NameOp, queryAttribute, dpsQuery, queryMinString, queryMaxString)
+			operation.NameOp, queryAttributes, dpsQuery, queryMinString, queryMaxString)
 		out, err := cmd.Output()
 		if err != nil {println(err.Error())}
 		fmt.Println(out)

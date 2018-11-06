@@ -222,11 +222,12 @@ type Query struct {
 // Operation defines the operation in the query
 type Operation struct {
 	NameOp       string
-	Attribute	 string
+	Attributes	 string
 	NbrInput     int64
 	NbrOutput    int64
 	QueryMin     int64
 	QueryMax     int64
+	Dimension    int64
 	LRParameters LogisticRegressionParameters
 }
 
@@ -700,15 +701,16 @@ func UpdateDB(db *bbolt.DB, bucketName string, key string, value []byte) {
 }
 
 // ChooseOperation sets the parameters according to the operation
-func ChooseOperation(operationName string, attribute string, queryMin, queryMax, d int64, cuttingFactor int64) Operation {
+func ChooseOperation(operationName string, attributes string, queryMin, queryMax, d int64, cuttingFactor int64) Operation {
 	operation := Operation{}
 
 	operation.NameOp = operationName
-	operation.Attribute = attribute
+	operation.Attributes = attributes
 	operation.NbrInput = 0
 	operation.NbrOutput = 0
-	operation.QueryMax = int64(queryMax)
-	operation.QueryMin = int64(queryMin)
+	operation.QueryMax = queryMax
+	operation.QueryMin = queryMin
+	operation.Dimension = d
 
 	switch operationName {
 	case "sum":
@@ -747,9 +749,6 @@ func ChooseOperation(operationName string, attribute string, queryMin, queryMax,
 		log.Fatal("Operation: <", operation, "> does not exist")
 	}
 
-	if cuttingFactor != 0 {
-		operation.NbrOutput *= cuttingFactor
-	}
-
+	if cuttingFactor != 0 {operation.NbrOutput *= cuttingFactor}
 	return operation
 }

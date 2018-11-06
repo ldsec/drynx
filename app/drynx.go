@@ -32,7 +32,7 @@ const (
 	optionDPsShort = "dps"
 
 	optionAttribute = "a"
-	optionAttributeShort = "attribute"
+	optionAttributeShort = "attributes"
 
 	optionQueryMin = "m"
 	optionQueryMinShort = "min"

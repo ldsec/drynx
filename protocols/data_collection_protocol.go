@@ -200,9 +200,8 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	}
 
 	// generate fake random data depending on the operation
-	//fakeData := createFakeDataForOperation(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
+	//dpData := createFakeDataForOperation(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
 	dpData := fetchDataFromDB(p.Survey.Query.Operation)
-	log.LLvl1(dpData)
 
 	// logistic regression specific
 	var datasFloat [][]float64
@@ -379,19 +378,47 @@ func createFakeDataForOperation(operation libdrynx.Operation, nbrRows, min, max 
 func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 	scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData.py"
 	dbLocation := "/Users/jstephan/Desktop/Client1.db"
-	cmd := exec.Command("python", scriptFetchDataDB, dbLocation, operation.Attribute, strconv.FormatInt(operation.QueryMin, 10),
-		strconv.FormatInt(operation.QueryMax, 10))
-	out, err := cmd.Output()
 
-	if err != nil {println(err.Error())}
-	dpData := strings.Split(string(out), "\n")
-	dpValues := make([]int64, len(dpData)-1)
-	for i := range dpValues {
-		n, _ := strconv.ParseInt(dpData[i], 10, 64)
-		dpValues[i] = n
+	if operation.NameOp == "lin_reg" {
+		//Send "true" as an argument if the operation in question is linear regression
+		//QueryMin and QueryMax are not useful in this case
+		cmd := exec.Command("python", scriptFetchDataDB, dbLocation, "true", operation.Attributes)
+		out, err := cmd.Output()
+		if err != nil {println(err.Error())}
+
+		dpData := strings.Split(string(out), "\n")
+		tab := make([][]int64, operation.NbrInput)
+		values := strings.Split(strings.TrimSuffix(strings.TrimPrefix(dpData[0], "("), ")"), ", ")
+		for j := range values {tab[j] = make([]int64, len(dpData)-1)}
+
+		for i, row := range dpData {
+			row = strings.TrimSuffix(strings.TrimPrefix(row, "("), ")")
+			if row != "" {
+				values := strings.Split(row, ", ")
+				for j, val := range values {
+					val64, _ := strconv.ParseInt(val, 10, 64)
+					tab[j][i] = val64
+				}
+			}
 		}
 
-	tab := make([][]int64, operation.NbrInput)
-	tab[0] = dpValues
-	return tab
+		return tab
+		} else {
+		//Send "false" as an argument if the operation in question is not linear regression
+		cmd := exec.Command("python", scriptFetchDataDB, dbLocation, "false", operation.Attributes, strconv.FormatInt(operation.QueryMin, 10),
+			strconv.FormatInt(operation.QueryMax, 10))
+		out, err := cmd.Output()
+		if err != nil {println(err.Error())}
+
+		dpData := strings.Split(string(out), "\n")
+		dpValues := make([]int64, len(dpData)-1)
+		for i := range dpValues {
+			n, _ := strconv.ParseInt(dpData[i], 10, 64)
+			dpValues[i] = n
+		}
+
+		tab := make([][]int64, operation.NbrInput)
+		tab[0] = dpValues
+		return tab
+	}
 }
