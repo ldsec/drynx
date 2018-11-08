@@ -287,18 +287,10 @@ func RunDrynx(c *cli.Context) error {
 
 func openGroupToml(tomlFileName string) (*onet.Roster, error) {
 	f, err := os.Open(tomlFileName)
-	if err != nil {
-		return nil, err
-	}
+	if err != nil {return nil, err}
 	el, err := app.ReadGroupDescToml(f)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(el.Roster.List) <= 0 {
-		return nil, errors.New("Empty or invalid drynx group file:" + tomlFileName)
-	}
-
+	if err != nil {return nil, err}
+	if len(el.Roster.List) <= 0 {return nil, errors.New("Empty or invalid drynx group file:" + tomlFileName)}
 	return el.Roster, nil
 }
 

@@ -377,7 +377,7 @@ func createFakeDataForOperation(operation libdrynx.Operation, nbrRows, min, max 
 // fetchDataFromDB fetches the DPs' data from their databases
 func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 	scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData.py"
-	dbLocation := "/Users/jstephan/Desktop/Client1.db"
+	dbLocation := "/Users/jstephan/go/src/github.com/lca1/drynx/app/Client.db"
 
 	if operation.NameOp == "lin_reg" {
 		//Send "true" as an argument if the operation in question is linear regression
