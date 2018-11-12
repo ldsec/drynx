@@ -87,7 +87,7 @@ func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRe
 		encryptedApproxCoefficients, _ := ComputeEncryptedApproxCoefficients(aggregatedApproxCoefficientsInt, pubKey)
 
 		// pack the encrypted aggregated approximation coefficients (will need to unpack the result at the querier side)
-		for j := 0; j < lrParameters.K; j++ {
+		for j := 0; int64(j) < lrParameters.K; j++ {
 			nLevel := getNumberApproxCoefficients(d, j)
 			nLevelPrevious := getNumberApproxCoefficients(d, j-1)
 			for i := 0; i < nLevel; i++ {
@@ -96,7 +96,7 @@ func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRe
 		}
 
 		// pack the aggregated approximation coefficients
-		for j := 0; j < lrParameters.K; j++ {
+		for j := 0; int64(j) < lrParameters.K; j++ {
 			nLevel := getNumberApproxCoefficients(d, j)
 			nLevelPrevious := getNumberApproxCoefficients(d, j-1)
 			for i := 0; i < nLevel; i++ {
@@ -167,7 +167,7 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.
 		encryptedApproxCoefficients, encryptedApproxCoefficientsRs := ComputeEncryptedApproxCoefficients(aggregatedApproxCoefficientsInt, pubKey)
 
 		// pack the encrypted aggregated approximation coefficients (will need to unpack the result at the querier side)
-		for j := 0; j < lrParameters.K; j++ {
+		for j := 0; int64(j) < lrParameters.K; j++ {
 			nLevel := getNumberApproxCoefficients(d, j)
 			nLevelPrevious := getNumberApproxCoefficients(d, j-1)
 			for i := 0; i < nLevel; i++ {
@@ -178,7 +178,7 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.
 		}
 
 		// pack the aggregated approximation coefficients
-		for j := 0; j < lrParameters.K; j++ {
+		for j := 0; int64(j) < lrParameters.K; j++ {
 			nLevel := getNumberApproxCoefficients(d, j)
 			nLevelPrevious := getNumberApproxCoefficients(d, j-1)
 			for i := 0; i < nLevel; i++ {
@@ -237,7 +237,7 @@ func DecodeLogisticRegression(result []libunlynx.CipherText, privKey kyber.Scala
 	gradientDescent := libunlynx.StartTimer("GradientDescent")
 	// unpack the aggregated approximation coefficients
 	approxCoefficients := make([][]int64, k)
-	for j := 0; j < k; j++ {
+	for j := 0; int64(j) < k; j++ {
 		nLevel := getNumberApproxCoefficients(d, j)
 		nLevelPrevious := getNumberApproxCoefficients(d, j-1)
 
@@ -255,7 +255,7 @@ func DecodeLogisticRegression(result []libunlynx.CipherText, privKey kyber.Scala
 	approxCoefficientsFloat := Int64ToFloat642DArray(approxCoefficients)
 
 	// rescale to the original order of magnitude
-	for j := 0; j < k; j++ {
+	for j := 0; int64(j) < k; j++ {
 		for i := 0; i < len(approxCoefficientsFloat[j]); i++ {
 			approxCoefficientsFloat[j][i] = approxCoefficientsFloat[j][i] / precision
 		}
@@ -299,9 +299,9 @@ func CombinationsWithRepetition(n int64, k int64) int64 {
 }
 
 // getTotalNumberApproxCoefficients returns the total number of approximation coefficients to compute for <d> features and approximation degree <k>
-func getTotalNumberApproxCoefficients(d int64, k int) int {
+func getTotalNumberApproxCoefficients(d int64, k int64) int {
 	count := 0
-	for j := 0; j < k; j++ {
+	for j := 0; int64(j) < k; j++ {
 		count += int(math.Pow(float64(d+1), float64(j+1)))
 	}
 
@@ -360,12 +360,12 @@ func ComputeDistinctApproxCoefficients(X []float64, y int64, k int) [][]float64 
 }
 
 // ComputeAllApproxCoefficients computes all the coefficients of the approximated logistic regression cost function
-func ComputeAllApproxCoefficients(X []float64, y int64, k int) [][]float64 {
+func ComputeAllApproxCoefficients(X []float64, y int64, k int64) [][]float64 {
 	d := len(X) - 1 // the dimension of the data
 
 	// case k <= 3 ok
 	approxCoefficients := make([][]float64, k)
-	for j := 0; j < k; j++ {
+	for j := 0; int64(j) < k; j++ {
 		approxCoefficients[j] = make([]float64, int(math.Pow(float64(d+1), float64(j+1))))
 	}
 
@@ -375,7 +375,7 @@ func ComputeAllApproxCoefficients(X []float64, y int64, k int) [][]float64 {
 	}
 
 	// computation of the coefficients for k >= 2
-	for j := 2; j <= k; j++ {
+	for j := 2; int64(j) <= k; j++ {
 		//nbCoefficientsForK := len(approxCoefficients[j])
 		ypart := float64(y - y*int64(math.Pow(-1, float64(j))) - 1)
 
@@ -686,7 +686,7 @@ func ComputeMinimumWeights(approxCoefficients [][]float64, lambda float64) []flo
 
 // FindMinimumWeights finds the weights minimizing the cost function using gradient descent
 func FindMinimumWeights(approxCoefficients [][]float64, initialWeights []float64, N int64, lambda float64,
-	step float64, maxIterations int) []float64 {
+	step float64, maxIterations int64) []float64 {
 
 	k := len(approxCoefficients) // the logarithm function approximation degree
 
@@ -705,7 +705,7 @@ func FindMinimumWeights(approxCoefficients [][]float64, initialWeights []float64
 	timeout := time.Duration(60 * 3 * time.Second)
 	epsilon := time.Duration(2 * time.Second)
 
-	for iter := 0; iter < maxIterations; iter++ {
+	for iter := 0; int64(iter) < maxIterations; iter++ {
 		cost := Cost(weights, approxCoefficients, N, lambda)
 
 		//if cost >= 0.0 && cost < minCost {
@@ -739,7 +739,7 @@ func FindMinimumWeights(approxCoefficients [][]float64, initialWeights []float64
 // FindMinimumWeightsWithEncryption finds the weights minimizing the cost function using gradient descent,
 // with encrypted approximation coefficients as input
 func FindMinimumWeightsWithEncryption(encryptedApproxCoefficients []*libunlynx.CipherVector, privKey kyber.Scalar,
-	initialWeights []float64, N int64, lambda float64, step float64, maxIterations int, precision float64) ([]float64,
+	initialWeights []float64, N int64, lambda float64, step float64, maxIterations int64, precision float64) ([]float64,
 	[][]float64) {
 
 	// the client decrypts the encrypted approximation coefficients

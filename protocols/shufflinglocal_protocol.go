@@ -60,7 +60,7 @@ type ShufflingLocalProtocol struct {
 	TargetOfShuffle   *[]libunlynx.ProcessResponse
 
 	CollectiveKey kyber.Point //only use in order to test the protocol
-	Proofs        int
+	Proofs        int64
 	Precomputed   []libunlynx.CipherVectorScalar
 
 	Query *libdrynx.SurveyQuery

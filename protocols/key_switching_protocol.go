@@ -97,7 +97,7 @@ type KeySwitchingProtocol struct {
 	// Protocol state data
 	TargetOfSwitch  *libunlynx.CipherVector
 	TargetPublicKey *kyber.Point
-	Proofs          int
+	Proofs          int64
 	Query           *libdrynx.SurveyQuery
 
 	// Protocol root data

@@ -2,9 +2,7 @@ package services
 
 import (
 	"time"
-
 	"sync"
-
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/coreos/bbolt"
 	"github.com/dedis/cothority/skipchain"
@@ -307,6 +305,8 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 
 	// to the DPs
 	listDPs := generateDataCollectionRoster(s.ServerIdentity(), recq.ServerToDP)
+	//Filter the list of DPs at every server depending on the DPs over which the query is executed
+	listDPs = checkIfDPisUsedinQuery(s.ServerIdentity(), recq.DPsUsed, listDPs)
 	if listDPs != nil {
 		err := libunlynx.SendISMOthers(s.ServiceProcessor, listDPs, &libdrynx.SurveyQueryToDP{SQ: *recq, Root: s.ServerIdentity()})
 		if err != nil {
@@ -646,7 +646,7 @@ func (s *ServiceDrynx) DataCollectionPhase(targetSurvey string) error {
 	// we convert the map into an object of [Group + CipherVector] to avoid later problems with protobuf
 	for key, value := range dataDPs {
 		if survey.SurveyQuery.Query.CuttingFactor != 0 {
-			survey.QueryResponseState.Data = append(survey.QueryResponseState.Data, libdrynx.ResponseDPOneGroup{Group: key, Data: value[:int(len(value)/survey.SurveyQuery.Query.CuttingFactor)]})
+			survey.QueryResponseState.Data = append(survey.QueryResponseState.Data, libdrynx.ResponseDPOneGroup{Group: key, Data: value[:int(int64(len(value))/survey.SurveyQuery.Query.CuttingFactor)]})
 		} else {
 			survey.QueryResponseState.Data = append(survey.QueryResponseState.Data, libdrynx.ResponseDPOneGroup{Group: key, Data: value})
 
@@ -780,9 +780,29 @@ func generateDataCollectionRoster(root *network.ServerIdentity, serverToDP map[s
 			return onet.NewRoster(roster)
 		}
 	}
-
 	return nil
 }
+
+
+func checkIfDPisUsedinQuery(root *network.ServerIdentity, dpsUsed []*network.ServerIdentity, listDPs *onet.Roster) *onet.Roster {
+	roster := make([]*network.ServerIdentity, 0)
+	roster = append(roster, root)
+
+	for i, dp := range listDPs.List {
+		if i != 0 {
+			for _, dpUsed := range dpsUsed {
+				if dpUsed.ID == dp.ID {
+					tmp := dp
+					roster = append(roster, tmp)
+				}
+			}
+		}
+	}
+
+	if len(onet.NewRoster(roster).List) > 1 {return onet.NewRoster(roster)}
+	return nil
+}
+
 
 func recreateRangeSignatures(ivSigs libdrynx.QueryIVSigs) []*[]libdrynx.PublishSignatureBytes {
 	recreate := make([]*[]libdrynx.PublishSignatureBytes, 0)
@@ -790,7 +810,7 @@ func recreateRangeSignatures(ivSigs libdrynx.QueryIVSigs) []*[]libdrynx.PublishS
 	// transform the one-dimensional array (because of protobuf) to the original two-dimensional array
 	indexInit := 0
 	for i := 1; i <= len(ivSigs.InputValidationSigs); i++ {
-		if i%ivSigs.InputValidationSize2 == 0 {
+		if int64(i) % ivSigs.InputValidationSize2 == int64(0) {
 			tmp := make([]libdrynx.PublishSignatureBytes, ivSigs.InputValidationSize2)
 			for j := range tmp {
 				tmp[j] = (*ivSigs.InputValidationSigs[indexInit])[0]

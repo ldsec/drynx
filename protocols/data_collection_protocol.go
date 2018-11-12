@@ -2,13 +2,7 @@ package protocols
 
 import (
 	"errors"
-
 	"fmt"
-
-	"math/rand"
-
-	"sync"
-
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/dedis/onet"
@@ -18,6 +12,11 @@ import (
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/drynx/services/data"
 	"github.com/lca1/unlynx/lib"
+	"math/rand"
+	"os/exec"
+	"strconv"
+	"strings"
+	"sync"
 )
 
 // DataCollectionProtocolName is the registered name for the data provider protocol.
@@ -193,15 +192,16 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	mutexGroups.Unlock()
 	// read the signatures needed to compute the range proofs
 	signatures := make([][]libdrynx.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize1)
-	for i := 0; i < p.Survey.Query.IVSigs.InputValidationSize1; i++ {
+	for i := 0; int64(i) < p.Survey.Query.IVSigs.InputValidationSize1; i++ {
 		signatures[i] = make([]libdrynx.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize2)
-		for j := 0; j < p.Survey.Query.IVSigs.InputValidationSize2; j++ {
+		for j := 0; int64(j) < p.Survey.Query.IVSigs.InputValidationSize2; j++ {
 			signatures[i][j] = libdrynx.PublishSignatureBytesToPublishSignatures((*p.Survey.Query.IVSigs.InputValidationSigs[i])[j])
 		}
 	}
 
 	// generate fake random data depending on the operation
-	fakeData := createFakeDataForOperation(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
+	//dpData := createFakeDataForOperation(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
+	dpData := fetchDataFromDB(p.Survey.Query.Operation)
 
 	// logistic regression specific
 	var datasFloat [][]float64
@@ -245,13 +245,13 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	// for all different groups
 	for _, v := range groupsString {
 		if p.Survey.Query.CuttingFactor != 0 {
-			p.Survey.Query.Operation.NbrOutput = int(p.Survey.Query.Operation.NbrOutput / p.Survey.Query.CuttingFactor)
+			p.Survey.Query.Operation.NbrOutput = p.Survey.Query.Operation.NbrOutput / int64(p.Survey.Query.CuttingFactor)
 		}
 		if p.Survey.Query.Operation.NameOp == "logistic regression" {
 			//p.Survey.Query.Ranges = nil
 			encryptedResponse, clearResponse, cprf = encoding.EncodeForFloat(datasFloat, lrParameters, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation.NameOp)
 		} else {
-			encryptedResponse, clearResponse, cprf = encoding.Encode(fakeData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
+			encryptedResponse, clearResponse, cprf = encoding.Encode(dpData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
 		}
 
 		log.Lvl2("Data Provider", p.Name(), "computes the query response", clearResponse, "for groups:", groupsString, "with operation:", p.Survey.Query.Operation)
@@ -260,7 +260,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 		// scaling for simulation purposes
 		qr := queryResponse[v]
-		for i := 0; i < p.Survey.Query.CuttingFactor-1; i++ {
+		for i := 0; int64(i) < p.Survey.Query.CuttingFactor-1; i++ {
 			queryResponse[v] = append(queryResponse[v], qr...)
 		}
 		if p.Survey.Query.Proofs != 0 {
@@ -282,10 +282,10 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 				// scaling for simulation purposes
 				if p.Survey.Query.CuttingFactor != 0 {
 					rplNew := libdrynx.RangeProofList{}
-					rplNew.Data = make([]libdrynx.RangeProof, len(rpl.Data)*p.Survey.Query.CuttingFactor)
+					rplNew.Data = make([]libdrynx.RangeProof, int64(len(rpl.Data)) * p.Survey.Query.CuttingFactor)
 					counter := 0
 					suitePair := bn256.NewSuite()
-					for j := 0; j < p.Survey.Query.CuttingFactor; j++ {
+					for j := 0; int64(j) < p.Survey.Query.CuttingFactor; j++ {
 						for _, v := range rpl.Data {
 
 							rplNew.Data[counter].RP = &libdrynx.RangeProofData{}
@@ -372,4 +372,53 @@ func createFakeDataForOperation(operation libdrynx.Operation, nbrRows, min, max 
 	}
 	libunlynx.EndParallelize(wg)
 	return tab
+}
+
+// fetchDataFromDB fetches the DPs' data from their databases
+func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
+	scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData.py"
+	dbLocation := "/Users/jstephan/go/src/github.com/lca1/drynx/app/Client.db"
+
+	if operation.NameOp == "lin_reg" {
+		//Send "true" as an argument if the operation in question is linear regression
+		//QueryMin and QueryMax are not useful in this case
+		cmd := exec.Command("python", scriptFetchDataDB, dbLocation, "true", operation.Attributes)
+		out, err := cmd.Output()
+		if err != nil {println(err.Error())}
+
+		dpData := strings.Split(string(out), "\n")
+		tab := make([][]int64, operation.NbrInput)
+		values := strings.Split(strings.TrimSuffix(strings.TrimPrefix(dpData[0], "("), ")"), ", ")
+		for j := range values {tab[j] = make([]int64, len(dpData)-1)}
+
+		for i, row := range dpData {
+			row = strings.TrimSuffix(strings.TrimPrefix(row, "("), ")")
+			if row != "" {
+				values := strings.Split(row, ", ")
+				for j, val := range values {
+					val64, _ := strconv.ParseInt(val, 10, 64)
+					tab[j][i] = val64
+				}
+			}
+		}
+
+		return tab
+		} else {
+		//Send "false" as an argument if the operation in question is not linear regression
+		cmd := exec.Command("python", scriptFetchDataDB, dbLocation, "false", operation.Attributes, strconv.FormatInt(operation.QueryMin, 10),
+			strconv.FormatInt(operation.QueryMax, 10))
+		out, err := cmd.Output()
+		if err != nil {println(err.Error())}
+
+		dpData := strings.Split(string(out), "\n")
+		dpValues := make([]int64, len(dpData)-1)
+		for i := range dpValues {
+			n, _ := strconv.ParseInt(dpData[i], 10, 64)
+			dpValues[i] = n
+		}
+
+		tab := make([][]int64, operation.NbrInput)
+		tab[0] = dpValues
+		return tab
+	}
 }

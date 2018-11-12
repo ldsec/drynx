@@ -25,7 +25,7 @@ const proofFalseSign = int64(4)
 // This information helps us to know how many proofs have been received and processed.
 type QueryInfo struct {
 	Bitmap         map[string]int64
-	TotalNbrProofs []int
+	TotalNbrProofs []int64
 	Query          *SurveyQuery
 
 	// channels
@@ -166,7 +166,7 @@ type PublishSignatureBytes struct { //need this because of G2 in protobuf not wo
 type QueryDiffP struct {
 	LapMean       float64
 	LapScale      float64
-	NoiseListSize int
+	NoiseListSize int64
 	Quanta        float64
 	Scale         float64
 	Limit         float64
@@ -184,8 +184,8 @@ type QueryDPDataGen struct {
 // QueryIVSigs contains parameters for input validation
 type QueryIVSigs struct {
 	InputValidationSigs  []*[]PublishSignatureBytes
-	InputValidationSize1 int
-	InputValidationSize2 int
+	InputValidationSize1 int64
+	InputValidationSize2 int64
 }
 
 // QuerySQL contains SQL parameters of the query
@@ -201,7 +201,7 @@ type Query struct {
 	// query statement
 	Operation   Operation
 	Ranges      []*[]int64
-	Proofs      int
+	Proofs      int64
 	Obfuscation bool
 	DiffP       QueryDiffP
 
@@ -216,16 +216,18 @@ type Query struct {
 	SQL QuerySQL
 
 	//simulation
-	CuttingFactor int
+	CuttingFactor int64
 }
 
 // Operation defines the operation in the query
 type Operation struct {
 	NameOp       string
-	NbrInput     int
-	NbrOutput    int
+	Attributes	 string
+	NbrInput     int64
+	NbrOutput    int64
 	QueryMin     int64
 	QueryMax     int64
+	Dimension    int64
 	LRParameters LogisticRegressionParameters
 }
 
@@ -241,11 +243,11 @@ type LogisticRegressionParameters struct {
 	// parameters
 	Lambda         float64
 	Step           float64
-	MaxIterations  int
+	MaxIterations  int64
 	InitialWeights []float64
 
 	// approximation
-	K                           int
+	K                           int64
 	PrecisionApproxCoefficients float64
 }
 
@@ -265,6 +267,7 @@ type SurveyQuery struct {
 	ObfuscationProofThreshold  float64
 	RangeProofThreshold        float64
 	KeySwitchingProofThreshold float64
+	DPsUsed []*network.ServerIdentity
 }
 
 // SurveyQueryToVN is the version of the query sent to the VNs
@@ -592,7 +595,7 @@ func CheckParameters(sq SurveyQuery, diffP bool) bool {
 		}
 
 		if sq.Query.IVSigs.InputValidationSigs != nil && sq.Query.Ranges != nil {
-			if sq.Query.Operation.NbrOutput != len(*sq.Query.IVSigs.InputValidationSigs[0]) || sq.Query.Operation.NbrOutput != len(sq.Query.Ranges) {
+			if sq.Query.Operation.NbrOutput != int64(len(*sq.Query.IVSigs.InputValidationSigs[0])) || sq.Query.Operation.NbrOutput != int64(len(sq.Query.Ranges)) {
 				result = false
 				message = message + "ranges or signatures length do not match with nbr output \n"
 			}
@@ -643,7 +646,7 @@ func CheckParameters(sq SurveyQuery, diffP bool) bool {
 }
 
 // QueryToProofsNbrs creates the number of required proofs from the query parameters
-func QueryToProofsNbrs(q SurveyQuery) []int {
+func QueryToProofsNbrs(q SurveyQuery) []int64 {
 	nbrDPs := 0
 
 	for _, v := range q.ServerToDP {
@@ -674,7 +677,7 @@ func QueryToProofsNbrs(q SurveyQuery) []int {
 
 	// key switching
 	prfKS := nbrServers
-	return []int{prfRange, prfShuffling, prfAggr, prfObf, prfKS}
+	return []int64{int64(prfRange), int64(prfShuffling), int64(prfAggr), int64(prfObf), int64(prfKS)}
 }
 
 // UpdateDB put in a given bucket the value as byte with given key.
@@ -698,14 +701,16 @@ func UpdateDB(db *bbolt.DB, bucketName string, key string, value []byte) {
 }
 
 // ChooseOperation sets the parameters according to the operation
-func ChooseOperation(operationName string, queryMin, queryMax, d int, cuttingFactor int) Operation {
+func ChooseOperation(operationName string, attributes string, queryMin, queryMax, d int64, cuttingFactor int64) Operation {
 	operation := Operation{}
 
 	operation.NameOp = operationName
+	operation.Attributes = attributes
 	operation.NbrInput = 0
 	operation.NbrOutput = 0
-	operation.QueryMax = int64(queryMax)
-	operation.QueryMin = int64(queryMin)
+	operation.QueryMax = queryMax
+	operation.QueryMin = queryMin
+	operation.Dimension = d
 
 	switch operationName {
 	case "sum":
@@ -744,9 +749,6 @@ func ChooseOperation(operationName string, queryMin, queryMax, d int, cuttingFac
 		log.Fatal("Operation: <", operation, "> does not exist")
 	}
 
-	if cuttingFactor != 0 {
-		operation.NbrOutput = operation.NbrOutput * cuttingFactor
-	}
-
+	if cuttingFactor != 0 {operation.NbrOutput *= cuttingFactor}
 	return operation
 }

@@ -25,6 +25,21 @@ const (
 	optionGroupFile      = "file"
 	optionGroupFileShort = "f"
 
+	optionOperation = "operation"
+	optionOperationShort = "o"
+
+	optionDPs = "d"
+	optionDPsShort = "dps"
+
+	optionAttribute = "a"
+	optionAttributeShort = "attributes"
+
+	optionQueryMin = "m"
+	optionQueryMinShort = "min"
+
+	optionQueryMax = "M"
+	optionQueryMaxShort = "max"
+
 	optionProofs = "proofs"
 
 	// query flags
@@ -99,6 +114,35 @@ func main() {
 			Usage: "Configuration file of the server",
 		},
 	}
+
+
+	querierFlags := []cli.Flag{
+		cli.StringFlag{
+			Name:  optionOperation + ", " + optionOperationShort,
+			Usage: "Operation to be run by querier",
+		},
+
+		cli.StringFlag{
+			Name:  optionDPs + ", " + optionDPsShort,
+			Usage: "DPs over which query is run",
+		},
+
+		cli.StringFlag{
+			Name:  optionAttribute + ", " + optionAttributeShort,
+			Usage: "Attribute over which query is run",
+		},
+
+		cli.StringFlag{
+			Name:  optionQueryMin + ", " + optionQueryMinShort,
+			Usage: "Minimum of data to be examined while executing query",
+		},
+
+		cli.StringFlag{
+			Name:  optionQueryMax + ", " + optionQueryMaxShort,
+			Usage: "Maximum of data to be examined while executing query",
+		},
+	}
+
 	cliApp.Commands = []cli.Command{
 		// BEGIN CLIENT: DATA PROVIDER ----------
 
@@ -130,6 +174,7 @@ func main() {
 			Aliases: []string{"r"},
 			Usage:   "Run Drynx service",
 			Action:  RunDrynx,
+			Flags: querierFlags,
 		},
 		// CLIENT END: QUERIER ----------
 

@@ -14,6 +14,10 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"gopkg.in/urfave/cli.v1"
 	"os"
+	"os/exec"
+	"strconv"
+	"strings"
+	"time"
 )
 
 // BEGIN SERVER: DP or COMPUTING NODE ----------
@@ -58,14 +62,12 @@ func NonInteractiveSetup(c *cli.Context) error {
 	}
 
 	group.Save(publicTomlPath)
-
 	return nil
 }
 
 // BEGIN CLIENT: QUERIER ----------
 // how to repartition the DPs: each server as a list of data providers
 func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []int64) map[string]*[]network.ServerIdentity {
-
 	if len(dpRepartition) > len(elServers.List) {
 		log.Fatal("Cannot assign the DPs to", len(dpRepartition), "servers (", len(elServers.List), ")")
 	}
@@ -87,31 +89,54 @@ func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 
 // RunDrynx runs a query
 func RunDrynx(c *cli.Context) error {
-	//tomlFileName := c.String("file")
-	elServers, err := openGroupToml("test/groupServers.toml")
-	if err != nil {
-		log.Fatal("Could not read groupServers.toml")
-	}
-	elDPs, err := openGroupToml("test/groupDPs.toml")
-	if err != nil {
-		log.Fatal("Could not read groupDPs.toml")
-	}
+	scriptPopulateDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/insertDB.py"
+	dbLocation := "/Users/jstephan/go/src/github.com/lca1/drynx/app/Stats.db"
 
-	proofs := 0 // 0 is not proof, 1 is proofs, 2 is optimized proofs
+	elServers, err := openGroupToml("test/groupServers.toml")
+	if err != nil {log.Fatal("Could not read groupServers.toml")}
+	elDPs, err := openGroupToml("test/groupDPs.toml")
+	if err != nil {log.Fatal("Could not read groupDPs.toml")}
+
+	proofs := int64(0) // 0 is not proof, 1 is proofs, 2 is optimized proofs
 	rangeProofs := false
 	obfuscation := false
 
 	diffPri := false
 	diffPriOpti := false
-	nbrRows := int64(1)
+	nbrRows := int64(2)
 	//repartition: server1: 1 DP, server2: 1 DP, server3: 1 DP
 	repartition := []int64{1, 1, 1}
 
 	//simulation
-	cuttingFactor := 0
+	cuttingFactor := int64(0)
 
-	//operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
-	operationList := []string{"sum"}
+	//Get the query operation to be executed
+	operationQuery := c.String("operation")
+
+	//Get the attribute over which the query should be executed
+	queryAttributes := c.String("attributes")
+
+	//Get the query min and max values over which the query should be executed
+	queryMinString := c.String("min")
+	queryMaxString := c.String("max")
+	queryMin, _ := strconv.ParseInt(queryMinString, 10, 64)
+	queryMax, _ :=  strconv.ParseInt(queryMaxString, 10, 64)
+
+	//Get the DPs over which the query should be executed
+	dpsQuery := c.String("dps")
+	s := strings.Split(dpsQuery, ",")
+	//DPs over which the query is executed
+	dpsUsed := make([]*network.ServerIdentity, len(s))
+	for i, indexString := range s {
+		index, _ := strconv.Atoi(indexString)
+		dpsUsed[i] = elDPs.List[index]
+		}
+
+	var operationList []string
+	if operationQuery == "all" {
+		operationList = []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
+	} else {operationList = []string{operationQuery}}
+
 	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 
 	if proofs == 1 {
@@ -129,14 +154,17 @@ func RunDrynx(c *cli.Context) error {
 	client := services.NewDrynxClient(elServers.List[0], "test-Drynx")
 
 	for _, op := range operationList {
-		// data providers data generation
-		minGenerateData := 3
-		maxGenerateData := 4
-		dimensions := 5
-		operation := libdrynx.ChooseOperation(op, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
+		queryAnswer := ""
+		// data providers data fetch
+		/*minGenerateData := int64(0)
+		maxGenerateData := int64(100)
+		dimensions := int64(5)*/
+		//The number of dimensions is exactly the number of attributes - 1
+		dimensions := int64(len(strings.Split(queryAttributes, ",")) - 1)
+		operation := libdrynx.ChooseOperation(op, queryAttributes, queryMin, queryMax, dimensions, cuttingFactor)
 
 		// define the number of groups for groupBy (1 per default)
-		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateRows: nbrRows, GenerateDataMin: int64(minGenerateData), GenerateDataMax: int64(maxGenerateData)}
+		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateRows: nbrRows, GenerateDataMin: queryMin, GenerateDataMax: queryMax}
 
 		// define the ranges for the input validation (1 range per data provider output)
 		var u, l int64
@@ -170,12 +198,8 @@ func RunDrynx(c *cli.Context) error {
 
 		ranges := make([]*[]int64, operation.NbrOutput)
 		if rangeProofs {
-			for i := range ranges {
-				ranges[i] = &[]int64{u, l}
-			}
-		} else {
-			ranges = nil
-		}
+			for i := range ranges {ranges[i] = &[]int64{u, l}}
+		} else {ranges = nil}
 
 		// choose if differential privacy or not, no diffP by default
 		// choosing the limit is done by drawing the curve (e.g. wolframalpha)
@@ -201,9 +225,7 @@ func RunDrynx(c *cli.Context) error {
 				}
 				ps[i] = &temp
 			}
-		} else {
-			ps = nil
-		}
+		} else {ps = nil}
 
 		// QUERY RECAP
 		log.LLvl1("\n")
@@ -224,20 +246,16 @@ func RunDrynx(c *cli.Context) error {
 		//-----------
 
 		idToPublic := make(map[string]kyber.Point)
-		for _, v := range elServers.List {
-			idToPublic[v.String()] = v.Public
-		}
-		for _, v := range elDPs.List {
-			idToPublic[v.String()] = v.Public
-		}
+		for _, v := range elServers.List {idToPublic[v.String()] = v.Public}
+		for _, v := range elDPs.List {idToPublic[v.String()] = v.Public}
 
 		// query generation
 		surveyID := "query-" + op
 		log.LLvl1(dpToServers)
-		sq := client.GenerateSurveyQuery(elServers, nil, dpToServers, idToPublic, surveyID, operation, ranges, ps, proofs, obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor)
-		if !libdrynx.CheckParameters(sq, diffPri) {
-			log.Fatal("Oups!")
-		}
+
+		sq := client.GenerateSurveyQuery(elServers, nil, dpToServers, idToPublic, surveyID, operation,
+			ranges, ps, proofs, obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor, dpsUsed)
+		if !libdrynx.CheckParameters(sq, diffPri) {log.Fatal("Oups!")}
 
 		// send query and receive results
 		grp, aggr, _ := client.SendSurveyQuery(sq)
@@ -247,28 +265,32 @@ func RunDrynx(c *cli.Context) error {
 			log.Fatal("Results format problem")
 		} else {
 			for i, v := range *aggr {
+				//log.LLvl1("Value " + string(i) + " is: " + string(v[0]))
 				log.LLvl1((*grp)[i], ": ", v)
+				for j := range v {queryAnswer += strconv.FormatFloat(v[j], 'f', 6, 64) + ", "}
 			}
+			queryAnswer = strings.TrimSuffix(queryAnswer, ", ")
 		}
+		log.LLvl1("Operation " + op + " is done successfully.")
+
+		//Store query answer in local database
+		log.LLvl1("Update local database.")
+		cmd := exec.Command("python", scriptPopulateDB, dbLocation, queryAnswer, strconv.Itoa(int(time.Now().Unix())),
+			operation.NameOp, queryAttributes, dpsQuery, queryMinString, queryMaxString)
+		_, err := cmd.Output()
+		if err != nil {println(err.Error())}
 	}
 
+	log.LLvl1("All done.")
 	return nil
 }
 
 func openGroupToml(tomlFileName string) (*onet.Roster, error) {
 	f, err := os.Open(tomlFileName)
-	if err != nil {
-		return nil, err
-	}
+	if err != nil {return nil, err}
 	el, err := app.ReadGroupDescToml(f)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(el.Roster.List) <= 0 {
-		return nil, errors.New("Empty or invalid drynx group file:" + tomlFileName)
-	}
-
+	if err != nil {return nil, err}
+	if len(el.Roster.List) <= 0 {return nil, errors.New("Empty or invalid drynx group file:" + tomlFileName)}
 	return el.Roster, nil
 }
 
