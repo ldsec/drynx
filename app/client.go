@@ -43,8 +43,8 @@ func NonInteractiveSetup(c *cli.Context) error {
 	pubStr, _ := encoding.PointToStringHex(libunlynx.SuiTe, kp.Public)
 	public, _ := encoding.StringHexToPoint(libunlynx.SuiTe, pubStr)
 
-	//serverBinding := network.NewTLSAddress(serverBindingStr)
-	serverBinding := network.NewTCPAddress(serverBindingStr)
+	serverBinding := network.NewTLSAddress(serverBindingStr)
+	//serverBinding := network.NewTCPAddress(serverBindingStr)
 	conf := &app.CothorityConfig{
 		Suite:       libunlynx.SuiTe.String(),
 		Public:      pubStr,
