@@ -17,7 +17,7 @@ df = pd.DataFrame(raw_data, raw_data['sizeNoiseList'])
 df['execution'] += 1
 
 # Create the general plot and the "subplots" i.e. the bars
-f, ax = plt.subplots(1, figsize=(8, 7))
+f, ax = plt.subplots(1, figsize=(9, 7))
 
 # Set the bar width
 bar_width = 0.5
@@ -62,4 +62,4 @@ ax.set_yticklabels(labels)
 # Set a buffer around the edge
 plt.ylim(ymin=1, ymax=20000)
 
-plt.savefig('diffPri.pdf', format='pdf')
+plt.savefig('diffPri.pdf', bbox_inches='tight', pad_inches=0)

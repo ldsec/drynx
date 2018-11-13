@@ -52,6 +52,6 @@ ax.tick_params(axis='x', labelsize=20)
 ax.tick_params(axis='y', labelsize=20)
 
 # Set a buffer around the edge
-plt.ylim(ymin=0, ymax=12)
+plt.ylim(bottom=0, top=12)
 
-plt.savefig('scalingVNs.pdf', format='pdf')
+plt.savefig('scalingVNs.pdf', bbox_inches='tight', pad_inches=0)

@@ -6,7 +6,8 @@ font = {'family': 'Bitstream Vera Sans',
 
 plt.rc('font', **font)
 
-raw_data = {'operations': ['sum', 'min', '', 'mean', 'var', 'cosim', 'R$^{2}$', 'log$_{reg}$', 'lin$_{reg}$', 'fc', 'max', '', 'inter', ''],
+raw_data = {'operations': ['sum\n2', 'OR\n1', '', 'mean\n2', 'var\n3', 'cosim\n4', 'R$^{2}$\n4', 'log\n54',
+                           'lin\n65', 'fc\n100', 'max\n100', '', 'inter\n100', ''],
             'execution':     [0.9, 0.9, 0, 0.9, 0.9, 0.9, 0.9, 1.2, 1.2, 0.93, 1.3, 0, 0.9, 0],
             'proofOverhead': [1.08, 0.98, 0, 1.67, 1.84, 2.94, 2.39, 11.2, 14.7, 1.7, 0.83, 0, 1.04, 0],
             'total': [2, 1.9, 2.1, 2.6, 2.7, 3.8, 3.2, 12.4, 15.9, 2.6, 2.2, 8, 1.9, 2.3],
@@ -86,4 +87,4 @@ ax.tick_params(axis='y', labelsize=20)
 # Set a buffer around the edge
 plt.ylim(bottom=0, top=20)
 
-plt.savefig('allOps.pdf', format='pdf')
+plt.savefig('allOps.pdf', bbox_inches='tight', pad_inches=0)

@@ -133,10 +133,10 @@ ax.text(1.12, 5.3, 'Query Execution', color='black', fontweight='bold')
 ax.text(5.6, 1.7, 'Proof Overhead', color='black', fontweight='bold')
 
 # Set a buffer around the edge
-plt.xlim(xmin=1, xmax=13)
+plt.xlim(left=1, right=13)
 plt.ylim([min(tick_pos) - bar_width, max(tick_pos) + bar_width + 2])
 
 plt.axvline(x=2.43, ymin=0, ymax=0.67, linewidth=2, color='k', linestyle="--")
 plt.axvline(x=11.7, ymin=0, ymax=10, linewidth=2, color='k', linestyle="--")
 
-plt.savefig('timeline.pdf', format='pdf')
+plt.savefig('timeline.pdf', bbox_inches='tight', pad_inches=0)

@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-import savefig as save
 
 font = {'family': 'Bitstream Vera Sans',
         'size': 17}
@@ -77,4 +76,4 @@ labels[4] = '10$^3$'
 labels[5] = '10$^4$'
 ax.set_yticklabels(labels)
 
-save.savefig_no_margins(plt, 'scalingDPs.pdf')
+plt.savefig('scalingDPs.pdf', bbox_inches='tight', pad_inches=0)

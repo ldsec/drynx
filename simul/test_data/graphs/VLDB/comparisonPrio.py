@@ -81,7 +81,7 @@ ax.tick_params(axis='x', labelsize=20)
 ax.tick_params(axis='y', labelsize=20)
 
 # Set a buffer around the edge
-plt.ylim(ymin=0, ymax=310)
+plt.ylim(bottom=0, top=310)
 plt.xlim([min(bar_Drynx) - bar_width - 0.2, max(bar_Prio) + bar_width + 0.2])
 
 plt.axhline(xmin=0.115, xmax=0.17,  y=10.62, linewidth=2, color='k', label="Honest-but-curious Model")
@@ -90,4 +90,4 @@ plt.axhline(xmin=0.56, xmax=0.67, y=61.59, linewidth=2, color='k')
 plt.axhline(xmin=0.8, xmax=0.91, y=170.7, linewidth=2, color='k')
 plt.legend()
 
-plt.savefig('comparisonPrio.pdf', format='pdf')
+plt.savefig('comparisonPrio.pdf', bbox_inches='tight', pad_inches=0)
