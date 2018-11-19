@@ -30,29 +30,12 @@ _testmain.go
 
 .idea/
 
-services/default/data/*.txt
-services/unlynxMedCo/*.toml
-
 simul/test_data/*.csv
-simul/test_data/graphs/*.pdf
-simul/test_data/time_data/*.txt
+simul/test_data/*.txt
+simul/test_data/graphs/VLDB/*.pdf
 simul/build/
 simul/deploy/
 simul/simul
-simul/deter.toml
 
-app/default/*.toml
-app/default/test
-app/default/service_storage
-app/unlynxMedCo/*.toml
-app/unlynxMedCo/loader/files/*
-app/unlynxMedCo/loader/26-load-data.sh
-app/unlynxMedCo/loader/*.toml
-app/unlynxMedCo/loader/*.txt
-app/unlynxMedCo/graphs/*.pdf
-
-unlynx
-#unlynxMedCo
 server_list
-
 pre_compute_multiplications.gob

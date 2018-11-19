@@ -1,9 +1,9 @@
 package data_test
 
 import (
-	"github.com/JoaoAndreSa/MedCo/lib"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/drynx/services/data"
+	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -21,7 +21,7 @@ const numAggrEnc = 2
 
 var numType = [...]int64{2, 5}
 
-var testData map[string][]lib.DpClearResponse
+var testData map[string][]libunlynx.DpClearResponse
 
 func TestAllPossibleGroups(t *testing.T) {
 	data.Groups = make([][]int64, 0)
