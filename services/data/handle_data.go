@@ -6,6 +6,7 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/store"
+	"github.com/lca1/unlynx/lib/tools"
 	"math"
 	"math/rand"
 	"os"
@@ -140,12 +141,12 @@ func GenerateUnLynxData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, 
 			}
 
 			dpData[j] = libunlynx.DpClearResponse{
-				GroupByClear:               libunlynx.ConvertDataToMap(grp[:numGroupsClear], "g", 0),
-				GroupByEnc:                 libunlynx.ConvertDataToMap(grp[numGroupsClear:numGroupsClear+numGroupsEnc], "g", int(numGroupsClear)),
-				WhereClear:                 libunlynx.ConvertDataToMap(where[:numWhereClear], "w", 0),
-				WhereEnc:                   libunlynx.ConvertDataToMap(where[numWhereClear:numWhereClear+numWhereEnc], "w", int(numWhereClear)),
-				AggregatingAttributesClear: libunlynx.ConvertDataToMap(aggr[:numAggrClear], "s", 0),
-				AggregatingAttributesEnc:   libunlynx.ConvertDataToMap(aggr[numAggrClear:numAggrClear+numAggrEnc], "s", int(numAggrClear)),
+				GroupByClear:               libunlynxtools.ConvertDataToMap(grp[:numGroupsClear], "g", 0),
+				GroupByEnc:                 libunlynxtools.ConvertDataToMap(grp[numGroupsClear:numGroupsClear+numGroupsEnc], "g", int(numGroupsClear)),
+				WhereClear:                 libunlynxtools.ConvertDataToMap(where[:numWhereClear], "w", 0),
+				WhereEnc:                   libunlynxtools.ConvertDataToMap(where[numWhereClear:numWhereClear+numWhereEnc], "w", int(numWhereClear)),
+				AggregatingAttributesClear: libunlynxtools.ConvertDataToMap(aggr[:numAggrClear], "s", 0),
+				AggregatingAttributesEnc:   libunlynxtools.ConvertDataToMap(aggr[numAggrClear:numAggrClear+numAggrEnc], "s", int(numAggrClear)),
 			}
 
 		}
@@ -181,12 +182,12 @@ func WriteDataToTextFile(filename string, testData map[string][]libunlynx.DpClea
 		writer.Flush()
 
 		for _, entry := range v {
-			flushInt64Data(writer, libunlynx.ConvertMapToData(entry.GroupByClear, "g", 0))
-			flushInt64Data(writer, libunlynx.ConvertMapToData(entry.GroupByEnc, "g", len(entry.GroupByClear)))
-			flushInt64Data(writer, libunlynx.ConvertMapToData(entry.WhereClear, "w", 0))
-			flushInt64Data(writer, libunlynx.ConvertMapToData(entry.WhereEnc, "w", len(entry.WhereClear)))
-			flushInt64Data(writer, libunlynx.ConvertMapToData(entry.AggregatingAttributesClear, "s", 0))
-			flushInt64Data(writer, libunlynx.ConvertMapToData(entry.AggregatingAttributesEnc, "s", len(entry.AggregatingAttributesClear)))
+			flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.GroupByClear, "g", 0))
+			flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.GroupByEnc, "g", len(entry.GroupByClear)))
+			flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.WhereClear, "w", 0))
+			flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.WhereEnc, "w", len(entry.WhereClear)))
+			flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.AggregatingAttributesClear, "s", 0))
+			flushInt64Data(writer, libunlynxtools.ConvertMapToData(entry.AggregatingAttributesEnc, "s", len(entry.AggregatingAttributesClear)))
 		}
 	}
 }
@@ -219,35 +220,35 @@ func ReadDataFromTextFile(filename string) map[string][]libunlynx.DpClearRespons
 			id = line[1:]
 		} else {
 			// Grouping Attributes Clear
-			grpClear := libunlynx.StringToInt64Array(line[:int(math.Max(float64(0), float64(len(line)-1)))])
+			grpClear := libunlynxtools.StringToInt64Array(line[:int(math.Max(float64(0), float64(len(line)-1)))])
 
 			// Grouping Attributes Encrypted
 			scanner.Scan()
-			grpEnc := libunlynx.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
+			grpEnc := libunlynxtools.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
 
 			// Where Attributes Clear
 			scanner.Scan()
-			whereClear := libunlynx.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
+			whereClear := libunlynxtools.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
 
 			// Where Attributes Encrypted
 			scanner.Scan()
-			whereEnc := libunlynx.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
+			whereEnc := libunlynxtools.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
 
 			// Aggregating Attributes Clear
 			scanner.Scan()
-			aggrClear := libunlynx.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
+			aggrClear := libunlynxtools.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
 
 			// Aggregating Attributes Encrypted
 			scanner.Scan()
-			aggrEnc := libunlynx.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
+			aggrEnc := libunlynxtools.StringToInt64Array(scanner.Text()[:int(math.Max(float64(0), float64(len(scanner.Text())-1)))])
 
 			container = append(container, libunlynx.DpClearResponse{
-				GroupByClear:               libunlynx.ConvertDataToMap(grpClear, "g", 0),
-				GroupByEnc:                 libunlynx.ConvertDataToMap(grpEnc, "g", len(grpClear)),
-				WhereClear:                 libunlynx.ConvertDataToMap(whereClear, "w", 0),
-				WhereEnc:                   libunlynx.ConvertDataToMap(whereEnc, "w", len(whereClear)),
-				AggregatingAttributesClear: libunlynx.ConvertDataToMap(aggrClear, "s", 0),
-				AggregatingAttributesEnc:   libunlynx.ConvertDataToMap(aggrEnc, "s", len(aggrClear)),
+				GroupByClear:               libunlynxtools.ConvertDataToMap(grpClear, "g", 0),
+				GroupByEnc:                 libunlynxtools.ConvertDataToMap(grpEnc, "g", len(grpClear)),
+				WhereClear:                 libunlynxtools.ConvertDataToMap(whereClear, "w", 0),
+				WhereEnc:                   libunlynxtools.ConvertDataToMap(whereEnc, "w", len(whereClear)),
+				AggregatingAttributesClear: libunlynxtools.ConvertDataToMap(aggrClear, "s", 0),
+				AggregatingAttributesEnc:   libunlynxtools.ConvertDataToMap(aggrEnc, "s", len(aggrClear)),
 			})
 		}
 	}

@@ -1,6 +1,8 @@
 package services
 
 import (
+	"github.com/lca1/unlynx/lib/shuffle"
+	"github.com/lca1/unlynx/lib/tools"
 	"time"
 	"sync"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
@@ -290,13 +292,13 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 
 	// prepares the precomputation for shuffling
 	lineSize := 100 // + 1 is for the possible count attribute
-	survey.ShufflePrecompute = libunlynx.PrecomputationWritingForShuffling(false, gobFile, s.ServerIdentity().String(), libunlynx.SuiTe.Scalar().Pick(random.New()), recq.RosterServers.Aggregate, lineSize)
+	survey.ShufflePrecompute = libunlynxshuffle.PrecomputationWritingForShuffling(false, gobFile, s.ServerIdentity().String(), libunlynx.SuiTe.Scalar().Pick(random.New()), recq.RosterServers.Aggregate, lineSize)
 
 	// if is the root server: send query to all other servers and its data providers
 	if recq.IntraMessage == false {
 		recq.IntraMessage = true
 		// to other computing servers
-		err := libunlynx.SendISMOthers(s.ServiceProcessor, &recq.RosterServers, recq)
+		err := libunlynxtools.SendISMOthers(s.ServiceProcessor, &recq.RosterServers, recq)
 		if err != nil {
 			log.Error("[SERVICE] <drynx> Server, broadcasting [SurveyQuery] error ", err)
 		}
@@ -308,7 +310,7 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	//Filter the list of DPs at every server depending on the DPs over which the query is executed
 	listDPs = checkIfDPisUsedinQuery(s.ServerIdentity(), recq.DPsUsed, listDPs)
 	if listDPs != nil {
-		err := libunlynx.SendISMOthers(s.ServiceProcessor, listDPs, &libdrynx.SurveyQueryToDP{SQ: *recq, Root: s.ServerIdentity()})
+		err := libunlynxtools.SendISMOthers(s.ServiceProcessor, listDPs, &libdrynx.SurveyQueryToDP{SQ: *recq, Root: s.ServerIdentity()})
 		if err != nil {
 			log.Error("[SERVICE] <drynx> Server, broadcasting [SurveyQuery] error ", err)
 		}
@@ -341,7 +343,7 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	// TODO: we can remove this waiting after the test
 	// -----------------------------------------------------------------------------------------------------------------
 	// signal other nodes that the data provider(s) already sent their data (response)
-	err := libunlynx.SendISMOthers(s.ServiceProcessor, &recq.RosterServers, &SyncDCP{recq.SurveyID})
+	err := libunlynxtools.SendISMOthers(s.ServiceProcessor, &recq.RosterServers, &SyncDCP{recq.SurveyID})
 	if err != nil {
 		log.Error("[SERVICE] <drynx> Server, broadcasting [syncDCPChannel] error ", err)
 	}
@@ -364,7 +366,7 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 
 	//startWaitTimeDPs := libunlynx.StartTimer(s.ServerIdentity().String() + "_WaitTimeDPs")
 	// signal other nodes that the data provider(s) already sent their data (response)
-	err = libunlynx.SendISMOthers(s.ServiceProcessor, &recq.RosterServers, &DPdataFinished{recq.SurveyID})
+	err = libunlynxtools.SendISMOthers(s.ServiceProcessor, &recq.RosterServers, &DPdataFinished{recq.SurveyID})
 	if err != nil {
 		log.Error("[SERVICE] <drynx> Server, broadcasting [DPdataFinished] error ", err)
 	}
