@@ -27,44 +27,44 @@ func init() {
 type SimulationDrynx struct {
 	onet.SimulationBFTree
 	// Topology
-	NbrServers      	int
-	NbrVNs          	int
-	NbrDPs          	int
-	NbrDPsPerServer 	int
+	NbrServers      int
+	NbrVNs          int
+	NbrDPs          int
+	NbrDPsPerServer int
 
 	//Log Reg
-	NbrRecords 			int
+	NbrRecords int
 
 	//Proofs
-	Proofs          	int
-	Ranges           	int
-	InputValidation  	bool
-	Obfuscation      	bool
-	ThresholdGeneral	float64
-	ThresholdOther   	float64
+	Proofs           int
+	Ranges           int
+	InputValidation  bool
+	Obfuscation      bool
+	ThresholdGeneral float64
+	ThresholdOther   float64
 
 	// Query
-	OperationName 		string
-	NbrInput      		int
-	NbrOutput     		int
+	OperationName string
+	NbrInput      int
+	NbrOutput     int
 
 	//DiffP
-	DiffPEpsilon 		float64
-	DiffPDelta   		float64
-	DiffPSize    		int
-	DiffPQuanta  		float64
-	DiffPScale   		float64
-	DiffPLimit   		float64
-	DiffPOpti    		bool
+	DiffPEpsilon float64
+	DiffPDelta   float64
+	DiffPSize    int
+	DiffPQuanta  float64
+	DiffPScale   float64
+	DiffPLimit   float64
+	DiffPOpti    bool
 
 	// Data and query response
-	GroupByValues 		[]int64
-	DPRows        		int
-	MinData       		int64
-	MaxData       		int64
+	GroupByValues []int64
+	DPRows        int
+	MinData       int64
+	MaxData       int64
 
-	CuttingFactor 		int
-	MaxIterations 		int
+	CuttingFactor int
+	MaxIterations int
 }
 
 // NewSimulationDrynx constructs a full Drynx service simulation.
