@@ -6,7 +6,7 @@ Drynx is developed by lca1 (Laboratory for Communications and Applications in EP
 
 ## Documentation
 
-* For more information regarding the underlying architecture please refer to the stable version of ONet `github.bom/dedis/onet`
+* For more information regarding the underlying architecture please refer to the stable version of ONet `github.com/dedis/onet`
 * For more information on how to run our protocols, services, simulations and apps, go to [Running UnLynx](https://github.com/lca1/unlynx/wiki/Running-UnLynx)
 
 ## Getting Started
