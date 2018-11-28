@@ -1,5 +1,5 @@
+[![Build Status](https://travis-ci.org/lca1/drynx.svg?branch=master)](https://travis-ci.org/lca1/drynx) [![Go Report Card](https://goreportcard.com/badge/github.com/lca1/drynx)](https://goreportcard.com/report/github.com/lca1/drynx) [![Coverage Status](https://coveralls.io/repos/github/lca1/drynx/badge.svg?branch=master)](https://coveralls.io/github/lca1/drynx?branch=master)
 # Drynx
-
 Drynx is a library for simulating a privacy-preserving and verifiable data sharing/querying tool. It offers a series of independent protocols that when combined offer a verifiably-secure and safe way to compute statistics and train basic machine learning models on distributed sensitive data (e.g., medical data).
 
 Drynx is developed by lca1 (Laboratory for Communications and Applications in EPFL) in collaboration with DeDiS (Laboratory for Decentralized and Distributed Systems). It is build on the [UnLynx library](https://github.com/lca1/unlynx) and does an intensive use of [Overlay-network (ONet) library](https://github.com/dedis/onet) and of the [Advanced Crypto (kyber) library](https://github.com/dedis/kyber).
