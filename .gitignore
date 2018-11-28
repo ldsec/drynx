@@ -30,6 +30,8 @@ _testmain.go
 
 .idea/
 
+services/db:*
+
 simul/test_data/*.csv
 simul/test_data/*.txt
 simul/test_data/graphs/VLDB/*.pdf
