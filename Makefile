@@ -1,3 +1,5 @@
+EXCLUDE_LINT = "_test.go"
+
 test_fmt:
 	@echo Checking correct formatting of files
 	@{ \
@@ -14,9 +16,9 @@ test_fmt:
 test_lint:
 	@echo Checking linting of files
 	@{ \
-		go get -u github.com/golang/lint/golint; \
-		exclude="protocols/byzcoin|_test.go"; \
-		lintfiles=$$( golint ./... | egrep -v "($$exclude)" ); \
+		go get -u golang.org/x/lint/golint; \
+		el=$(EXCLUDE_LINT); \
+		lintfiles=$$( golint ./... | egrep -v "$$el" ); \
 		if [ -n "$$lintfiles" ]; then \
 		echo "Lint errors:"; \
 		echo "$$lintfiles"; \
@@ -24,24 +26,12 @@ test_lint:
 		fi \
 	}
 
-# You can use `test_playground` to run any test or part of cothority
-# for more than once in Travis. Change `make test` in .travis.yml
-# to `make test_playground`.
-test_verbose:
-	go test -v -race -p=1 -tags vartime ./...;
+test_local:
+	go test -v -race -short -p=1 ./...
 
-test_playground:
-	cd protocols; \
-	for a in $$( seq 10 ); do \
-	  go test -v -race -p=1 || exit 1 ; \
-	done;
-
-# use test_verbose instead if you want to use this Makefile locally
-test_go:
+test_codecov:
 	./coveralls.sh
 
-test: test_fmt test_lint test_go
+test: test_fmt test_lint test_codecov
 
-local: test_fmt test_lint test_verbose
-
-all: install test
+local: test_fmt test_lint test_local

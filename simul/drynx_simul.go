@@ -26,46 +26,45 @@ func init() {
 // SimulationDrynx state of a simulation.
 type SimulationDrynx struct {
 	onet.SimulationBFTree
-	// Settings
 	// Topology
-	NbrServers      int
-	NbrVNs          int
-	NbrDPs          int
-	NbrDPsPerServer int
+	NbrServers      	int
+	NbrVNs          	int
+	NbrDPs          	int
+	NbrDPsPerServer 	int
 
 	//Log Reg
-	NbrRecords int
+	NbrRecords 			int
 
 	//Proofs
-	Proofs           int
-	Ranges           int
-	InputValidation  bool
-	Obfuscation      bool
-	ThresholdGeneral float64
-	ThresholdOther   float64
+	Proofs          	int
+	Ranges           	int
+	InputValidation  	bool
+	Obfuscation      	bool
+	ThresholdGeneral	float64
+	ThresholdOther   	float64
 
 	// Query
-	OperationName string
-	NbrInput      int
-	NbrOutput     int
+	OperationName 		string
+	NbrInput      		int
+	NbrOutput     		int
 
 	//DiffP
-	DiffPEpsilon float64
-	DiffPDelta   float64
-	DiffPSize    int
-	DiffPQuanta  float64
-	DiffPScale   float64
-	DiffPLimit   float64
-	DiffPOpti    bool
+	DiffPEpsilon 		float64
+	DiffPDelta   		float64
+	DiffPSize    		int
+	DiffPQuanta  		float64
+	DiffPScale   		float64
+	DiffPLimit   		float64
+	DiffPOpti    		bool
 
 	// Data and query response
-	GroupByValues []int64
-	DPRows        int
-	MinData       int64
-	MaxData       int64
+	GroupByValues 		[]int64
+	DPRows        		int
+	MinData       		int64
+	MaxData       		int64
 
-	CuttingFactor int
-	MaxIterations int
+	CuttingFactor 		int
+	MaxIterations 		int
 }
 
 // NewSimulationDrynx constructs a full Drynx service simulation.
@@ -272,7 +271,7 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 		}
 		break
 	}
-	log.LLvl1(sim.CuttingFactor, len(ranges))
+
 	// signatures for Input Validation
 	ps := make([]*[]libdrynx.PublishSignatureBytes, sim.NbrServers)
 	if !(ranges == nil) && sim.Ranges != 0 {
@@ -341,7 +340,6 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 
 	// Create a client (querier) for the service)
 	client := services.NewDrynxClient(rosterServers.List[0], "simul-Drynx")
-	log.LLvl1("CLIENT CREATED")
 	// query generation
 	surveyID := uuid.NewV4().String()
 
@@ -351,7 +349,6 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 	} else {
 		thresholdEntityProofsVerif = []float64{sim.ThresholdGeneral, sim.ThresholdOther, sim.ThresholdOther, sim.ThresholdOther}
 	}
-	log.LLvl1("GENERATE SURVEY")
 	sq := client.GenerateSurveyQuery(rosterServers, rosterVNs, dpToServers, idToPublic, surveyID, operation, ranges, ps, sim.Proofs, sim.Obfuscation, thresholdEntityProofsVerif, diffP, dpData, sim.CuttingFactor)
 	if diffP.NoiseListSize > 0 {
 		if !libdrynx.CheckParameters(sq, true) {
@@ -365,7 +362,6 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 
 	overallTimer := time.Now()
 	startSimulation := libunlynx.StartTimer("Simulation")
-	log.LLvl1("STARTS SIMUL")
 	var wg *sync.WaitGroup
 	var block *skipchain.SkipBlock
 	var err error

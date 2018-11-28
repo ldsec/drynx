@@ -60,6 +60,6 @@ labels[5] = '10$^4$'
 ax.set_yticklabels(labels)
 
 # Set a buffer around the edge
-plt.ylim(ymin=1, ymax=20000)
+plt.ylim(bottom=1, top=20000)
 
 plt.savefig('diffPri.pdf', bbox_inches='tight', pad_inches=0)

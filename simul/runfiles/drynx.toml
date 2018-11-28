@@ -1,5 +1,5 @@
 Simulation = "ServiceDrynx"
-Servers = 13
+Servers = 6
 Bf = 2
 Suite = "bn256.G1"
 Rounds = 1
@@ -10,5 +10,4 @@ TAGS = "vartime"
 RunWait = "2h"
 
 Hosts, NbrServers, NbrVNs, NbrDPs, NbrDPsPerServer, Proofs, Ranges, Obfuscation, OperationName, NbrInput, NbrOutput, DiffPEpsilon, DiffPDelta, DiffPSize, DiffPQuanta, DiffPScale, DiffPLimit, DiffPOpti, DPRows, MinData, MaxData, ThresholdGeneral, ThresholdOther, CuttingFactor
-73, 6, 7, 60, 10, 1, 0, false, "inter", 1, 100, 0.0, 0.0, 0, 0.0, 0.0, 0.0, false, 1, 1, 100, 1.0, 0.3, 0
-73, 6, 7, 60, 10, 1, 1, true, "inter", 1, 100, 0.0, 0.0, 0, 0.0, 0.0, 0.0, false, 1, 1, 100, 1.0, 0.3, 0
+16, 3, 3, 10, 10, 1, 18, false, "sum", 1, 1, 0.0, 0.0, 0, 0.0, 0.0, 0.0, false, 1, 1, 2, 1.0, 1.0, 0
