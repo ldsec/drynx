@@ -43,8 +43,8 @@ func NonInteractiveSetup(c *cli.Context) error {
 	pubStr, _ := encoding.PointToStringHex(libunlynx.SuiTe, kp.Public)
 	public, _ := encoding.StringHexToPoint(libunlynx.SuiTe, pubStr)
 
-	serverBinding := network.NewTLSAddress(serverBindingStr)
-	//serverBinding := network.NewTCPAddress(serverBindingStr)
+	//serverBinding := network.NewTLSAddress(serverBindingStr)
+	serverBinding := network.NewTCPAddress(serverBindingStr)
 	conf := &app.CothorityConfig{
 		Suite:       libunlynx.SuiTe.String(),
 		Public:      pubStr,
@@ -156,11 +156,10 @@ func RunDrynx(c *cli.Context) error {
 	client := services.NewDrynxClient(elServers.List[0], "test-Drynx")
 
 	for _, op := range operationList {
+		start := time.Now()
+
 		queryAnswer := ""
 		// data providers data fetch
-		/*minGenerateData := int64(0)
-		maxGenerateData := int64(100)
-		dimensions := int64(5)*/
 		//The number of dimensions is exactly the number of attributes - 1
 		dimensions := int64(len(strings.Split(queryAttributes, ",")) - 1)
 		operation := libdrynx.ChooseOperation(op, queryAttributes, queryMin, queryMax, dimensions, cuttingFactor)
@@ -281,6 +280,9 @@ func RunDrynx(c *cli.Context) error {
 			operation.NameOp, queryAttributes, dpsQuery, queryMinString, queryMaxString)
 		_, err := cmd.Output()
 		if err != nil {println(err.Error())}
+
+		elapsed := time.Since(start)
+		log.LLvl1("Query took %s", elapsed)
 	}
 
 	log.LLvl1("All done.")

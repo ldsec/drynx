@@ -768,19 +768,13 @@ func convertFromKeySwitchingStruct(cv libunlynx.CipherVector, dpResponses libdry
 }
 
 func generateDataCollectionRoster(root *network.ServerIdentity, serverToDP map[string]*[]network.ServerIdentity) *onet.Roster {
-	for key, value := range serverToDP {
-		if key == root.String() {
-			roster := make([]*network.ServerIdentity, 0)
-			roster = append(roster, root)
-
-			for _, srv := range *value {
-				tmp := srv
-				roster = append(roster, &tmp)
-			}
-			return onet.NewRoster(roster)
-		}
+	roster := make([]*network.ServerIdentity, 0)
+	roster = append(roster, root)
+	for _, srv := range *serverToDP[root.String()] {
+		tmp := srv
+		roster = append(roster, &tmp)
 	}
-	return nil
+	return onet.NewRoster(roster)
 }
 
 
@@ -788,12 +782,8 @@ func checkIfDPisUsedinQuery(root *network.ServerIdentity, dpsUsed []*network.Ser
 	roster := make([]*network.ServerIdentity, 0)
 	roster = append(roster, root)
 
-	for i, dp := range listDPs.List {
-		if i > 0 {
-			for _, dpUsed := range dpsUsed {
-				if dpUsed.ID == dp.ID {roster = append(roster, dp)}
-			}
-		}
+	for i := 1; i < len(listDPs.List); i++ {
+		for _, dpUsed := range dpsUsed {if dpUsed.ID == listDPs.List[i].ID {roster = append(roster, dpUsed)}}
 	}
 
 	if len(onet.NewRoster(roster).List) > 1 {return onet.NewRoster(roster)}

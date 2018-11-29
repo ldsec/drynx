@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 // DataCollectionProtocolName is the registered name for the data provider protocol.
@@ -235,6 +236,9 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 	// ------- START: ENCODING & ENCRYPTION -------
 	//encodeTime := libunlynx.StartTimer(p.Name() + "_DPencoding")
+	start := time.Now()
+
+
 	cprf := make([]libdrynx.CreateProof, 0)
 
 	// compute response
@@ -328,6 +332,8 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		}
 	}
 	//libunlynx.EndTimer(encodeTime)
+	elapsed := time.Since(start)
+	log.LLvl1("Encryption took %s", elapsed)
 	// ------- END -------
 
 	//convert the response to bytes
