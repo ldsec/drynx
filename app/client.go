@@ -97,7 +97,7 @@ func RunDrynx(c *cli.Context) error {
 	elDPs, err := openGroupToml("test/groupDPs.toml")
 	if err != nil {log.Fatal("Could not read groupDPs.toml")}
 
-	proofs := int64(0) // 0 is not proof, 1 is proofs, 2 is optimized proofs
+	proofs := int64(1) // 0 is not proof, 1 is proofs, 2 is optimized proofs
 	rangeProofs := false
 	obfuscation := false
 
