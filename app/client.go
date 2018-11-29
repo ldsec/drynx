@@ -106,6 +106,8 @@ func RunDrynx(c *cli.Context) error {
 	nbrRows := int64(2)
 	//repartition: server1: 1 DP, server2: 1 DP, server3: 1 DP
 	repartition := []int64{1, 1, 1}
+	//repartition (Real Scenario): server1: 3 DPs, server2: 3 DPs, server3: 3 DPs
+	//repartition := []int64{3, 3, 3}
 
 	//simulation
 	cuttingFactor := int64(0)

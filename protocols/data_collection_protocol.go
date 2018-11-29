@@ -378,6 +378,9 @@ func createFakeDataForOperation(operation libdrynx.Operation, nbrRows, min, max 
 func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 	scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData.py"
 	dbLocation := "/Users/jstephan/go/src/github.com/lca1/drynx/app/Client.db"
+	//For RPis
+	/*scriptFetchDataDB := "/home/pi/Desktop/fetchDPData.py"
+	dbLocation := "/home/pi/Desktop/Client.db"*/
 
 	if operation.NameOp == "lin_reg" {
 		//Send "true" as an argument if the operation in question is linear regression
@@ -401,7 +404,6 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 				}
 			}
 		}
-
 		return tab
 		} else {
 		//Send "false" as an argument if the operation in question is not linear regression

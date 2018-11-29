@@ -307,11 +307,10 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	listDPs := generateDataCollectionRoster(s.ServerIdentity(), recq.ServerToDP)
 	//Filter the list of DPs at every server depending on the DPs over which the query is executed
 	listDPs = checkIfDPisUsedinQuery(s.ServerIdentity(), recq.DPsUsed, listDPs)
+
 	if listDPs != nil {
 		err := libunlynx.SendISMOthers(s.ServiceProcessor, listDPs, &libdrynx.SurveyQueryToDP{SQ: *recq, Root: s.ServerIdentity()})
-		if err != nil {
-			log.Error("[SERVICE] <drynx> Server, broadcasting [SurveyQuery] error ", err)
-		}
+		if err != nil {log.Error("[SERVICE] <drynx> Server, broadcasting [SurveyQuery] error ", err)}
 	}
 
 	// DRO Phase
@@ -350,6 +349,7 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	for counter > 0 {
 		counter = counter - (<-castToSurvey(s.Survey.Get(recq.SurveyID)).SyncDCPChannel)
 	}
+
 	// -----------------------------------------------------------------------------------------------------------------
 
 	startDataCollectionProtocol := libunlynx.StartTimer(s.ServerIdentity().String() + "_DataCollectionProtocol")
@@ -377,7 +377,6 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	log.Lvl2("[SERVICE] <drynx> Server", s.ServerIdentity(), "- all data providers have sent their data")
 
 	//libDrynx.EndTimer(startWaitTimeDPs)
-
 	// ready to start the collective aggregation & key switching protocol
 	if recq.IntraMessage == false {
 		startJustExecution := libunlynx.StartTimer("JustExecution")
@@ -640,6 +639,7 @@ func (s *ServiceDrynx) DataCollectionPhase(targetSurvey string) error {
 	if err != nil {
 		return err
 	}
+
 	dataDPs := <-pi.(*protocols.DataCollectionProtocol).FeedbackChannel
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
@@ -789,12 +789,9 @@ func checkIfDPisUsedinQuery(root *network.ServerIdentity, dpsUsed []*network.Ser
 	roster = append(roster, root)
 
 	for i, dp := range listDPs.List {
-		if i != 0 {
+		if i > 0 {
 			for _, dpUsed := range dpsUsed {
-				if dpUsed.ID == dp.ID {
-					tmp := dp
-					roster = append(roster, tmp)
-				}
+				if dpUsed.ID == dp.ID {roster = append(roster, dp)}
 			}
 		}
 	}
