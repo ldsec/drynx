@@ -75,8 +75,8 @@ ax.set_xlabel("Threshold_T (Ratio)", fontsize=20)
 ax.tick_params(axis='x', labelsize=20)
 ax.tick_params(axis='y', labelsize=20)
 
-plt.ylim(ymax=3.2)
+plt.ylim(top=3.2)
 plt.axhline(y=2.1, linewidth=2, color='k', linestyle='--', label='T = T$_{sub}$ = 0')
 plt.legend()
 
-plt.savefig('threshold.pdf', format='pdf')
+plt.savefig('threshold.pdf', bbox_inches='tight', pad_inches=0)

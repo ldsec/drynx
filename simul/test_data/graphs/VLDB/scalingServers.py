@@ -51,6 +51,6 @@ ax.tick_params(axis='x', labelsize=20)
 ax.tick_params(axis='y', labelsize=20)
 
 # Set a buffer around the edge
-plt.ylim(ymin=0, ymax=30)
+plt.ylim(bottom=0, top=30)
 
-plt.savefig('scalingServers.pdf', format='pdf')
+plt.savefig('scalingServers.pdf', bbox_inches='tight', pad_inches=0)

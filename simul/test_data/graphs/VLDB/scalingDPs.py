@@ -76,7 +76,4 @@ labels[4] = '10$^3$'
 labels[5] = '10$^4$'
 ax.set_yticklabels(labels)
 
-# Set a buffer around the edge
-plt.ylim(ymin=1, ymax=10000)
-
-plt.savefig('scalingDPs.pdf', format='pdf')
+plt.savefig('scalingDPs.pdf', bbox_inches='tight', pad_inches=0)

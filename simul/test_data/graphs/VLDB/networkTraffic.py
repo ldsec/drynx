@@ -61,6 +61,6 @@ ax.set_xlabel("Delay (ms)", fontsize=20)
 ax.tick_params(axis='x', labelsize=20)
 ax.tick_params(axis='y', labelsize=20)
 
-plt.ylim(ymax=16)
+plt.ylim(top=16)
 
-plt.savefig('networkTraffic.pdf', format='pdf')
+plt.savefig('networkTraffic.pdf', bbox_inches='tight', pad_inches=0)

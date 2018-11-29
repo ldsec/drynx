@@ -75,4 +75,4 @@ ax.set_yticklabels(labels)
 plt.ylim(ymin=1, ymax=1000)
 plt.xlim([min(bar_LR) - bar_width - 0.3, max(bar_Eval) + bar_width + 0.2])
 
-plt.savefig('logReg.pdf', format='pdf')
+plt.savefig('logReg.pdf', bbox_inches='tight', pad_inches=0)
