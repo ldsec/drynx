@@ -8,6 +8,8 @@ Drynx is developed by lca1 (Laboratory for Communications and Applications in EP
 
 * For more information regarding the underlying architecture please refer to the stable version of ONet `github.com/dedis/onet`
 * For more information on how to run our protocols, services, simulations and apps, go to [Running UnLynx](https://github.com/lca1/unlynx/wiki/Running-UnLynx)
+* To check the code organisation, have a look at [Layout](https://github.com/lca1/drynx/wiki/Layout)
+* For more information on how to run our protocols, services, simulations and apps, go to [Running Drynx](https://github.com/lca1/drynx/wiki/Running-Drynx)
 
 ## Getting Started
 
@@ -19,11 +21,11 @@ To use the code of this repository you need to:
 - Add `$GOPATH/bin` to `$PATH`
 - Git clone this repository to $GOPATH/src `git clone https://github.com/lca1/drynx.git` or...
 - go get repository: `go get github.com/lca1/drynx`
-- when building use the "-tags vartime" argument to use the pairing enabling curve
+- **When building use the "-tags vartime" argument to enable the use of the bn256 pairing curve**
 
 ## Version
 
-The version in the `master`-branch is stable for simulation purposes and has no incompatible changes.
+The version in the `master`-branch is stable for simulation and test purposes and has no incompatible changes.
 
 ## License
 
