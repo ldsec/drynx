@@ -9,6 +9,7 @@ import (
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
+	"time"
 )
 
 // API represents a client with the server to which he is connected and its public/private key pair.
@@ -114,7 +115,9 @@ func (c *API) SendSurveyQuery(sq libdrynx.SurveyQuery) (*[]string, *[][]float64,
 	log.Lvl2("[API] <Drynx> Client", c.clientID, "successfully executed the query with SurveyID ", sq.SurveyID)
 
 	// decrypt/decode the result
-	clientDecode := libunlynx.StartTimer("Decode")
+	//clientDecode := libunlynx.StartTimer("Decode")
+	start := time.Now()
+
 	log.Lvl2("[API] <Drynx> Client", c.clientID, "is decrypting the results")
 
 	grp := make([]string, len(sr.Data))
@@ -125,7 +128,10 @@ func (c *API) SendSurveyQuery(sq libdrynx.SurveyQuery) (*[]string, *[][]float64,
 		aggr[count] = encoding.Decode(res, c.private, sq.Query.Operation)
 		count++
 	}
-	libunlynx.EndTimer(clientDecode)
+	//libunlynx.EndTimer(clientDecode)
+	elapsed := time.Since(start)
+	log.Printf("Decryption took %s", elapsed)
+
 
 	log.Lvl2("[API] <Drynx> Client", c.clientID, "finished decrypting the results")
 	return &grp, &aggr, nil

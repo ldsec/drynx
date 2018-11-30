@@ -176,7 +176,7 @@ type QueryDiffP struct {
 // QueryDPDataGen contains the query information for the generation of data at DP
 type QueryDPDataGen struct {
 	GroupByValues   []int64 // the number of groups = len(GroupByValues); number of categories for each group GroupByValues[i]
-	GenerateRows    int64
+	//GenerateRows    int64
 	GenerateDataMin int64
 	GenerateDataMax int64
 }

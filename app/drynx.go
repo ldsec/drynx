@@ -174,7 +174,7 @@ func main() {
 			Aliases: []string{"r"},
 			Usage:   "Run Drynx service",
 			Action:  RunDrynx,
-			Flags: querierFlags,
+			Flags: 	 querierFlags,
 		},
 		// CLIENT END: QUERIER ----------
 

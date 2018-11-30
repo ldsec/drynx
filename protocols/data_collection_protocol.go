@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 // DataCollectionProtocolName is the registered name for the data provider protocol.
@@ -235,6 +236,9 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 	// ------- START: ENCODING & ENCRYPTION -------
 	//encodeTime := libunlynx.StartTimer(p.Name() + "_DPencoding")
+	start := time.Now()
+
+
 	cprf := make([]libdrynx.CreateProof, 0)
 
 	// compute response
@@ -328,6 +332,8 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		}
 	}
 	//libunlynx.EndTimer(encodeTime)
+	elapsed := time.Since(start)
+	log.LLvl1("Encryption took %s", elapsed)
 	// ------- END -------
 
 	//convert the response to bytes
@@ -378,6 +384,9 @@ func createFakeDataForOperation(operation libdrynx.Operation, nbrRows, min, max 
 func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 	scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData.py"
 	dbLocation := "/Users/jstephan/go/src/github.com/lca1/drynx/app/Client.db"
+	//For RPis
+	/*scriptFetchDataDB := "/home/pi/Desktop/fetchDPData.py"
+	dbLocation := "/home/pi/Desktop/Client.db"*/
 
 	if operation.NameOp == "lin_reg" {
 		//Send "true" as an argument if the operation in question is linear regression
@@ -401,7 +410,6 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 				}
 			}
 		}
-
 		return tab
 		} else {
 		//Send "false" as an argument if the operation in question is not linear regression
