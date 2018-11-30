@@ -376,7 +376,7 @@ func (p *ProofCollectionProtocol) storeProof(index int, typeProof, surveyID, sen
 				}
 			}()
 
-			for i := 0; i < len(p.Tree().List())-2; i++ {
+			for i := 0; i < len(p.Tree().List())-1; i++ {
 				bitmap := <-p.BitmapCollectionChannel
 
 				// if the message was sent by the go routine

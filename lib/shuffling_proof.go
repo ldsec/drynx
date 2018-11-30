@@ -7,6 +7,7 @@ import (
 	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/shuffle"
 	"math/big"
 	"sync"
 )
@@ -101,7 +102,7 @@ func shuffleProofCreation(inputList, outputList []libunlynx.ProcessResponse, bet
 	}
 	libunlynx.EndParallelize(wg1)
 
-	betaCompressed := libunlynx.CompressBeta(beta, e)
+	betaCompressed := libunlynxshuffle.CompressBeta(beta, e)
 
 	rand := libunlynx.SuiTe.RandomStream()
 	// do k-shuffle of ElGamal on the (Xhat,Yhat) and check it

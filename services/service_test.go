@@ -449,7 +449,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		operation := libdrynx.ChooseOperation(op, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
 		operation.LRParameters = lrParameters
 		// define the number of groups for groupBy (1 per default)
-		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}/*, GenerateRows: nbrRows*/, GenerateDataMin: int64(minGenerateData), GenerateDataMax: int64(maxGenerateData)}
+		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1} /*, GenerateRows: nbrRows*/, GenerateDataMin: int64(minGenerateData), GenerateDataMax: int64(maxGenerateData)}
 
 		// define the ranges for the input validation (1 range per data provider output)
 		var u, l int64
@@ -858,7 +858,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 			minGenerateData = operation.QueryMin
 			maxGenerateData = operation.QueryMax
 		}
-		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{}/*, GenerateRows: 100*/, GenerateDataMin: minGenerateData, GenerateDataMax: maxGenerateData}
+		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{} /*, GenerateRows: 100*/, GenerateDataMin: minGenerateData, GenerateDataMax: maxGenerateData}
 
 		// define the ranges for the input validation (1 range per data provider output)
 		u := int64(2)

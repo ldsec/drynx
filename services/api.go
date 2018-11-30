@@ -79,7 +79,7 @@ func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToSer
 		RangeProofThreshold:        thresholds[1],
 		ObfuscationProofThreshold:  thresholds[2],
 		KeySwitchingProofThreshold: thresholds[3],
-		DPsUsed:					dpsUsed,
+		DPsUsed:                    dpsUsed,
 
 		// query statement
 		Query: libdrynx.Query{
@@ -131,7 +131,6 @@ func (c *API) SendSurveyQuery(sq libdrynx.SurveyQuery) (*[]string, *[][]float64,
 	//libunlynx.EndTimer(clientDecode)
 	elapsed := time.Since(start)
 	log.Printf("Decryption took %s", elapsed)
-
 
 	log.Lvl2("[API] <Drynx> Client", c.clientID, "finished decrypting the results")
 	return &grp, &aggr, nil
