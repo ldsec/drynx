@@ -1,10 +1,6 @@
 package services
 
 import (
-	"github.com/lca1/unlynx/lib/shuffle"
-	"github.com/lca1/unlynx/lib/tools"
-	"time"
-	"sync"
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/coreos/bbolt"
 	"github.com/dedis/cothority/skipchain"
@@ -16,7 +12,11 @@ import (
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/protocols"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/shuffle"
+	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols"
+	"sync"
+	"time"
 )
 
 // ServiceName is the registered name for the drynx service.
@@ -781,19 +781,23 @@ func generateDataCollectionRoster(root *network.ServerIdentity, serverToDP map[s
 	return onet.NewRoster(roster)
 }
 
-
 func checkIfDPisUsedinQuery(root *network.ServerIdentity, dpsUsed []*network.ServerIdentity, listDPs *onet.Roster) *onet.Roster {
 	roster := make([]*network.ServerIdentity, 0)
 	roster = append(roster, root)
 
 	for i := 1; i < len(listDPs.List); i++ {
-		for _, dpUsed := range dpsUsed {if dpUsed.ID == listDPs.List[i].ID {roster = append(roster, dpUsed)}}
+		for _, dpUsed := range dpsUsed {
+			if dpUsed.ID == listDPs.List[i].ID {
+				roster = append(roster, dpUsed)
+			}
+		}
 	}
 
-	if len(onet.NewRoster(roster).List) > 1 {return onet.NewRoster(roster)}
+	if len(onet.NewRoster(roster).List) > 1 {
+		return onet.NewRoster(roster)
+	}
 	return nil
 }
-
 
 func recreateRangeSignatures(ivSigs libdrynx.QueryIVSigs) []*[]libdrynx.PublishSignatureBytes {
 	recreate := make([]*[]libdrynx.PublishSignatureBytes, 0)
@@ -801,7 +805,7 @@ func recreateRangeSignatures(ivSigs libdrynx.QueryIVSigs) []*[]libdrynx.PublishS
 	// transform the one-dimensional array (because of protobuf) to the original two-dimensional array
 	indexInit := 0
 	for i := 1; i <= len(ivSigs.InputValidationSigs); i++ {
-		if int64(i) % ivSigs.InputValidationSize2 == int64(0) {
+		if int64(i)%ivSigs.InputValidationSize2 == int64(0) {
 			tmp := make([]libdrynx.PublishSignatureBytes, ivSigs.InputValidationSize2)
 			for j := range tmp {
 				tmp[j] = (*ivSigs.InputValidationSigs[indexInit])[0]

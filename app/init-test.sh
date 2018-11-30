@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 bash compileMac.sh
 
 mkdir -p test

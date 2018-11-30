@@ -238,7 +238,6 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	//encodeTime := libunlynx.StartTimer(p.Name() + "_DPencoding")
 	start := time.Now()
 
-
 	cprf := make([]libdrynx.CreateProof, 0)
 
 	// compute response
@@ -286,7 +285,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 				// scaling for simulation purposes
 				if p.Survey.Query.CuttingFactor != 0 {
 					rplNew := libdrynx.RangeProofList{}
-					rplNew.Data = make([]libdrynx.RangeProof, int64(len(rpl.Data)) * p.Survey.Query.CuttingFactor)
+					rplNew.Data = make([]libdrynx.RangeProof, int64(len(rpl.Data))*p.Survey.Query.CuttingFactor)
 					counter := 0
 					suitePair := bn256.NewSuite()
 					for j := 0; int64(j) < p.Survey.Query.CuttingFactor; j++ {
@@ -393,12 +392,16 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 		//QueryMin and QueryMax are not useful in this case
 		cmd := exec.Command("python", scriptFetchDataDB, dbLocation, "true", operation.Attributes)
 		out, err := cmd.Output()
-		if err != nil {println(err.Error())}
+		if err != nil {
+			println(err.Error())
+		}
 
 		dpData := strings.Split(string(out), "\n")
 		tab := make([][]int64, operation.NbrInput)
 		values := strings.Split(strings.TrimSuffix(strings.TrimPrefix(dpData[0], "("), ")"), ", ")
-		for j := range values {tab[j] = make([]int64, len(dpData)-1)}
+		for j := range values {
+			tab[j] = make([]int64, len(dpData)-1)
+		}
 
 		for i, row := range dpData {
 			row = strings.TrimSuffix(strings.TrimPrefix(row, "("), ")")
@@ -411,12 +414,14 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 			}
 		}
 		return tab
-		} else {
+	} else {
 		//Send "false" as an argument if the operation in question is not linear regression
 		cmd := exec.Command("python", scriptFetchDataDB, dbLocation, "false", operation.Attributes, strconv.FormatInt(operation.QueryMin, 10),
 			strconv.FormatInt(operation.QueryMax, 10))
 		out, err := cmd.Output()
-		if err != nil {println(err.Error())}
+		if err != nil {
+			println(err.Error())
+		}
 
 		dpData := strings.Split(string(out), "\n")
 		dpValues := make([]int64, len(dpData)-1)

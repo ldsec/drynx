@@ -111,17 +111,17 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 	}
 
 	lrParameters := libdrynx.LogisticRegressionParameters{
-		FilePath:           "",
-		NbrRecords:         int64(sim.NbrRecords),
-		NbrFeatures:        m,
-		Means:              means,
-		StandardDeviations: stds,
-		K:                  2,
+		FilePath:                    "",
+		NbrRecords:                  int64(sim.NbrRecords),
+		NbrFeatures:                 m,
+		Means:                       means,
+		StandardDeviations:          stds,
+		K:                           2,
 		PrecisionApproxCoefficients: 1,
-		Lambda:         1.0,
-		Step:           0.1,
-		MaxIterations:  int64(sim.MaxIterations),
-		InitialWeights: make([]float64, m+1),
+		Lambda:                      1.0,
+		Step:                        0.1,
+		MaxIterations:               int64(sim.MaxIterations),
+		InitialWeights:              make([]float64, m+1),
 	}
 
 	// operation

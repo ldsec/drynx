@@ -175,7 +175,7 @@ type QueryDiffP struct {
 
 // QueryDPDataGen contains the query information for the generation of data at DP
 type QueryDPDataGen struct {
-	GroupByValues   []int64 // the number of groups = len(GroupByValues); number of categories for each group GroupByValues[i]
+	GroupByValues []int64 // the number of groups = len(GroupByValues); number of categories for each group GroupByValues[i]
 	//GenerateRows    int64
 	GenerateDataMin int64
 	GenerateDataMax int64
@@ -222,7 +222,7 @@ type Query struct {
 // Operation defines the operation in the query
 type Operation struct {
 	NameOp       string
-	Attributes	 string
+	Attributes   string
 	NbrInput     int64
 	NbrOutput    int64
 	QueryMin     int64
@@ -267,7 +267,7 @@ type SurveyQuery struct {
 	ObfuscationProofThreshold  float64
 	RangeProofThreshold        float64
 	KeySwitchingProofThreshold float64
-	DPsUsed []*network.ServerIdentity
+	DPsUsed                    []*network.ServerIdentity
 }
 
 // SurveyQueryToVN is the version of the query sent to the VNs
@@ -749,6 +749,8 @@ func ChooseOperation(operationName string, attributes string, queryMin, queryMax
 		log.Fatal("Operation: <", operation, "> does not exist")
 	}
 
-	if cuttingFactor != 0 {operation.NbrOutput *= cuttingFactor}
+	if cuttingFactor != 0 {
+		operation.NbrOutput *= cuttingFactor
+	}
 	return operation
 }

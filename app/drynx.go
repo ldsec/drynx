@@ -25,19 +25,19 @@ const (
 	optionGroupFile      = "file"
 	optionGroupFileShort = "f"
 
-	optionOperation = "operation"
+	optionOperation      = "operation"
 	optionOperationShort = "o"
 
-	optionDPs = "d"
+	optionDPs      = "d"
 	optionDPsShort = "dps"
 
-	optionAttribute = "a"
+	optionAttribute      = "a"
 	optionAttributeShort = "attributes"
 
-	optionQueryMin = "m"
+	optionQueryMin      = "m"
 	optionQueryMinShort = "min"
 
-	optionQueryMax = "M"
+	optionQueryMax      = "M"
 	optionQueryMaxShort = "max"
 
 	optionProofs = "proofs"
@@ -115,7 +115,6 @@ func main() {
 		},
 	}
 
-
 	querierFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:  optionOperation + ", " + optionOperationShort,
@@ -174,7 +173,7 @@ func main() {
 			Aliases: []string{"r"},
 			Usage:   "Run Drynx service",
 			Action:  RunDrynx,
-			Flags: 	 querierFlags,
+			Flags:   querierFlags,
 		},
 		// CLIENT END: QUERIER ----------
 
