@@ -1,19 +1,34 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 font = {'family': 'Bitstream Vera Sans',
         'size': 17}
 
 plt.rc('font', **font)
 
-x = [0, 0.1, 1, 10]
-y = [0, 0.143000143, 1.443001443, 15.87301587]
-y1 = [0, 0.366080366, 3.694083694, 40.63492063]
+totalNbrDPs = 8922
+
+
+x = np.linspace(0, 10, num=100)
+
+d = totalNbrDPs*x/100           # maliciousDPs
+h = totalNbrDPs*(100-x)/100     # honestDPs
+ah = 70
+e = 100
+c = 0
 
 # Create the general plot and the "subplots"
 f, ax = plt.subplots(1, figsize=(9, 7))
 
+am = (h*ah+d*e)/(h+c)
+y = np.absolute(1 - (am/ah)) * 100
 ax.plot(x, y, label='Range: [40,100]', linestyle="--")
-ax.plot(x, y1, label='Range: [0,256]')
+
+e = 256
+am = (h*ah+d*e)/(h+c)
+y = np.absolute(1 - (am/ah)) * 100
+ax.plot(x, y, label='Range: [0,256]')
+
 ax.set_xscale("log")
 
 # Set the label and legends

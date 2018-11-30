@@ -58,7 +58,7 @@ ax.barh(bar_Drynx, df['waitingQ'], bar_width, alpha=0, color='white',
 
 # DPs
 ax.barh(bar_Drynx, df['waitingDP1'], bar_width, alpha=0, color='white')
-ax.barh(bar_Drynx, df['dcp'], bar_width, label='Encoding', alpha=0.8, color='#0B7A75',
+ax.barh(bar_Drynx, df['dcp'], bar_width, label='Retrieval & Encoding', alpha=0.8, color='#0B7A75',
         left=df['waitingDP1'])
 
 # CNs
