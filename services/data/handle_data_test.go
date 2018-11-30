@@ -1,6 +1,6 @@
 package data_test
 
-import (
+/*import (
 	"github.com/dedis/onet/log"
 	"github.com/lca1/drynx/services/data"
 	"github.com/lca1/unlynx/lib"
@@ -59,4 +59,4 @@ func TestComputeExpectedResult(t *testing.T) {
 	log.Lvl1(data.ComputeExpectedResult(data.ReadDataFromTextFile(filename), 1, false))
 	assert.Equal(t, data.CompareClearResponses(data.ComputeExpectedResult(testData, 1, false), data.ComputeExpectedResult(data.ReadDataFromTextFile(filename), 1, false)), true, "Response should be the same")
 	assert.Equal(t, data.CompareClearResponses(data.ComputeExpectedResult(testData, 1, true), data.ComputeExpectedResult(data.ReadDataFromTextFile(filename), 1, true)), true, "Response should be the same")
-}
+}*/

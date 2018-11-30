@@ -1,6 +1,6 @@
 package data
 
-import (
+/*import (
 	"bufio"
 	"fmt"
 	"github.com/dedis/onet/log"
@@ -349,4 +349,4 @@ func CompareClearResponses(x []libunlynx.DpClearResponse, y []libunlynx.DpClearR
 	}
 
 	return test
-}
+}*/
