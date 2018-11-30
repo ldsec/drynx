@@ -101,7 +101,7 @@ func RunDrynx(c *cli.Context) error {
 	dbLocation := "/Users/jstephan/go/src/github.com/lca1/drynx/app/Stats.db"
 
 	elServers, _ := openGroupToml("test/groupServers.toml")
-	elVNs, _ := openGroupToml("test/groupServers.toml")
+	elVNs, _ := openGroupToml("test/groupVNs.toml")
 	elDPs, _ := openGroupToml("test/groupDPs.toml")
 
 	proofs := int64(1) // 0 is not proof, 1 is proofs, 2 is optimized proofs
