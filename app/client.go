@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/btcsuite/goleveldb/leveldb/errors"
+	"github.com/dedis/cothority/skipchain"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/encoding"
 	"github.com/dedis/kyber/util/key"
@@ -17,6 +18,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -24,7 +26,6 @@ import (
 
 // NonInteractiveSetup is used to setup the cothority node for unlynx in a non-interactive way (and without error checks)
 func NonInteractiveSetup(c *cli.Context) error {
-
 	// cli arguments
 	serverBindingStr := c.String("serverBinding")
 	description := c.String("description")
@@ -57,12 +58,19 @@ func NonInteractiveSetup(c *cli.Context) error {
 	group := app.NewGroupToml(server)
 
 	err := conf.Save(privateTomlPath)
-	if err != nil {
-		log.Fatal(err)
-	}
+	if err != nil {log.Fatal(err)}
 
 	group.Save(publicTomlPath)
 	return nil
+}
+
+func openGroupToml(tomlFileName string) (*onet.Roster, error) {
+	f, err := os.Open(tomlFileName)
+	if err != nil {return nil, err}
+	el, err := app.ReadGroupDescToml(f)
+	if err != nil {return nil, err}
+	if len(el.Roster.List) <= 0 {return nil, errors.New("Empty or invalid drynx group file:" + tomlFileName)}
+	return el.Roster, nil
 }
 
 // BEGIN CLIENT: QUERIER ----------
@@ -92,10 +100,9 @@ func RunDrynx(c *cli.Context) error {
 	scriptPopulateDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/insertDB.py"
 	dbLocation := "/Users/jstephan/go/src/github.com/lca1/drynx/app/Stats.db"
 
-	elServers, err := openGroupToml("test/groupServers.toml")
-	if err != nil {log.Fatal("Could not read groupServers.toml")}
-	elDPs, err := openGroupToml("test/groupDPs.toml")
-	if err != nil {log.Fatal("Could not read groupDPs.toml")}
+	elServers, _ := openGroupToml("test/groupServers.toml")
+	elVNs, _ := openGroupToml("test/groupServers.toml")
+	elDPs, _ := openGroupToml("test/groupDPs.toml")
 
 	proofs := int64(1) // 0 is not proof, 1 is proofs, 2 is optimized proofs
 	rangeProofs := false
@@ -103,7 +110,6 @@ func RunDrynx(c *cli.Context) error {
 
 	diffPri := false
 	diffPriOpti := false
-	nbrRows := int64(2)
 	//repartition: server1: 1 DP, server2: 1 DP, server3: 1 DP
 	repartition := []int64{1, 1, 1}
 	//repartition (Real Scenario): server1: 3 DPs, server2: 3 DPs, server3: 3 DPs
@@ -141,21 +147,28 @@ func RunDrynx(c *cli.Context) error {
 
 	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 
-	if proofs == 1 {
-		if obfuscation {
-			thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 1.0}
-		} else {
-			thresholdEntityProofsVerif = []float64{1.0, 1.0, 0.0, 1.0}
-		}
-	} else {
-		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
+	if proofs == 0 {
+		elVNs = nil
 	}
+
+	if proofs == 1 {
+		if obfuscation {thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 1.0}} else {thresholdEntityProofsVerif = []float64{1.0, 1.0, 0.0, 1.0}}
+	} else {thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}}
+
+
 	dpToServers := repartitionDPs(elServers, elDPs, repartition)
 
 	// Create a client (querier) for the service)
 	client := services.NewDrynxClient(elServers.List[0], "test-Drynx")
 
-	for _, op := range operationList {
+	var wgProofs []*sync.WaitGroup
+	var listBlocks []*skipchain.SkipBlock
+	if proofs != 0 {
+		wgProofs = make([]*sync.WaitGroup, len(operationList))
+		listBlocks = make([]*skipchain.SkipBlock, len(operationList))
+	}
+
+	for i, op := range operationList {
 		start := time.Now()
 
 		queryAnswer := ""
@@ -165,7 +178,7 @@ func RunDrynx(c *cli.Context) error {
 		operation := libdrynx.ChooseOperation(op, queryAttributes, queryMin, queryMax, dimensions, cuttingFactor)
 
 		// define the number of groups for groupBy (1 per default)
-		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateRows: nbrRows, GenerateDataMin: queryMin, GenerateDataMax: queryMax}
+		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}/*, GenerateRows: nbrRows*/, GenerateDataMin: queryMin, GenerateDataMax: queryMax}
 
 		// define the ranges for the input validation (1 range per data provider output)
 		var u, l int64
@@ -249,14 +262,43 @@ func RunDrynx(c *cli.Context) error {
 		idToPublic := make(map[string]kyber.Point)
 		for _, v := range elServers.List {idToPublic[v.String()] = v.Public}
 		for _, v := range elDPs.List {idToPublic[v.String()] = v.Public}
+		if proofs != 0 {for _, v := range elVNs.List {idToPublic[v.String()] = v.Public}}
 
 		// query generation
 		surveyID := "query-" + op
 		log.LLvl1(dpToServers)
 
-		sq := client.GenerateSurveyQuery(elServers, nil, dpToServers, idToPublic, surveyID, operation,
+		sq := client.GenerateSurveyQuery(elServers, elVNs, dpToServers, idToPublic, surveyID, operation,
 			ranges, ps, proofs, obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor, dpsUsed)
 		if !libdrynx.CheckParameters(sq, diffPri) {log.Fatal("Oups!")}
+
+		var wg *sync.WaitGroup
+		if proofs != 0 {
+			// send query to the skipchain and 'wait' for all proofs' verification to be done
+			clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip-"+op)
+
+			wg = libunlynx.StartParallelize(1)
+			go func(elVNs *onet.Roster) {
+				defer wg.Done()
+
+				err := clientSkip.SendSurveyQueryToVNs(elVNs, &sq)
+				if err != nil {
+					log.Fatal("Error sending query to VNs:", err)
+				}
+			}(elVNs)
+			libunlynx.EndParallelize(wg)
+
+			wgProofs[i] = libunlynx.StartParallelize(1)
+			go func(index int, si *network.ServerIdentity) {
+				defer wgProofs[index].Done()
+
+				sb, err := clientSkip.SendEndVerification(si, surveyID)
+				if err != nil {
+					log.Fatal("Error starting the 'waiting' threads:", err)
+				}
+				listBlocks[index] = sb
+			}(i, elVNs.List[0])
+		}
 
 		// send query and receive results
 		grp, aggr, _ := client.SendSurveyQuery(sq)
@@ -284,18 +326,7 @@ func RunDrynx(c *cli.Context) error {
 		elapsed := time.Since(start)
 		log.LLvl1("Query took %s", elapsed)
 	}
-
 	log.LLvl1("All done.")
 	return nil
 }
-
-func openGroupToml(tomlFileName string) (*onet.Roster, error) {
-	f, err := os.Open(tomlFileName)
-	if err != nil {return nil, err}
-	el, err := app.ReadGroupDescToml(f)
-	if err != nil {return nil, err}
-	if len(el.Roster.List) <= 0 {return nil, errors.New("Empty or invalid drynx group file:" + tomlFileName)}
-	return el.Roster, nil
-}
-
 // CLIENT END: QUERIER ----------
