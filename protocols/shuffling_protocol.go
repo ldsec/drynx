@@ -6,7 +6,7 @@
 // until it comes back to the server who started the protocol.
 package protocols
 
-import (
+/*import (
 	"errors"
 
 	"time"
@@ -77,13 +77,15 @@ type ShufflingProtocol struct {
 	TargetOfShuffle   *[]libunlynx.ProcessResponse
 
 	CollectiveKey kyber.Point //only use in order to test the protocol
-	Proofs        int
+
 	Precomputed   []libunlynx.CipherVectorScalar
 
 	Query *libdrynx.SurveyQuery
 
-	// Protocol proof data
-	MapPIs map[string]onet.ProtocolInstance
+	// Proofs
+	Proofs 		int 								// proofs=1 (true); proofs=0 (false)
+	ProofFunc 	proofFunc 							// proof function for when we want to do something different with the proofs (e.g. insert in the blockchain)
+	MapPIs 		map[string]onet.ProtocolInstance	// protocol instances to be able to call protocols inside protocols (e.g. proof_collection_protocol)
 }
 
 // NewShufflingProtocol constructs neff shuffle protocol instances.
@@ -289,4 +291,4 @@ func (p *ShufflingProtocol) sendToNext(msg interface{}) {
 }
 
 // Conversion
-//______________________________________________________________________________________________________________________
+//______________________________________________________________________________________________________________________*/

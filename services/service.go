@@ -1,6 +1,7 @@
 package services
 
 import (
+	"github.com/lca1/unlynx/lib/proofs"
 	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/lib/tools"
 	"time"
@@ -508,7 +509,11 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 			shuffle.TargetOfShuffle = &clientResponses
 
 		} else {
-			pi, err = protocols.NewShufflingProtocol(tn)
+
+
+
+
+			/*pi, err = protocols.NewShufflingProtocol(tn)
 			if err != nil {
 				return nil, err
 			}
@@ -529,7 +534,7 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 					clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
 				}
 				shuffle.TargetOfShuffle = &clientResponses
-			}
+			}*/
 		}
 		return pi, nil
 
@@ -564,6 +569,46 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 	}
 
 	return pi, nil
+}
+
+func (s* ServiceDrynx) NewShufflingProtocol(tn *onet.TreeNodeInstance, survey Survey) (onet.ProtocolInstance, error) {
+	pi, err := protocolsunlynx.NewShufflingProtocol(tn)
+	if err != nil {
+		return nil, err
+	}
+	shuffle := pi.(*protocolsunlynx.ShufflingProtocol)
+
+	shuffle.Proofs = survey.SurveyQuery.Query.Proofs
+	shuffle.Precomputed = survey.ShufflePrecompute
+	sq := &survey.SurveyQuery
+	shuffle.MapPIs = survey.MapPIs
+	shuffle.ProofFunc = func(pcp, p onet.ProtocolInstance, proof libunlynxproofs.PublishedShufflingProof) {
+		go func() {
+			p := p.(*protocolsunlynx.ShufflingProtocol)
+
+			pcp.(*protocols.ProofCollectionProtocol).Proof = libdrynx.ProofRequest{ShuffleProof: libdrynx.NewShuffleProofRequest(&proof, sq.SurveyID, p.ServerIdentity().String(), "", sq.Query.RosterVNs, p.Private(), nil)}
+			go pi.Dispatch()
+			go pi.Start()
+			<-pi.(*protocols.ProofCollectionProtocol).FeedbackChannel
+		}()
+	}
+
+
+	if tn.IsRoot() {
+		clientResponses := make([]libunlynx.ProcessResponse, 0)
+		if survey.SurveyQuery.Query.DiffP.Scale == 0 {
+			survey.SurveyQuery.Query.DiffP.Scale = 1
+		}
+		noiseArray := libdrynx.GenerateNoiseValuesScale(int64(survey.SurveyQuery.Query.DiffP.NoiseListSize), survey.SurveyQuery.Query.DiffP.LapMean, survey.SurveyQuery.Query.DiffP.LapScale, survey.SurveyQuery.Query.DiffP.Quanta, survey.SurveyQuery.Query.DiffP.Scale, survey.SurveyQuery.Query.DiffP.Limit)
+		for _, v := range noiseArray {
+			clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
+		}
+		shuffle.ShuffleTarget = &clientResponses
+	}
+
+
+
+	return pi, err
 }
 
 // StartProtocol starts a specific protocol
