@@ -34,13 +34,14 @@ const (
 	optionAttribute      = "a"
 	optionAttributeShort = "attributes"
 
-	optionQueryMin      = "m"
-	optionQueryMinShort = "min"
+	optionQueryMin      = "min"
+	optionQueryMinShort = "m"
 
-	optionQueryMax      = "M"
-	optionQueryMaxShort = "max"
+	optionQueryMax      = "max"
+	optionQueryMaxShort = "M"
 
 	optionProofs = "proofs"
+	optionProofsShort = "p"
 
 	// query flags
 	optionDecryptKey      = "key"
@@ -139,6 +140,11 @@ func main() {
 		cli.StringFlag{
 			Name:  optionQueryMax + ", " + optionQueryMaxShort,
 			Usage: "Maximum of data to be examined while executing query",
+		},
+
+		cli.StringFlag{
+			Name:  optionProofs + ", " + optionProofsShort,
+			Usage: "Are Range Proofs enabled?",
 		},
 	}
 

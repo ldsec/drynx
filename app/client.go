@@ -111,7 +111,6 @@ func RunDrynx(c *cli.Context) error {
 	elDPs, _ := openGroupToml("test/groupDPs.toml")
 	elVNs, _ := openGroupToml("test/groupVNs.toml")
 
-	proofs := int64(1) // 0 is not proof, 1 is proofs, 2 is optimized proofs
 	rangeProofs := false
 	obfuscation := false
 
@@ -137,6 +136,11 @@ func RunDrynx(c *cli.Context) error {
 	queryMin, _ := strconv.ParseInt(queryMinString, 10, 64)
 	queryMax, _ := strconv.ParseInt(queryMaxString, 10, 64)
 
+	//Check whether or not range proofs are enabled
+	// 0 is not proof, 1 is proofs, 2 is optimized proofs
+	proofs, _ := strconv.ParseInt(c.String("proofs"), 10, 64)
+	if proofs == 1 || proofs == 2 {rangeProofs = true}
+
 	//Get the DPs over which the query should be executed
 	dpsQuery := c.String("dps")
 	s := strings.Split(dpsQuery, ",")
@@ -150,15 +154,11 @@ func RunDrynx(c *cli.Context) error {
 	var operationList []string
 	if operationQuery == "all" {
 		operationList = []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
-	} else {
-		operationList = []string{operationQuery}
-	}
+	} else {operationList = []string{operationQuery}}
 
 	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 
-	if proofs == 0 {
-		elVNs = nil
-	}
+	if proofs == 0 {elVNs = nil}
 
 	if proofs == 1 {
 		if obfuscation {
@@ -166,9 +166,7 @@ func RunDrynx(c *cli.Context) error {
 		} else {
 			thresholdEntityProofsVerif = []float64{1.0, 1.0, 0.0, 1.0}
 		}
-	} else {
-		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
-	}
+	} else {thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}}
 
 	dpToServers := repartitionDPs(elServers, elDPs, repartition)
 
@@ -193,16 +191,14 @@ func RunDrynx(c *cli.Context) error {
 			rangeProofs = false
 		} else {
 			if op == "bool_AND" || op == "bool_OR" || op == "min" || op == "max" || op == "union" || op == "inter" {
+				rangeProofs = true
 				if obfuscation {
-					rangeProofs = true
 					u = int64(2)
 					l = int64(1)
 				} else {
-					rangeProofs = true
 					u = int64(0)
 					l = int64(0)
 				}
-
 			} else {
 				obfuscation = false
 
@@ -219,12 +215,8 @@ func RunDrynx(c *cli.Context) error {
 
 		ranges := make([]*[]int64, operation.NbrOutput)
 		if rangeProofs {
-			for i := range ranges {
-				ranges[i] = &[]int64{u, l}
-			}
-		} else {
-			ranges = nil
-		}
+			for i := range ranges {ranges[i] = &[]int64{u, l}}
+		} else {ranges = nil}
 
 		// choose if differential privacy or not, no diffP by default
 		// choosing the limit is done by drawing the curve (e.g. wolframalpha)
@@ -246,9 +238,7 @@ func RunDrynx(c *cli.Context) error {
 				}
 				ps[i] = &temp
 			}
-		} else {
-			ps = nil
-		}
+		} else {ps = nil}
 
 		// QUERY RECAP
 		log.LLvl1("\n")
@@ -257,41 +247,27 @@ func RunDrynx(c *cli.Context) error {
 		log.LLvl1("SELECT ", operation, " ... FROM DP1, ..., DP", len(elDPs.List), " WHERE ... GROUP BY ", dpData.GroupByValues)
 		if ranges == nil || (u == int64(0) && l == int64(0)) {
 			log.LLvl1("No input range validation")
-		} else {
-			log.LLvl1("with input range validation (", len(ps), " x ", len(*ps[0]), ")")
-		}
+		} else {log.LLvl1("with input range validation (", len(ps), " x ", len(*ps[0]), ")")}
 		if libdrynx.AddDiffP(diffP) {
 			log.LLvl1(" with differential privacy with epsilon=", diffP.LapMean, " and delta=", diffP.LapScale)
-		} else {
-			log.LLvl1(" no differential privacy")
-		}
+		} else {log.LLvl1(" no differential privacy")}
 		log.LLvl1("#-----------------#\n")
 		//-----------
 
 		idToPublic := make(map[string]kyber.Point)
-		for _, v := range elServers.List {
-			idToPublic[v.String()] = v.Public
-		}
-		for _, v := range elDPs.List {
-			idToPublic[v.String()] = v.Public
-		}
+		for _, v := range elServers.List {idToPublic[v.String()] = v.Public}
+		for _, v := range elDPs.List {idToPublic[v.String()] = v.Public}
 		if proofs != 0 {
-			for _, v := range elVNs.List {
-				idToPublic[v.String()] = v.Public
-			}
+			for _, v := range elVNs.List {idToPublic[v.String()] = v.Public}
 		}
 
 		// query generation
 		surveyID := "query-" + op
-
 		sq := client.GenerateSurveyQuery(elServers, elVNs, dpToServers, idToPublic, surveyID, operation,
 			ranges, ps, proofs, obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor, dpsUsed)
-		if !libdrynx.CheckParameters(sq, diffPri) {
-			log.Fatal("Oups!")
-		}
+		if !libdrynx.CheckParameters(sq, diffPri) {log.Fatal("Oups!")}
 
 		var wg *sync.WaitGroup
-
 		if proofs != 0 {
 			// send query to the skipchain and 'wait' for all proofs' verification to be done
 			clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip-"+op)
@@ -329,9 +305,7 @@ func RunDrynx(c *cli.Context) error {
 			for i, v := range *aggr {
 				//log.LLvl1("Value " + string(i) + " is: " + string(v[0]))
 				log.LLvl1((*grp)[i], ": ", v)
-				for j := range v {
-					queryAnswer += strconv.FormatFloat(v[j], 'f', 6, 64) + ", "
-				}
+				for j := range v {queryAnswer += strconv.FormatFloat(v[j], 'f', 6, 64) + ", "}
 			}
 			queryAnswer = strings.TrimSuffix(queryAnswer, ", ")
 		}
@@ -342,15 +316,13 @@ func RunDrynx(c *cli.Context) error {
 		cmd := exec.Command("python", scriptPopulateDB, dbLocation, queryAnswer, strconv.Itoa(int(time.Now().Unix())),
 			operation.NameOp, queryAttributes, dpsQuery, queryMinString, queryMaxString)
 		_, err := cmd.Output()
-		if err != nil {
-			println(err.Error())
-		}
+		if err != nil {println(err.Error())}
 
 		elapsed := time.Since(start)
 		log.LLvl1("Query took %s", elapsed)
 
-		clientSkip := services.NewDrynxClient(elVNs.List[0], "close-DB")
 		if proofs != 0 {
+			clientSkip := services.NewDrynxClient(elVNs.List[0], "close-DB")
 			libunlynx.EndParallelize(wg)
 			// close DB
 			clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1})
