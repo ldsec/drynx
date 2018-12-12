@@ -18,7 +18,7 @@ import (
 func TestComputeApproxCoefficients(t *testing.T) {
 	X := []float64{0, 1, 2, 3, 4}
 	y := int64(1)
-	k := 1
+	k := int64(1)
 	expected := [][]float64{{0, 1, 2, 3, 4}}
 	actual := ComputeDistinctApproxCoefficients(X, y, k)
 	assert.Equal(t, expected, actual)
@@ -72,7 +72,7 @@ func TestComputeApproxCoefficients(t *testing.T) {
 func TestComputeEncryptedApproxCoefficients(t *testing.T) {
 	X := []float64{0, 1, 2, 3, 4}
 	y := int64(1)
-	k := 1
+	k := int64(1)
 
 	privKey, pubKey := libunlynx.GenKey()
 
@@ -82,7 +82,7 @@ func TestComputeEncryptedApproxCoefficients(t *testing.T) {
 	approxCoeffs := Float64ToInt642DArray(ComputeDistinctApproxCoefficients(X, y, k))
 	encryptedApproxCoeffs, _ := ComputeEncryptedApproxCoefficients(approxCoeffs, pubKey)
 
-	for j := 0; j < k; j++ {
+	for j := int64(0); j < k; j++ {
 		expected[j] = approxCoeffs[j]
 		actual[j] = libunlynx.DecryptIntVector(privKey, libunlynx.EncryptIntVector(pubKey, approxCoeffs[j]))
 	}
@@ -96,7 +96,7 @@ func TestComputeEncryptedApproxCoefficients(t *testing.T) {
 	approxCoeffs = Float64ToInt642DArray(ComputeDistinctApproxCoefficients(X, y, k))
 	encryptedApproxCoeffs, _ = ComputeEncryptedApproxCoefficients(approxCoeffs, pubKey)
 
-	for j := 0; j < k; j++ {
+	for j := int64(0); j < k; j++ {
 		expected[j] = libunlynx.DecryptIntVector(privKey, encryptedApproxCoeffs[j])
 		actual[j] = libunlynx.DecryptIntVector(privKey, libunlynx.EncryptIntVector(pubKey, approxCoeffs[j]))
 	}
@@ -180,7 +180,7 @@ func TestAggregateEncryptedApproxCoefficients(t *testing.T) {
 	// data providers data
 	X := [][]float64{{0, 1, 2, 3, 4}, {0, 1, 2, 3, 4}}
 	y := []int64{1, 1}
-	k := 1
+	k := int64(1)
 	N := len(X)
 
 	privKey, pubKey := libunlynx.GenKey()
@@ -201,7 +201,7 @@ func TestAggregateEncryptedApproxCoefficients(t *testing.T) {
 	expected := Float64ToInt642DArray(AggregateApproxCoefficients(approxCoefficients))
 
 	// compare the decrypted aggregated approximation coefficients
-	for j := 0; j < k; j++ {
+	for j := int64(0); j < k; j++ {
 		assert.Equal(t, expected[j], libunlynx.DecryptIntVector(privKey, actual[j]))
 	}
 }
@@ -338,7 +338,7 @@ func TestInt64ToFloat642DArray(t *testing.T) {
 func TestGradient(t *testing.T) {
 	X := [][]float64{{1, 2, 3, 4, 5}}
 	y := []int64{1}
-	k := 1
+	k := int64(1)
 	N := len(X) //len(X[0]) * 10
 	N_64 := int64(N)
 
@@ -381,7 +381,7 @@ func TestGradient(t *testing.T) {
 func TestCost(t *testing.T) {
 	X := [][]float64{{1, 0, 1, 2, 3, 4}}
 	y := []int64{1}
-	k := 1
+	k := int64(1)
 	N := len(X)
 	N_64 := int64(N)
 
@@ -427,7 +427,7 @@ func TestLogisticCost(t *testing.T) {
 func TestFindMinimumWeightsDegreeOne(t *testing.T) {
 	X := [][]float64{{1, 0, 1, 2, 3, 4}}
 	y := []int64{1}
-	k := 1
+	k := int64(1)
 	N := int64(len(X))
 	d := len(X[0]) - 1
 
@@ -446,8 +446,7 @@ func TestFindMinimumWeightsDegreeOne(t *testing.T) {
 	aggregatedApproxCoeffs := AggregateApproxCoefficients(allApproxCoeffs)
 
 	expectedWeights := ComputeMinimumWeights(aggregatedApproxCoeffs, lambda)
-	actualWeights := FindMinimumWeights(aggregatedApproxCoeffs, initialWeights, N, lambda, step,
-		maxIterations)
+	actualWeights := FindMinimumWeights(aggregatedApproxCoeffs, initialWeights, N, lambda, step, int64(maxIterations))
 
 	// cheating
 	epsilon := 0.0001
@@ -479,7 +478,7 @@ func TestFindMinimumWeightsDegreeOne(t *testing.T) {
 func TestFindMinimumWeights(t *testing.T) {
 	X := [][]float64{{1, 0, 1, 2, 3, 4}}
 	y := []int64{1}
-	k := 2
+	k := int64(2)
 	N := int64(len(X))
 
 	lambda := 1.0
@@ -497,7 +496,7 @@ func TestFindMinimumWeights(t *testing.T) {
 	allApproxCoeffs[0] = approxCoeffs
 	aggregatedApproxCoeffs := AggregateApproxCoefficients(allApproxCoeffs)
 
-	weights := FindMinimumWeights(aggregatedApproxCoeffs, initialWeights, N, lambda, step, maxIterations)
+	weights := FindMinimumWeights(aggregatedApproxCoeffs, initialWeights, N, lambda, step, int64(maxIterations))
 	cost := Cost(weights, aggregatedApproxCoeffs, N, lambda)
 	logisticCost := LogisticRegressionCost(weights, X, y, N, lambda)
 
@@ -536,7 +535,7 @@ func TestCombinations(t *testing.T) {
 func TestCartesianProduct(t *testing.T) {
 	start := int64(0)
 	end := int64(2)
-	dim := 3
+	dim := int64(3)
 	actual := CartesianProduct(start, end, dim)
 	expected := [][]int64{{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {0, 1, 1}, {1, 0, 0}, {1, 0, 1}, {1, 1, 0}, {1, 1, 1}}
 	assert.Equal(t, expected, actual)
@@ -585,7 +584,7 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 	N_64 := int64(N)
 	d := int64(len(X[0]))
 
-	k := 2
+	k := int64(2)
 	precision := 1e2
 
 	// gradient descent parameters
@@ -606,12 +605,12 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 	aggregatedApproxCoefficients := AggregateApproxCoefficients(approxCoefficients)
 
 	expected := FindMinimumWeights(aggregatedApproxCoefficients, initialWeights, N_64, lambda, step,
-		maxIterations)
+		int64(maxIterations))
 
 	initialWeights = []float64{0.1, 0.2, 0.3, 0.4, 0.5} // FindMinimumWeights modifies the initial weights...
 
-	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: N_64, NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
-		InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
+	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: N_64, NbrFeatures: d, Lambda: lambda, Step: step,
+	MaxIterations: int64(maxIterations), InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
 
 	resultEncrypted, _ := EncodeLogisticRegression(data, lrParameters, pubKey)
 	result := DecodeLogisticRegression(resultEncrypted, privKey, lrParameters)
@@ -647,7 +646,7 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 	N_64 := int64(N)
 	d := int64(len(X[0]))
 
-	k := 2
+	k := int64(2)
 	precision := 1e2
 
 	// gradient descent parameters
@@ -667,13 +666,12 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 	// aggregate the approximation coefficients locally
 	aggregatedApproxCoefficients := AggregateApproxCoefficients(approxCoefficients)
 
-	expected := FindMinimumWeights(aggregatedApproxCoefficients, initialWeights, N_64, lambda, step,
-		maxIterations)
+	expected := FindMinimumWeights(aggregatedApproxCoefficients, initialWeights, N_64, lambda, step, int64(maxIterations))
 
 	initialWeights = []float64{0.1, 0.2, 0.3, 0.4, 0.5} // FindMinimumWeights modifies the initial weights...
 
-	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: N_64, NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
-		InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
+	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: N_64, NbrFeatures: d, Lambda: lambda, Step: step,
+	MaxIterations: int64(maxIterations), InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
 
 	//signatures needed to check the proof; create signatures for 2 servers and all DPs outputs
 	u := int64(4)

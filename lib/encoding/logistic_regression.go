@@ -316,13 +316,13 @@ func getNumberApproxCoefficients(d int64, level int) int {
 }
 
 // ComputeDistinctApproxCoefficients computes the distinct coefficients of the approximated logistic regression cost function
-func ComputeDistinctApproxCoefficients(X []float64, y int64, k int) [][]float64 {
+func ComputeDistinctApproxCoefficients(X []float64, y int64, k int64) [][]float64 {
 	d := len(X) - 1 // the dimension of the data
 
 	// case k <= 3 ok
 	// we store only the distinct coefficients
 	approxCoeffs := make([][]float64, k)
-	for j := 0; j < k; j++ {
+	for j := int64(0); j < k; j++ {
 		approxCoeffs[j] = make([]float64, CombinationsWithRepetition(int64(d+1), int64(j+1)))
 	}
 
@@ -332,7 +332,7 @@ func ComputeDistinctApproxCoefficients(X []float64, y int64, k int) [][]float64 
 	}
 
 	// computation of the coefficients for k >= 2
-	for j := 1; j < k; j++ {
+	for j := int64(1); j < k; j++ {
 		totalNumberCoeffs := len(approxCoeffs[j])
 
 		ypart := y - y*int64(math.Pow(-1, float64(j+1))) - 1
@@ -375,7 +375,7 @@ func ComputeAllApproxCoefficients(X []float64, y int64, k int64) [][]float64 {
 	}
 
 	// computation of the coefficients for k >= 2
-	for j := 2; int64(j) <= k; j++ {
+	for j := int64(2); int64(j) <= k; j++ {
 		//nbCoefficientsForK := len(approxCoefficients[j])
 		ypart := float64(y - y*int64(math.Pow(-1, float64(j))) - 1)
 
@@ -519,12 +519,12 @@ func AggregateEncryptedApproxCoefficients(encryptedApproxCoeffs [][]*libunlynx.C
 
 // Cost computes the result of the cost function approximating the logistic regression cost function (with l2-regularization)
 func Cost(weights []float64, approxCoefficients [][]float64, N int64, lambda float64) (cost float64) {
-	k := len(approxCoefficients)        // the logarithm function approximation degree
+	k := int64(len(approxCoefficients))       // the logarithm function approximation degree
 	d := len(approxCoefficients[0]) - 1 // the dimension of the data
 
 	cost = 0.0
 
-	for j := 0; j < k; j++ {
+	for j := int64(0); j < k; j++ {
 		// generate all indices combinations with repetitions, order matters, of size j+1 (cartesian product)
 		combinations := CartesianProduct(0, int64(d+1), j+1)
 
@@ -556,7 +556,7 @@ func Cost(weights []float64, approxCoefficients [][]float64, N int64, lambda flo
 
 // Gradient computes the gradient of the cost function approximating the logistic regression cost function
 // (with l2-regularization)
-func Gradient(weights []float64, approxCoeffs [][]float64, k int, N int64, lambda float64) []float64 {
+func Gradient(weights []float64, approxCoeffs [][]float64, k int64, N int64, lambda float64) []float64 {
 
 	d := len(approxCoeffs[0]) - 1 // the dimension of the data
 	gradient := make([]float64, d+1)
@@ -565,7 +565,7 @@ func Gradient(weights []float64, approxCoeffs [][]float64, k int, N int64, lambd
 	for idx := int64(0); idx < int64(len(gradient)); idx++ {
 		derivative := make([]float64, k)
 
-		for j := 0; j < k; j++ {
+		for j := int64(0); j < k; j++ {
 			// generate all indices combinations with repetitions, order matters, of size j+1 (cartesian product)
 			combinations := CartesianProduct(0, int64(d+1), j+1)
 
@@ -609,11 +609,11 @@ func Gradient(weights []float64, approxCoeffs [][]float64, k int, N int64, lambd
 			}
 		}
 
-		for j := 0; j < k; j++ {
+		for j := int64(0); j < k; j++ {
 			derivative[j] *= PolyApproxCoefficients[j+1]
 		}
 
-		for j := 0; j < k; j++ {
+		for j := int64(0); j < k; j++ {
 			gradient[idx] += derivative[j]
 		}
 
@@ -630,7 +630,7 @@ func Gradient(weights []float64, approxCoeffs [][]float64, k int, N int64, lambd
 
 // GradientFor2 computes the gradient of the cost function approximating the logistic regression cost function for k = 2
 // (with l2-regularization)
-func GradientFor2(weights []float64, approxCoeffs [][]float64, k int, N int, lambda float64) []float64 {
+func GradientFor2(weights []float64, approxCoeffs [][]float64, k int64, N int, lambda float64) []float64 {
 
 	d := len(approxCoeffs[0]) - 1 // the dimension of the data
 	gradient := make([]float64, d+1)
@@ -688,7 +688,7 @@ func ComputeMinimumWeights(approxCoefficients [][]float64, lambda float64) []flo
 func FindMinimumWeights(approxCoefficients [][]float64, initialWeights []float64, N int64, lambda float64,
 	step float64, maxIterations int64) []float64 {
 
-	k := len(approxCoefficients) // the logarithm function approximation degree
+	k := int64(len(approxCoefficients)) // the logarithm function approximation degree
 
 	if k == 1 {
 		return ComputeMinimumWeights(approxCoefficients, lambda)
@@ -1550,10 +1550,10 @@ func Range(start int64, end int64) []int64 {
 }
 
 // CartesianProduct returns the cartesian product of <dimension> arrays ranging from <start> (included) to <end> (excluded)
-func CartesianProduct(start, end int64, dimension int) [][]int64 {
+func CartesianProduct(start, end int64, dimension int64) [][]int64 {
 	// generate all indices combinations with repetitions, order matters, of size j+1 (cartesian product)
 	indices := make([][]int64, dimension)
-	for i := 0; i < dimension; i++ {
+	for i := int64(0); i < dimension; i++ {
 		indices[i] = Range(start, end)
 	}
 	combinationsMatrix := combin.Cartesian(nil, Int64ToFloat642DArray(indices))
@@ -1564,7 +1564,7 @@ func CartesianProduct(start, end int64, dimension int) [][]int64 {
 	combinations := make([][]int64, nbRows)
 	for i := 0; i < nbRows; i++ {
 		combinations[i] = make([]int64, dimension)
-		for j := 0; j < dimension; j++ {
+		for j := 0; int64(j) < dimension; j++ {
 			combinations[i][j] = int64(combinationsMatrix.At(i, j))
 		}
 	}

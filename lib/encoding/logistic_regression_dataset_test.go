@@ -71,14 +71,12 @@ func findMinimumWeights(X [][]float64, y []int64, k int, maxIterations int, step
 	N64 := int64(N)
 	approxCoefficients := make([][][]float64, N)
 	for i := range X {
-		approxCoefficients[i] = encoding.ComputeAllApproxCoefficients(X[i], y[i], k)
+		approxCoefficients[i] = encoding.ComputeAllApproxCoefficients(X[i], y[i], int64(k))
 	}
 	aggregatedApproxCoefficients := encoding.AggregateApproxCoefficients(approxCoefficients)
 
 	// the client computes the weights on its side
-	weights := encoding.FindMinimumWeights(aggregatedApproxCoefficients,
-		initialWeights, N64,
-		lambda, step, maxIterations)
+	weights := encoding.FindMinimumWeights(aggregatedApproxCoefficients, initialWeights, N64, lambda, step, int64(maxIterations))
 
 	log.LLvl2("weights 1", weights)
 	return weights, aggregatedApproxCoefficients
@@ -97,8 +95,7 @@ func findMinimumWeightsWithEncryption(X [][]float64, y []int64, k int, maxIterat
 	encryptedApproxCoefficients := make([][]*libunlynx.CipherVector, N)
 	for i := range X {
 		approxCoefficients[i] = encoding.Float64ToInt642DArrayWithPrecision(
-			encoding.ComputeAllApproxCoefficients(X[i], y[i], k),
-			precisionApproxCoefficients)
+			encoding.ComputeAllApproxCoefficients(X[i], y[i], int64(k)), precisionApproxCoefficients)
 
 		encryptedApproxCoefficients[i], _ = encoding.ComputeEncryptedApproxCoefficients(approxCoefficients[i], pubKey)
 	}
@@ -110,7 +107,7 @@ func findMinimumWeightsWithEncryption(X [][]float64, y []int64, k int, maxIterat
 		privKey,
 		initialWeights,
 		N,
-		lambda, step, maxIterations,
+		lambda, step, int64(maxIterations),
 		precisionApproxCoefficients)
 
 	return weights, aggregatedApproxCoefficients
