@@ -8,7 +8,6 @@ package protocols
 
 import (
 	"errors"
-
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
@@ -172,7 +171,11 @@ func (p *KeySwitchingProtocol) keySwitching(pubKey, targetPubKey kyber.Point, rb
 
 	if p.Proofs != 0 {
 		go func() {
+			//start := time.Now()
 			proof := libdrynx.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, len(rbs), ks2s, rBNegs, vis)
+			//elapsed := time.Since(start)
+			//log.LLvl1("Key Switching Proof creation took ", elapsed)
+
 			pi := p.MapPIs["keyswitch/"+p.ServerIdentity().String()]
 			pi.(*ProofCollectionProtocol).Proof = libdrynx.ProofRequest{KeySwitchProof: libdrynx.NewKeySwitchProofRequest(&proof, p.Query.SurveyID, p.ServerIdentity().String(), "", p.Query.Query.RosterVNs, p.Private(), nil)}
 			go pi.Dispatch()

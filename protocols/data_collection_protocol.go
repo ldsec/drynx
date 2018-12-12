@@ -200,9 +200,11 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		}
 	}
 
-	// generate fake random data depending on the operation
-	//dpData := createFakeDataForOperation(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
+	//startDB := time.Now()
+	// fetch data from db
 	dpData := fetchDataFromDB(p.Survey.Query.Operation)
+	//elapsedDB := time.Since(startDB)
+	//log.LLvl1("Actual DB fetch took", elapsedDB)
 
 	// logistic regression specific
 	var datasFloat [][]float64
@@ -268,6 +270,8 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		}
 		if p.Survey.Query.Proofs != 0 {
 			go func() {
+				start2 := time.Now()
+
 				startAllProofs := libunlynx.StartTimer(p.Name() + "_AllProofs")
 				rpl := libdrynx.RangeProofList{}
 
@@ -327,12 +331,17 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 				libunlynx.EndTimer(startAllProofs)
 
+				elapsed2 := time.Since(start2)
+				log.LLvl1("AllProofs took ", elapsed2)
+
 			}()
 		}
 	}
 	//libunlynx.EndTimer(encodeTime)
 	elapsed := time.Since(start)
-	log.LLvl1("Encryption took %s", elapsed)
+	log.LLvl1("Encrypting locally aggregated answer")
+	log.LLvl1("Encryption took ", elapsed)
+
 	// ------- END -------
 
 	//convert the response to bytes
@@ -357,35 +366,13 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	return libdrynx.ResponseDPBytes{Data: queryResponseBytes, Len: lenQueryResponse}, nil
 }
 
-// createFakeDataForOperation creates fake data to be used
-func createFakeDataForOperation(operation libdrynx.Operation, nbrRows, min, max int64) [][]int64 {
-	//either use the min and max defined by the query or the default constants
-	zero := int64(0)
-	if min == zero && max == zero {
-		log.Lvl2("Only generating 0s!")
-	}
-
-	//generate response tab
-	tab := make([][]int64, operation.NbrInput)
-	wg := libunlynx.StartParallelize(len(tab))
-	for i := range tab {
-		go func(i int) {
-			defer wg.Done()
-			tab[i] = data.CreateInt64Slice(nbrRows, min, max)
-		}(i)
-
-	}
-	libunlynx.EndParallelize(wg)
-	return tab
-}
-
 // fetchDataFromDB fetches the DPs' data from their databases
 func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 	scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData.py"
 	dbLocation := "/Users/jstephan/go/src/github.com/lca1/drynx/app/Client.db"
 	//For RPis
-	/*scriptFetchDataDB := "/home/pi/Desktop/fetchDPData.py"
-	dbLocation := "/home/pi/Desktop/Client.db"*/
+	//scriptFetchDataDB := "/home/pi/Desktop/fetchDPData.py"
+	//dbLocation := "/home/pi/Desktop/Client.db"
 
 	if operation.NameOp == "lin_reg" {
 		//Send "true" as an argument if the operation in question is linear regression
@@ -418,6 +405,7 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 		//Send "false" as an argument if the operation in question is not linear regression
 		cmd := exec.Command("python", scriptFetchDataDB, dbLocation, "false", operation.Attributes, strconv.FormatInt(operation.QueryMin, 10),
 			strconv.FormatInt(operation.QueryMax, 10))
+
 		out, err := cmd.Output()
 		if err != nil {
 			println(err.Error())

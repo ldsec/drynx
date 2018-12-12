@@ -123,14 +123,16 @@ func (c *API) SendSurveyQuery(sq libdrynx.SurveyQuery) (*[]string, *[][]float64,
 	grp := make([]string, len(sr.Data))
 	aggr := make([][]float64, len(sr.Data))
 	count := 0
+
 	for i, res := range sr.Data {
 		grp[count] = i
 		aggr[count] = encoding.Decode(res, c.private, sq.Query.Operation)
+		//aggr[count] = []float64{1}
 		count++
 	}
 	//libunlynx.EndTimer(clientDecode)
 	elapsed := time.Since(start)
-	log.Printf("Decryption took %s", elapsed)
+	log.LLvl1("Decoding took", elapsed)
 
 	log.Lvl2("[API] <Drynx> Client", c.clientID, "finished decrypting the results")
 	return &grp, &aggr, nil

@@ -16,9 +16,7 @@ func EncodeSum(input []int64, pubKey kyber.Point) (*libunlynx.CipherText, []int6
 func EncodeSumWithProofs(input []int64, pubKey kyber.Point, sigs []libdrynx.PublishSignature, l int64, u int64) (*libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
 	//sum the local DP's query results
 	sum := int64(0)
-	for _, el := range input {
-		sum += el
-	}
+	for _, el := range input {sum += el}
 	//encrypt the local DP's query result
 	sumEncrypted, r := libunlynx.EncryptIntGetR(pubKey, sum)
 
@@ -35,5 +33,4 @@ func EncodeSumWithProofs(input []int64, pubKey kyber.Point, sigs []libdrynx.Publ
 func DecodeSum(result libunlynx.CipherText, secKey kyber.Scalar) int64 {
 	//decrypt the query results
 	return libunlynx.DecryptIntWithNeg(secKey, result)
-
 }

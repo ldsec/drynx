@@ -356,6 +356,7 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 
 	// -----------------------------------------------------------------------------------------------------------------
 
+	start := time.Now()
 	startDataCollectionProtocol := libunlynx.StartTimer(s.ServerIdentity().String() + "_DataCollectionProtocol")
 	if listDPs != nil {
 		// servers contact their DPs to get their response
@@ -363,8 +364,9 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 			log.Error("[SERVICE] <drynx> Server, data collection error", err)
 		}
 		libunlynx.EndTimer(startDataCollectionProtocol)
-
 	}
+	elapsed := time.Since(start)
+	log.LLvl1("DataCollectionProtocol took %s", elapsed)
 
 	//startWaitTimeDPs := libunlynx.StartTimer(s.ServerIdentity().String() + "_WaitTimeDPs")
 	// signal other nodes that the data provider(s) already sent their data (response)
@@ -383,14 +385,17 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	//libDrynx.EndTimer(startWaitTimeDPs)
 	// ready to start the collective aggregation & key switching protocol
 	if recq.IntraMessage == false {
+		start := time.Now()
+
 		startJustExecution := libunlynx.StartTimer("JustExecution")
 		s.StartService(recq.SurveyID)
-
 		log.Lvl2("[SERVICE] <drynx> Server", s.ServerIdentity(), " completed the query processing...")
-
 		survey := castToSurvey(s.Survey.Get(recq.SurveyID))
 		result := survey.QueryResponseState
 		libunlynx.EndTimer(startJustExecution)
+
+		elapsed := time.Since(start)
+		log.LLvl1("JustExecution took %s", elapsed)
 		return &result, nil
 	}
 
@@ -449,10 +454,12 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 				for i, v := range groupedData {
 					resultAggrLocal.Data = append(resultAggrLocal.Data, libdrynx.ResponseDPOneGroup{Group: string(i), Data: v.AggregatingAttributes})
 				}
+
+				startAggProof := time.Now()
 				aggrLocalProof := libdrynx.ServerAggregationProofCreation(survey.QueryResponseState, resultAggrLocal)
-				if survey.SurveyQuery.Query.Proofs == 2 {
-					aggrLocalProof.DPsData = libdrynx.ResponseAllDPs{}
-				}
+				if survey.SurveyQuery.Query.Proofs == 2 {aggrLocalProof.DPsData = libdrynx.ResponseAllDPs{}}
+				elapsedAggproof := time.Since(startAggProof)
+				log.LLvl1("Aggregation proof creation took ", elapsedAggproof)
 
 				pi := survey.MapPIs["aggregation/"+s.ServerIdentity().String()]
 				pi.(*protocols.ProofCollectionProtocol).Proof = libdrynx.ProofRequest{AggregationProof: libdrynx.NewAggregationProofRequest(&aggrLocalProof, target, s.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, tn.Private(), nil)}

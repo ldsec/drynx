@@ -40,6 +40,7 @@ const (
 	optionQueryMax      = "max"
 	optionQueryMaxShort = "M"
 
+	//for Computing Nodes + Range proofs
 	optionProofs = "proofs"
 	optionProofsShort = "p"
 
@@ -144,7 +145,7 @@ func main() {
 
 		cli.StringFlag{
 			Name:  optionProofs + ", " + optionProofsShort,
-			Usage: "Are Range Proofs enabled?",
+			Usage: "Are (Computing Nodes + Range) Proofs enabled?",
 		},
 	}
 

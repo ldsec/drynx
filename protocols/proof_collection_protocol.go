@@ -190,9 +190,13 @@ func (p *ProofCollectionProtocol) Dispatch() error {
 		var err error
 		var sb *skipchain.SkipBlock
 
+		//verifyProofstart := time.Now()
+
 		// verify which type of proof it is
 		if p.Proof.RangeProof != nil {
+
 			verif, err = p.Proof.RangeProof.VerifyProof(*p.ServerIdentity(), p.SQ)
+
 			// store range proof list in db and skipchain (transaction)
 			sb, err = p.storeProof(
 				0,
@@ -267,13 +271,12 @@ func (p *ProofCollectionProtocol) Dispatch() error {
 				p.Proof.KeySwitchProof.Roster,
 				p.Proof.KeySwitchProof.SB)
 
-		} else {
-			log.Fatal("Did not recognise the type of proof")
-		}
+		} else {log.Fatal("Did not recognise the type of proof")}
 
-		if err != nil {
-			log.Fatal("Error when verifying the proof:", err)
-		}
+		//elapsedVerifyProof := time.Since(verifyProofstart)
+		//log.LLvl1("Proof verification took ", elapsedVerifyProof)
+
+		if err != nil {log.Fatal("Error when verifying the proof:", err)}
 
 		dcm := ProofCollectionMessage{Result: verif, SB: sb}
 		// 2. Send message to root

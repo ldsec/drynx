@@ -136,10 +136,10 @@ func RunDrynx(c *cli.Context) error {
 	queryMin, _ := strconv.ParseInt(queryMinString, 10, 64)
 	queryMax, _ := strconv.ParseInt(queryMaxString, 10, 64)
 
-	//Check whether or not range proofs are enabled
+	//Check whether or not proofs are enabled
 	// 0 is not proof, 1 is proofs, 2 is optimized proofs
 	proofs, _ := strconv.ParseInt(c.String("proofs"), 10, 64)
-	if proofs == 1 || proofs == 2 {rangeProofs = true}
+	if proofs == int64(1) {rangeProofs = true}
 
 	//Get the DPs over which the query should be executed
 	dpsQuery := c.String("dps")
@@ -187,7 +187,10 @@ func RunDrynx(c *cli.Context) error {
 
 		// define the ranges for the input validation (1 range per data provider output)
 		var u, l int64
-		if proofs == 0 {
+		uSmall := int64(16)
+		lSmall := int64(7)
+
+		/*if proofs == 0 {
 			rangeProofs = false
 		} else {
 			if op == "bool_AND" || op == "bool_OR" || op == "min" || op == "max" || op == "union" || op == "inter" {
@@ -211,11 +214,28 @@ func RunDrynx(c *cli.Context) error {
 					l = int64(0)
 				}
 			}
+		}*/
+
+		if rangeProofs {
+			if op == "bool_AND" || op == "bool_OR" || op == "min" || op == "max" || op == "union" || op == "inter" {
+				if obfuscation {
+					u = int64(2)
+					l = int64(1)
+				} else {
+					u = int64(0)
+					l = int64(0)
+				}
+			} else {
+				obfuscation = false
+				u = int64(16)
+				l = int64(8)
+			}
 		}
 
 		ranges := make([]*[]int64, operation.NbrOutput)
 		if rangeProofs {
-			for i := range ranges {ranges[i] = &[]int64{u, l}}
+			//for i := range ranges {ranges[i] = &[]int64{u, l}}
+			for i := range ranges {ranges[i] = &[]int64{uSmall, lSmall}}
 		} else {ranges = nil}
 
 		// choose if differential privacy or not, no diffP by default
@@ -296,6 +316,7 @@ func RunDrynx(c *cli.Context) error {
 		}
 
 		// send query and receive results
+		log.LLvl1("Sending Query to Computing Nodes")
 		grp, aggr, _ := client.SendSurveyQuery(sq)
 
 		// Result printing
@@ -311,15 +332,15 @@ func RunDrynx(c *cli.Context) error {
 		}
 		log.LLvl1("Operation " + op + " is done successfully.")
 
+		elapsed := time.Since(start)
+		log.LLvl1("Query took", elapsed)
+
 		//Store query answer in local database
 		log.LLvl1("Update local database.")
 		cmd := exec.Command("python", scriptPopulateDB, dbLocation, queryAnswer, strconv.Itoa(int(time.Now().Unix())),
 			operation.NameOp, queryAttributes, dpsQuery, queryMinString, queryMaxString)
 		_, err := cmd.Output()
 		if err != nil {println(err.Error())}
-
-		elapsed := time.Since(start)
-		log.LLvl1("Query took %s", elapsed)
 
 		if proofs != 0 {
 			clientSkip := services.NewDrynxClient(elVNs.List[0], "close-DB")
