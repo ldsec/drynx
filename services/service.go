@@ -1,6 +1,8 @@
 package services
 
 import (
+	"github.com/dedis/kyber"
+	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/lib/proofs"
 	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/lib/tools"
@@ -445,6 +447,7 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 
 		if survey.SurveyQuery.Query.Proofs != 0 {
 			go func() {
+
 				log.Lvl2("SERVICE] <drynx> Server", s.ServerIdentity(), "creates local aggregation proof")
 				resultAggrLocal := libdrynx.ResponseAllDPs{}
 				for i, v := range groupedData {
@@ -485,82 +488,18 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 		survey := castToSurvey(s.Survey.Get(target))
 		log.Lvl2("SERVICE] <drynx> Server", s.ServerIdentity(), " Servers collectively add noise for differential privacy")
 
-		// TODO remove duplicate code
-		if castToSurvey(s.Survey.Get(target)).SurveyQuery.Query.DiffP.Optimized {
-			pi, err = protocols.NewShufflingLocalProtocol(tn)
-			if err != nil {
-				return nil, err
-			}
-			shuffle := pi.(*protocols.ShufflingLocalProtocol)
-			shuffle.Proofs = survey.SurveyQuery.Query.Proofs
-			shuffle.Precomputed = survey.ShufflePrecompute
-			shuffle.Query = &survey.SurveyQuery
-			shuffle.MapPIs = survey.MapPIs
-
-			clientResponses := make([]libunlynx.ProcessResponse, 0)
-			if survey.SurveyQuery.Query.DiffP.Scale == 0 {
-				survey.SurveyQuery.Query.DiffP.Scale = 1
-			}
-			noiseArray := libdrynx.GenerateNoiseValuesScale(int64(survey.SurveyQuery.Query.DiffP.NoiseListSize), survey.SurveyQuery.Query.DiffP.LapMean, survey.SurveyQuery.Query.DiffP.LapScale, survey.SurveyQuery.Query.DiffP.Quanta, survey.SurveyQuery.Query.DiffP.Scale, survey.SurveyQuery.Query.DiffP.Limit)
-
-			for _, v := range noiseArray {
-				clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
-			}
-			shuffle.TargetOfShuffle = &clientResponses
-
-		} else {
-
-
-
-
-			/*pi, err = protocols.NewShufflingProtocol(tn)
-			if err != nil {
-				return nil, err
-			}
-			shuffle := pi.(*protocols.ShufflingProtocol)
-
-			shuffle.Proofs = survey.SurveyQuery.Query.Proofs
-			shuffle.Precomputed = survey.ShufflePrecompute
-			shuffle.Query = &survey.SurveyQuery
-			shuffle.MapPIs = survey.MapPIs
-
-			if tn.IsRoot() {
-				clientResponses := make([]libunlynx.ProcessResponse, 0)
-				if survey.SurveyQuery.Query.DiffP.Scale == 0 {
-					survey.SurveyQuery.Query.DiffP.Scale = 1
-				}
-				noiseArray := libdrynx.GenerateNoiseValuesScale(int64(survey.SurveyQuery.Query.DiffP.NoiseListSize), survey.SurveyQuery.Query.DiffP.LapMean, survey.SurveyQuery.Query.DiffP.LapScale, survey.SurveyQuery.Query.DiffP.Quanta, survey.SurveyQuery.Query.DiffP.Scale, survey.SurveyQuery.Query.DiffP.Limit)
-				for _, v := range noiseArray {
-					clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
-				}
-				shuffle.TargetOfShuffle = &clientResponses
-			}*/
-		}
-		return pi, nil
-
-	case protocols.KeySwitchingProtocolName:
-		survey := castToSurvey(s.Survey.Get(target))
-		pi, err = protocols.NewKeySwitchingProtocol(tn)
+		pi, err = s.NewShufflingProtocol(tn, survey)
 		if err != nil {
 			return nil, err
 		}
-		keySwitch := pi.(*protocols.KeySwitchingProtocol)
-		keySwitch.Proofs = survey.SurveyQuery.Query.Proofs
-		keySwitch.Query = &survey.SurveyQuery
-		keySwitch.MapPIs = survey.MapPIs
 
-		if tn.IsRoot() {
-			if libdrynx.AddDiffP(survey.SurveyQuery.Query.DiffP) {
-				for i, v := range survey.QueryResponseState.Data {
-					survey.QueryResponseState.Data[i].Data.Add(v.Data, survey.Noises[:len(v.Data)])
-				}
-			}
-			keySwitch.TargetOfSwitch = convertToCipherVector(&survey.QueryResponseState)
-			tmp := survey.SurveyQuery.ClientPubKey
-			keySwitch.TargetPublicKey = &tmp
+		return pi, nil
 
-			s.Survey.Put(string(target), survey)
-
+	case protocolsunlynx.KeySwitchingProtocolName:
+		survey := castToSurvey(s.Survey.Get(target))
+		pi, err = s.NewKeySwitchingProtocol(tn, target, survey)
+		if err != nil {
+			return nil, err
 		}
 		return pi, nil
 
@@ -571,43 +510,88 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 	return pi, nil
 }
 
-func (s* ServiceDrynx) NewShufflingProtocol(tn *onet.TreeNodeInstance, survey Survey) (onet.ProtocolInstance, error) {
+// NewKeySwitchingProtocol defines a new key switching protocol
+func (s *ServiceDrynx) NewKeySwitchingProtocol(tn *onet.TreeNodeInstance, target string, survey Survey) (onet.ProtocolInstance, error) {
+	pi, err := protocolsunlynx.NewKeySwitchingProtocol(tn)
+	if err != nil {
+		return nil, err
+	}
+	keySwitch := pi.(*protocolsunlynx.KeySwitchingProtocol)
+	//TODO: change proofs
+	if survey.SurveyQuery.Query.Proofs == 1 {
+		keySwitch.Proofs = true
+	} else if survey.SurveyQuery.Query.Proofs == 0 {
+		keySwitch.Proofs = false
+	}
+	keySwitch.MapPIs = survey.MapPIs
+	keySwitch.ProofFunc = func(pubKey, targetPubKey kyber.Point, secretKey kyber.Scalar, ks2s, rBNegs []kyber.Point, vis []kyber.Scalar) *libunlynxkeyswitch.PublishedKSListProof {
+		go func() {
+			proof := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, ks2s, rBNegs, vis)
+			pcp := keySwitch.MapPIs["keyswitch/"+keySwitch.ServerIdentity().String()]
+			pcp.(*protocols.ProofCollectionProtocol).Proof = libdrynx.ProofRequest{KeySwitchProof: libdrynx.NewKeySwitchProofRequest(&proof, survey.SurveyQuery.SurveyID, keySwitch.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, keySwitch.Private(), nil)}
+			go pcp.Dispatch()
+			go pcp.Start()
+			<-pcp.(*protocols.ProofCollectionProtocol).FeedbackChannel
+		}()
+		return nil
+	}
+
+	if tn.IsRoot() {
+		if libdrynx.AddDiffP(survey.SurveyQuery.Query.DiffP) {
+			for i, v := range survey.QueryResponseState.Data {
+				survey.QueryResponseState.Data[i].Data.Add(v.Data, survey.Noises[:len(v.Data)])
+			}
+		}
+		keySwitch.TargetOfSwitch = convertToCipherVector(&survey.QueryResponseState)
+		tmp := survey.SurveyQuery.ClientPubKey
+		keySwitch.TargetPublicKey = &tmp
+
+		s.Survey.Put(string(target), survey)
+
+	}
+	return pi, err
+}
+
+// NewShufflingProtocol defines a new shuffling protocol
+func (s *ServiceDrynx) NewShufflingProtocol(tn *onet.TreeNodeInstance, survey Survey) (onet.ProtocolInstance, error) {
 	pi, err := protocolsunlynx.NewShufflingProtocol(tn)
 	if err != nil {
 		return nil, err
 	}
 	shuffle := pi.(*protocolsunlynx.ShufflingProtocol)
-
-	shuffle.Proofs = survey.SurveyQuery.Query.Proofs
+	//TODO: change proofs
+	if survey.SurveyQuery.Query.Proofs == 1 {
+		shuffle.Proofs = true
+	} else if survey.SurveyQuery.Query.Proofs == 0 {
+		shuffle.Proofs = false
+	}
 	shuffle.Precomputed = survey.ShufflePrecompute
-	sq := &survey.SurveyQuery
 	shuffle.MapPIs = survey.MapPIs
-	shuffle.ProofFunc = func(pcp, p onet.ProtocolInstance, proof libunlynxproofs.PublishedShufflingProof) {
+	shuffle.ProofFunc = func(shuffleTarget, shuffledData []libunlynx.CipherVector, collectiveKey kyber.Point, beta [][]kyber.Scalar, pi []int) *libunlynxproofs.PublishedShufflingProof {
 		go func() {
-			p := p.(*protocolsunlynx.ShufflingProtocol)
-
-			pcp.(*protocols.ProofCollectionProtocol).Proof = libdrynx.ProofRequest{ShuffleProof: libdrynx.NewShuffleProofRequest(&proof, sq.SurveyID, p.ServerIdentity().String(), "", sq.Query.RosterVNs, p.Private(), nil)}
-			go pi.Dispatch()
-			go pi.Start()
-			<-pi.(*protocols.ProofCollectionProtocol).FeedbackChannel
+			proof := libunlynxproofs.ShufflingProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+			pcp := shuffle.MapPIs["shuffle/"+shuffle.ServerIdentity().String()]
+			pcp.(*protocols.ProofCollectionProtocol).Proof = libdrynx.ProofRequest{ShuffleProof: libdrynx.NewShuffleProofRequest(&proof, survey.SurveyQuery.SurveyID, shuffle.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, shuffle.Private(), nil)}
+			go pcp.Dispatch()
+			go pcp.Start()
+			<-pcp.(*protocols.ProofCollectionProtocol).FeedbackChannel
 		}()
+		return nil
 	}
 
+	//TODO: The optimized should call another protocol
+	if survey.SurveyQuery.Query.DiffP.Optimized || (!survey.SurveyQuery.Query.DiffP.Optimized && tn.IsRoot()) {
 
-	if tn.IsRoot() {
-		clientResponses := make([]libunlynx.ProcessResponse, 0)
+		shuffleTarget := make([]libunlynx.CipherVector, 0)
 		if survey.SurveyQuery.Query.DiffP.Scale == 0 {
 			survey.SurveyQuery.Query.DiffP.Scale = 1
 		}
 		noiseArray := libdrynx.GenerateNoiseValuesScale(int64(survey.SurveyQuery.Query.DiffP.NoiseListSize), survey.SurveyQuery.Query.DiffP.LapMean, survey.SurveyQuery.Query.DiffP.LapScale, survey.SurveyQuery.Query.DiffP.Quanta, survey.SurveyQuery.Query.DiffP.Scale, survey.SurveyQuery.Query.DiffP.Limit)
 		for _, v := range noiseArray {
-			clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
+			shuffleTarget = append(shuffleTarget, libunlynx.IntArrayToCipherVector([]int64{int64(v)}))
 		}
-		shuffle.ShuffleTarget = &clientResponses
+		shuffle.ShuffleTarget = &shuffleTarget
 	}
-
-
-
 	return pi, err
 }
 
@@ -740,12 +724,12 @@ func (s *ServiceDrynx) DROPhase(targetSurvey string) error {
 		return err
 	}
 
-	shufflingResult := <-pi.(*protocols.ShufflingProtocol).FeedbackChannel
+	shufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 	noises := *libunlynx.NewCipherVector(len(shufflingResult))
 	for i, v := range shufflingResult {
-		noises[i] = v.AggregatingAttributes[0]
+		noises[i] = v[0]
 	}
 	survey.Noises = noises
 	survey.DiffPChannel <- 1
@@ -759,11 +743,11 @@ func (s *ServiceDrynx) DROLocalPhase(targetSurvey string) error {
 	if err != nil {
 		return err
 	}
-	shufflingResult := <-pi.(*protocols.ShufflingLocalProtocol).FeedbackChannel
+	shufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 	noises := *libunlynx.NewCipherVector(len(shufflingResult))
 	for i, v := range shufflingResult {
-		noises[i] = v.AggregatingAttributes[0]
+		noises[i] = v[0]
 	}
 	survey.Noises = noises
 	survey.DiffPChannel <- 1
@@ -773,11 +757,11 @@ func (s *ServiceDrynx) DROLocalPhase(targetSurvey string) error {
 
 // KeySwitchingPhase performs the switch to the querier's key on the currently aggregated data.
 func (s *ServiceDrynx) KeySwitchingPhase(targetSurvey string) error {
-	pi, err := s.StartProtocol(protocols.KeySwitchingProtocolName, targetSurvey)
+	pi, err := s.StartProtocol(protocolsunlynx.KeySwitchingProtocolName, targetSurvey)
 	if err != nil {
 		return err
 	}
-	keySwitchedAggregatedResponses := <-pi.(*protocols.KeySwitchingProtocol).FeedbackChannel
+	keySwitchedAggregatedResponses := <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 	survey.QueryResponseState = *convertFromKeySwitchingStruct(keySwitchedAggregatedResponses, survey.QueryResponseState)

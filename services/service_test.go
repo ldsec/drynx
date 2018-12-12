@@ -64,7 +64,7 @@ func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 //______________________________________________________________________________________________________________________
 /// Test service Drynx for all operations
 func TestServiceDrynx(t *testing.T) {
-	log.SetDebugVisible(1)
+	log.SetDebugVisible(2)
 
 	//------SET PARAMS--------
 
@@ -73,7 +73,7 @@ func TestServiceDrynx(t *testing.T) {
 	obfuscation := false
 
 	diffPri := true
-	diffPriOpti := true
+	diffPriOpti := false
 	nbrRows := int64(1)
 	nbrServers := 3
 	nbrDPs := 5

@@ -10,6 +10,9 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/key_switch"
+	"github.com/lca1/unlynx/lib/proofs"
+	"github.com/lca1/unlynx/lib/shuffle"
 	"sync"
 	"time"
 )
@@ -75,8 +78,8 @@ type DataToVerify struct {
 	ProofsRange       []*RangeProofList
 	ProofsAggregation []*PublishAggregationProof
 	ProofsObfuscation []*PublishedListObfuscationProof
-	ProofsKeySwitch   []*PublishedKSListProof
-	ProofShuffle      []*PublishedShufflingProof
+	ProofsKeySwitch   []*libunlynxkeyswitch.PublishedKSListProof
+	ProofShuffle      []*libunlynxproofs.PublishedShufflingProof
 }
 
 //DataBlock is the structure inserted in the Skipchain
@@ -297,11 +300,11 @@ var tab2 = []int64{2, 4, 8, 6}
 //CreateRandomGoodTestData only creates valid proofs
 func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]PublishSignatureBytes, ranges []*[]int64, nbrProofs int) DataToVerify {
 	result := DataToVerify{}
-	result.ProofsKeySwitch = make([]*PublishedKSListProof, nbrProofs)
+	result.ProofsKeySwitch = make([]*libunlynxkeyswitch.PublishedKSListProof, nbrProofs)
 	result.ProofsRange = make([]*RangeProofList, nbrProofs)
 	result.ProofsAggregation = make([]*PublishAggregationProof, nbrProofs)
 	result.ProofsObfuscation = make([]*PublishedListObfuscationProof, nbrProofs)
-	result.ProofShuffle = make([]*PublishedShufflingProof, nbrProofs)
+	result.ProofShuffle = make([]*libunlynxproofs.PublishedShufflingProof, nbrProofs)
 
 	//Fill Aggregation with good proofs
 	for i := range result.ProofsAggregation {
@@ -334,31 +337,29 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 
 	for i := range result.ProofShuffle {
 		testCipherVect1 := *libunlynx.EncryptIntVector(roster.Aggregate, tab1)
-
 		testCipherVect2 := *libunlynx.EncryptIntVector(roster.Aggregate, tab2)
 
-		responses := make([]libunlynx.ProcessResponse, 3)
-		responses[0] = libunlynx.ProcessResponse{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
-		responses[1] = libunlynx.ProcessResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
-		responses[2] = libunlynx.ProcessResponse{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}
+		responses := make([]libunlynx.CipherVector, 0)
+		responses = append(responses, testCipherVect1, testCipherVect2)
 
-		responsesShuffled, pi, beta := ShuffleSequence(responses, libunlynx.SuiTe.Point().Base(), roster.Aggregate, nil)
-		prf := ShufflingProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), roster.Aggregate, beta, pi)
+		//responses[0] = libunlynx.CipherVector{testCipherVect2, testCipherVect2}
+		//responses[1] = libunlynx.CipherVector{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
+		//responses[2] = libunlynx.CipherVector{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}
+
+		responsesShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(responses, libunlynx.SuiTe.Point().Base(), roster.Aggregate, nil)
+		prf := libunlynxproofs.ShufflingProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), roster.Aggregate, beta, pi)
 		result.ProofShuffle[i] = &prf
 	}
 
 	for i := range result.ProofsKeySwitch {
-		length := 2
 		cipher := libunlynx.EncryptIntVector(roster.Aggregate, []int64{1, 2})
 		initialTab := make([]kyber.Point, 2)
 		for i, v := range *cipher {
 			initialTab[i] = v.K
 		}
 
-		//switchedVect := libunlynx.NewCipherVector(length)
 		_, ks2s, rBNegs, vis := NewKeySwitching(pub, initialTab, secKey)
-
-		pkslp := KeySwitchListProofCreation(entityPub, pub, secKey, length, ks2s, rBNegs, vis)
+		pkslp := libunlynxkeyswitch.KeySwitchListProofCreation(entityPub, pub, secKey, ks2s, rBNegs, vis)
 
 		result.ProofsKeySwitch[i] = &pkslp
 	}

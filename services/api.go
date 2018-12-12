@@ -9,6 +9,8 @@ import (
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/key_switch"
+	"github.com/lca1/unlynx/lib/proofs"
 )
 
 // API represents a client with the server to which he is connected and its public/private key pair.
@@ -24,8 +26,8 @@ type API struct {
 func init() {
 	network.RegisterMessage(libdrynx.GetLatestBlock{})
 	network.RegisterMessage(libdrynx.RangeProofListBytes{})
-	network.RegisterMessage(libdrynx.PublishedShufflingProofBytes{})
-	network.RegisterMessage(libdrynx.PublishedKSListProofBytes{})
+	network.RegisterMessage(libunlynxproofs.PublishedShufflingProofBytes{})
+	network.RegisterMessage(libunlynxkeyswitch.PublishedKSListProofBytes{})
 	network.RegisterMessage(libdrynx.PublishAggregationProofBytes{})
 	network.RegisterMessage(libdrynx.PublishedListObfuscationProofBytes{})
 }

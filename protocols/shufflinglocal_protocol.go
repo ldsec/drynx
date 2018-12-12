@@ -2,8 +2,10 @@
 // This protocol is the first try to improve the shuffling protocol by better distributing the workload
 package protocols
 
-import (
+/*import (
 	"errors"
+	"github.com/lca1/unlynx/lib/proofs"
+	"github.com/lca1/unlynx/lib/shuffle"
 
 	"time"
 
@@ -126,21 +128,21 @@ func (p *ShufflingLocalProtocol) Dispatch() error {
 	}
 
 	shufflingTarget := *p.TargetOfShuffle
-	shuffledData := []libunlynx.ProcessResponse{}
+	shuffledData := make([]libunlynx.ProcessResponse,0)
 	var pi []int
 	var beta [][]kyber.Scalar
 
 	var wg *sync.WaitGroup
 	mu := sync.Mutex{}
-	tmp := []libunlynx.ProcessResponse{}
+	tmp := make([]libunlynx.CipherVector,0)
 	if p.Proofs != 0 {
 		wg = libunlynx.StartParallelize(1)
-		go func(shufflingTarget []libunlynx.ProcessResponse, shuffledData []libunlynx.ProcessResponse) {
+		go func(shufflingTarget []libunlynx.CipherVector, shuffledData []libunlynx.ProcessResponse) {
 
 			// SHUFFLING
 			roundShuffle := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH-noProof)")
 
-			shuffledData, pi, beta = libdrynx.ShuffleSequence(shufflingTarget, nil, collectiveKey, p.Precomputed)
+			shuffledData, pi, beta = libunlynxshuffle.ShuffleSequence(shufflingTarget, nil, collectiveKey, p.Precomputed)
 			mu.Lock()
 			tmp = shuffledData
 			mu.Unlock()
@@ -149,7 +151,7 @@ func (p *ShufflingLocalProtocol) Dispatch() error {
 
 			// PROOF
 			log.Lvl2("[SHUFFLING PROTOCOL] <Drynx> Server", p.ServerIdentity(), "creates shuffling proof")
-			proof := libdrynx.ShufflingProofCreation(shufflingTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+			proof := libunlynxproofs.ShufflingProofCreation(shufflingTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
 			wg.Done()
 
 			pi := p.MapPIs["shuffle/"+p.ServerIdentity().String()]
@@ -207,4 +209,4 @@ func (p *ShufflingLocalProtocol) sendToNext(msg interface{}) {
 }
 
 // Conversion
-//______________________________________________________________________________________________________________________
+//______________________________________________________________________________________________________________________*/

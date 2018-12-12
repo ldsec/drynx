@@ -2,6 +2,8 @@ package protocols
 
 import (
 	"github.com/coreos/bbolt"
+	"github.com/lca1/unlynx/lib/key_switch"
+	"github.com/lca1/unlynx/lib/proofs"
 	"testing"
 
 	"sync"
@@ -39,8 +41,8 @@ var sharedBMChannelToTerminate chan struct{}
 func TestProofCollectionProtocol(t *testing.T) {
 	network.RegisterMessage(libdrynx.GetLatestBlock{})
 	network.RegisterMessage(libdrynx.RangeProofListBytes{})
-	network.RegisterMessage(libdrynx.PublishedShufflingProofBytes{})
-	network.RegisterMessage(libdrynx.PublishedKSListProofBytes{})
+	network.RegisterMessage(libunlynxproofs.PublishedShufflingProofBytes{})
+	network.RegisterMessage(libunlynxkeyswitch.PublishedKSListProofBytes{})
 	network.RegisterMessage(libdrynx.PublishAggregationProofBytes{})
 	network.RegisterMessage(libdrynx.PublishedListObfuscationProofBytes{})
 

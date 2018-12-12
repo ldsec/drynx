@@ -1,6 +1,6 @@
 package protocols_test
 
-import (
+/*import (
 	"testing"
 	"time"
 
@@ -53,10 +53,10 @@ func TestShufflingLocal(t *testing.T) {
 					present = true
 				}
 			}*/
-			/*if !present {
-				t.Error("ERROR")
-			}*/
-			log.Lvl1(v)
+/*if !present {
+	t.Error("ERROR")
+}*/
+/*log.Lvl1(v)
 		}
 
 	case <-time.After(timeout):
@@ -119,4 +119,4 @@ func NewShufflingLocalTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, e
 	protocol.TargetOfShuffle = &mapi
 
 	return protocol, err
-}
+}*/
