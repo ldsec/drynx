@@ -200,24 +200,19 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		}
 	}
 
-	//startDB := time.Now()
-	// fetch data from db
-	dpData := fetchDataFromDB(p.Survey.Query.Operation)
-	//elapsedDB := time.Since(startDB)
-	//log.LLvl1("Actual DB fetch took", elapsedDB)
-
 	// logistic regression specific
 	var datasFloat [][]float64
 	lrParameters := p.Survey.Query.Operation.LRParameters
-	if p.Survey.Query.Operation.NameOp == "logistic regression" {
+	if p.Survey.Query.Operation.NameOp == "logreg" {
 		if lrParameters.FilePath != "" {
 			// note: GetDataForDataProvider(...) business only for testing purpose
 			dataProviderID := p.TreeNode().ServerIdentity
-			datasFloat = encoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.FilePath, *dataProviderID)
+			datasFloat = encoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.FilePath, *dataProviderID, lrParameters.NbrDps)
 
 			// set the number of records to the number of records owned by this data provider
-			//dataSpecifics = recq.Query.Operation.DataSpecifics
 			lrParameters.NbrRecords = int64(len(datasFloat))
+			//Not sure
+			lrParameters.NbrFeatures = int64(len(datasFloat[0])-1)
 		} else {
 			// create dummy data
 			datasFloat = make([][]float64, lrParameters.NbrRecords)
@@ -252,10 +247,14 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		if p.Survey.Query.CuttingFactor != 0 {
 			p.Survey.Query.Operation.NbrOutput = p.Survey.Query.Operation.NbrOutput / int64(p.Survey.Query.CuttingFactor)
 		}
-		if p.Survey.Query.Operation.NameOp == "logistic regression" {
+		if p.Survey.Query.Operation.NameOp == "logreg" {
 			//p.Survey.Query.Ranges = nil
 			encryptedResponse, clearResponse, cprf = encoding.EncodeForFloat(datasFloat, lrParameters, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation.NameOp)
 		} else {
+			//startDB := time.Now()
+			// fetch data from db
+			dpData := fetchDataFromDB(p.Survey.Query.Operation)
+			//log.LLvl1("Actual DB fetch took", time.Since(startDB))
 			encryptedResponse, clearResponse, cprf = encoding.Encode(dpData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
 		}
 

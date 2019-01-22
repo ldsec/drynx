@@ -208,7 +208,7 @@ func Decode(ciphers []libunlynx.CipherText, secKey kyber.Scalar, operation libdr
 			result[i] = float64(interSet[i])
 		}
 		return result
-	case "logistic regression":
+	case "logreg":
 		lrParameters := operation.LRParameters
 		return DecodeLogisticRegression(ciphers, secKey, lrParameters)
 
@@ -237,7 +237,7 @@ func EncodeForFloat(datas [][]float64, lrParameters libdrynx.LogisticRegressionP
 	withProofs := len(ranges) > 0
 
 	switch operation {
-	case "logistic regression":
+	case "logreg":
 		if withProofs {
 			encryptedResponse, clearResponse, prf = EncodeLogisticRegressionWithProofs(datas, lrParameters, pubKey, signatures, ranges)
 		} else {

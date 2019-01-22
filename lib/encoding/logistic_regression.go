@@ -1,25 +1,23 @@
 package encoding
 
 import (
-	"github.com/dedis/kyber"
-	"github.com/dedis/onet/log"
-	"github.com/lca1/unlynx/lib"
-	"github.com/montanaflynn/stats"
-	"gonum.org/v1/gonum/stat/combin"
-
 	"bufio"
 	"fmt"
+	"github.com/dedis/kyber"
+	"github.com/dedis/onet/log"
+	"github.com/dedis/onet/network"
+	"github.com/lca1/drynx/lib"
+	"github.com/lca1/unlynx/lib"
+	"github.com/montanaflynn/stats"
+	"gonum.org/v1/gonum/integrate"
+	"gonum.org/v1/gonum/stat"
+	"gonum.org/v1/gonum/stat/combin"
 	"math"
 	"math/rand"
 	"os"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/dedis/onet/network"
-	"github.com/lca1/drynx/lib"
-	"gonum.org/v1/gonum/integrate"
-	"gonum.org/v1/gonum/stat"
 )
 
 // TaylorCoefficients are the taylor coefficients (first taylor expansion coefficients of ln(1/(1+exp(x)))
@@ -31,16 +29,12 @@ var MinAreaCoefficients = []float64{-0.714761, -0.5, -0.0976419}
 // PolyApproxCoefficients is the number of approximated coefficients
 var PolyApproxCoefficients = MinAreaCoefficients
 
-// NumDps is the number of DPs
-var NumDps = 10
-
 // -------------------------
 // UnLynx framework specific
 // -------------------------
 
 // EncodeLogisticRegression computes and encrypts the data provider's coefficients for logistic regression
 func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point) ([]libunlynx.CipherText, []int64) {
-
 	d := lrParameters.NbrFeatures
 	n := getTotalNumberApproxCoefficients(d, lrParameters.K)
 
@@ -49,9 +43,10 @@ func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRe
 
 	if data != nil && len(data) > 0 {
 		// unpack the data into features and labels
-		labelColumn := 0
+		labelColumn := d
 		X := RemoveColumn(data, labelColumn)
 		y := Float64ToInt641DArray(GetColumn(data, labelColumn))
+
 
 		// standardise the data
 		var XStandardised [][]float64
@@ -88,6 +83,7 @@ func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRe
 
 		// pack the encrypted aggregated approximation coefficients (will need to unpack the result at the querier side)
 		for j := 0; int64(j) < lrParameters.K; j++ {
+			//JS: make it more efficient, keep variable for nLevelPrevious
 			nLevel := getNumberApproxCoefficients(d, j)
 			nLevelPrevious := getNumberApproxCoefficients(d, j-1)
 			for i := 0; i < nLevel; i++ {
@@ -119,7 +115,6 @@ type CipherAndRandom struct {
 
 // EncodeLogisticRegressionWithProofs computes and encrypts the data provider's coefficients for logistic regression with range proofs
 func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
-
 	d := lrParameters.NbrFeatures
 	n := getTotalNumberApproxCoefficients(d, lrParameters.K)
 
@@ -129,7 +124,7 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.
 
 	if data != nil && len(data) > 0 {
 		// unpack the data into features and labels
-		labelColumn := 0
+		labelColumn := d
 		X := RemoveColumn(data, labelColumn)
 		y := Float64ToInt641DArray(GetColumn(data, labelColumn))
 
@@ -310,9 +305,7 @@ func getTotalNumberApproxCoefficients(d int64, k int64) int {
 
 // getNumberApproxCoefficients returns the number of approximation coefficients to compute for <d> features at approximation degree <level>
 func getNumberApproxCoefficients(d int64, level int) int {
-	count := int(math.Pow(float64(d+1), float64(level+1)))
-
-	return count
+	return int(math.Pow(float64(d+1), float64(level+1)))
 }
 
 // ComputeDistinctApproxCoefficients computes the distinct coefficients of the approximated logistic regression cost function
@@ -521,7 +514,6 @@ func AggregateEncryptedApproxCoefficients(encryptedApproxCoeffs [][]*libunlynx.C
 func Cost(weights []float64, approxCoefficients [][]float64, N int64, lambda float64) (cost float64) {
 	k := int64(len(approxCoefficients))       // the logarithm function approximation degree
 	d := len(approxCoefficients[0]) - 1 // the dimension of the data
-
 	cost = 0.0
 
 	for j := int64(0); j < k; j++ {
@@ -533,11 +525,10 @@ func Cost(weights []float64, approxCoefficients [][]float64, N int64, lambda flo
 			weightsProduct := 1.0
 			combination := combinations[row]
 
-			for i := 0; i < len(combination); i++ {
-				weightsProduct *= weights[int(combination[i])]
-			}
+			for i := 0; i < len(combination); i++ {weightsProduct *= weights[int(combination[i])]}
 			cost += weightsProduct * float64(approxCoefficients[j][row])
 		}
+
 		cost *= PolyApproxCoefficients[j+1]
 	}
 
@@ -546,11 +537,8 @@ func Cost(weights []float64, approxCoefficients [][]float64, N int64, lambda flo
 	// l2-regularizer contribution
 	// todo: check for i = 0
 	regularizer := 0.0
-	for i := 1; i <= d; i++ {
-		regularizer += weights[i] * weights[i]
-	}
+	for i := 1; i <= d; i++ {regularizer += weights[i] * weights[i]}
 	cost += (lambda / (2 * float64(N))) * regularizer
-
 	return cost
 }
 
@@ -690,9 +678,7 @@ func FindMinimumWeights(approxCoefficients [][]float64, initialWeights []float64
 
 	k := int64(len(approxCoefficients)) // the logarithm function approximation degree
 
-	if k == 1 {
-		return ComputeMinimumWeights(approxCoefficients, lambda)
-	}
+	if k == 1 {return ComputeMinimumWeights(approxCoefficients, lambda)}
 
 	//weights := initialWeights
 	weights := make([]float64, len(initialWeights))
@@ -903,7 +889,7 @@ func ComputeMeans(data [][]float64) []float64 {
 
 	means := make([]float64, nbFeatures)
 
-	for i := 0; i < nbFeatures; i++ {
+	for i := int64(0); i < int64(nbFeatures); i++ {
 		feature := GetColumn(data, i)
 		means[i], _ = stats.Mean(feature)
 	}
@@ -917,7 +903,7 @@ func ComputeStandardDeviations(data [][]float64) []float64 {
 
 	standardDeviations := make([]float64, nbFeatures)
 
-	for i := 0; i < nbFeatures; i++ {
+	for i := int64(0); i < int64(nbFeatures); i++ {
 		feature := GetColumn(data, i)
 		standardDeviations[i], _ = stats.StandardDeviation(feature)
 	}
@@ -934,7 +920,7 @@ func Standardise(matrix [][]float64) [][]float64 {
 	sds := make([]float64, nbFeatures)
 	means := make([]float64, nbFeatures)
 
-	for i := 0; i < nbFeatures; i++ {
+	for i := int64(0); i < int64(nbFeatures); i++ {
 		feature := GetColumn(matrix, i)
 		means[i], _ = stats.Mean(feature)
 		sds[i], _ = stats.StandardDeviation(feature)
@@ -959,7 +945,7 @@ func StandardiseWithTrain(matrixTest, matrixTrain [][]float64) [][]float64 {
 	sd := make([]float64, nbFeatures)
 	mean := make([]float64, nbFeatures)
 
-	for i := 0; i < nbFeatures; i++ {
+	for i := int64(0); i < int64(nbFeatures); i++ {
 		feature := GetColumn(matrixTrain, i)
 
 		mean[i], _ = stats.Mean(feature)
@@ -1000,7 +986,7 @@ func Normalize(matrix [][]float64) [][]float64 {
 	min := make([]float64, nbFeatures)
 	max := make([]float64, nbFeatures)
 
-	for i := 0; i < nbFeatures; i++ {
+	for i := int64(0); i < int64(nbFeatures); i++ {
 		feature := GetColumn(matrix, i)
 
 		min[i], _ = stats.Min(feature)
@@ -1025,7 +1011,7 @@ func NormalizeWith(matrixTest, matrixTrain [][]float64) [][]float64 {
 	min := make([]float64, nbFeatures)
 	max := make([]float64, nbFeatures)
 
-	for i := 0; i < nbFeatures; i++ {
+	for i := int64(0); i < int64(nbFeatures); i++ {
 		feature := GetColumn(matrixTrain, i)
 
 		min[i], _ = stats.Min(feature)
@@ -1306,13 +1292,19 @@ func LoadData(dataset string, filename string) ([][]float64, []int64) {
 	var X [][]float64
 	var y []int64
 
-	labelColumn := 0
+	labelColumn := int64(0)
 
 	switch dataset {
+	case "CSV":
+		dataString := ReadFile(filename, ",")
+		data = String2DToFloat64(dataString)
+		//labelColumn = int64(0)
+		X = RemoveColumn(data, int64(len(data[0])-1))
+		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
 	case "SPECTF":
 		dataString := ReadFile(filename, ",")
 		data = String2DToFloat64(dataString)
-		labelColumn = 0
+		labelColumn = int64(0)
 
 		X = RemoveColumn(data, labelColumn)
 		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
@@ -1320,7 +1312,7 @@ func LoadData(dataset string, filename string) ([][]float64, []int64) {
 		dataString := ReadFile(filename, ",")
 		data = String2DToFloat64(dataString)
 
-		labelColumn = 8
+		labelColumn = int64(8)
 		X = RemoveColumn(data, labelColumn)
 		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
 	case "PCS":
@@ -1351,7 +1343,7 @@ func LoadData(dataset string, filename string) ([][]float64, []int64) {
 		// remove the actual birth weight column (the classification task becomes trivial otherwise)
 		data = RemoveColumn(data, 1)
 
-		labelColumn := 2
+		labelColumn := int64(2)
 		X = RemoveColumn(data, labelColumn)
 		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
 	default:
@@ -1412,14 +1404,14 @@ func ReadFile(path string, separator string) [][]string {
 }
 
 // GetColumn returns the column at index <idx> in the given 2D array <matrix>
-func GetColumn(matrix [][]float64, idx int) []float64 {
+func GetColumn(matrix [][]float64, idx int64) []float64 {
 
 	if len(matrix) < 0 {
 		log.Fatalf("error: empty matrix")
 		os.Exit(2)
 	}
 
-	if idx >= len(matrix[0]) {
+	if idx >= int64(len(matrix[0])) {
 		log.Fatalf("error: column index exceeds matrix dimension")
 		os.Exit(2)
 	}
@@ -1433,8 +1425,8 @@ func GetColumn(matrix [][]float64, idx int) []float64 {
 }
 
 // RemoveColumn returns a 2D array with the column at index <idx> removed from the given 2D array <matrix>
-func RemoveColumn(matrix [][]float64, idx int) [][]float64 {
-	if idx >= len(matrix) {
+func RemoveColumn(matrix [][]float64, idx int64) [][]float64 {
+	if idx >= int64(len(matrix)) {
 		log.Fatalf("error: column index exceeds matrix dimension")
 		os.Exit(2)
 	}
@@ -1516,7 +1508,34 @@ func PartitionDataset(X [][]float64, y []int64, ratio float64, shuffle bool, see
 }
 
 // GetDataForDataProvider returns data records from a file for a given data provider based on its id
-func GetDataForDataProvider(filename string, dataProviderIdentity network.ServerIdentity) [][]float64 {
+func GetDataForDataProvider(filename string, dataProviderIdentity network.ServerIdentity, NbrDps int64) [][]float64 {
+	/*var dataForDP [][]float64
+	var data [][]float64
+	dataProviderID := dataProviderIdentity.String()
+	dpID, err := strconv.Atoi(dataProviderID[len(dataProviderID)-2 : len(dataProviderID)-1])
+
+	csvFile, _ := os.Open(filename)
+	reader := csv.NewReader(bufio.NewReader(csvFile))
+	for {
+		line, error := reader.Read()
+		if error == io.EOF {break} else if error != nil {log.Fatal(error)}
+
+		var array []float64
+		for _, e := range line {
+			i, _ := strconv.ParseFloat(strings.TrimSpace(e), 64)
+			array = append(array, i)
+		}
+		data = append(data, array)
+	}
+
+	if err == nil {
+		for i := int64(0); i < int64(len(data)); i++ {if i%NbrDps == int64(dpID) {dataForDP = append(dataForDP, data[i])}}
+		fmt.Println("DP", dataProviderIdentity.String(), " has:", len(dataForDP), "records")
+	}
+
+	//data := String2DToFloat64(ReadFile(filename, ","))
+	return dataForDP*/
+
 	var dataForDP [][]float64
 	data := String2DToFloat64(ReadFile(filename, ","))
 
@@ -1524,11 +1543,7 @@ func GetDataForDataProvider(filename string, dataProviderIdentity network.Server
 	dpID, err := strconv.Atoi(dataProviderID[len(dataProviderID)-2 : len(dataProviderID)-1])
 
 	if err == nil {
-		for i := 0; i < len(data); i++ {
-			if i%NumDps == dpID {
-				dataForDP = append(dataForDP, data[i])
-			}
-		}
+		for i := int64(0); i < int64(len(data)); i++ {if i % NbrDps == int64(dpID) {dataForDP = append(dataForDP, data[i])}}
 		fmt.Println("DP", dataProviderIdentity.String(), " has:", len(dataForDP), "records")
 	}
 

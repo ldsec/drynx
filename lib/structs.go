@@ -237,6 +237,7 @@ type LogisticRegressionParameters struct {
 	FilePath           string
 	NbrRecords         int64
 	NbrFeatures        int64
+	NbrDps			   int64
 	Means              []float64
 	StandardDeviations []float64
 
@@ -701,9 +702,9 @@ func UpdateDB(db *bbolt.DB, bucketName string, key string, value []byte) {
 }
 
 // ChooseOperation sets the parameters according to the operation
-func ChooseOperation(operationName string, attributes string, queryMin, queryMax, d int64, cuttingFactor int64) Operation {
+func ChooseOperation(operationName string, attributes string, queryMin, queryMax, d int64, cuttingFactor int64,
+	params LogisticRegressionParameters) Operation {
 	operation := Operation{}
-
 	operation.NameOp = operationName
 	operation.Attributes = attributes
 	operation.NbrInput = 0
@@ -711,6 +712,7 @@ func ChooseOperation(operationName string, attributes string, queryMin, queryMax
 	operation.QueryMax = queryMax
 	operation.QueryMin = queryMin
 	operation.Dimension = d
+	operation.LRParameters = params
 
 	switch operationName {
 	case "sum":
@@ -743,7 +745,7 @@ func ChooseOperation(operationName string, attributes string, queryMin, queryMax
 		operation.NbrInput = d + 1
 		operation.NbrOutput = (d*d + 5*d + 4) / 2
 		break
-	case "logistic regression":
+	case "logreg":
 		break
 	default:
 		log.Fatal("Operation: <", operation, "> does not exist")

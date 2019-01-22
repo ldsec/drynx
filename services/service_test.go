@@ -119,10 +119,10 @@ func TestServiceDrynx(t *testing.T) {
 		minGenerateData := int64(3)
 		maxGenerateData := int64(4)
 		dimensions := int64(5)
-		operation := libdrynx.ChooseOperation(op, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
+		operation := libdrynx.ChooseOperation(op, "", minGenerateData, maxGenerateData, dimensions, cuttingFactor)
 
 		// define the number of groups for groupBy (1 per default)
-		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateRows: nbrRows, GenerateDataMin: int64(minGenerateData), GenerateDataMax: int64(maxGenerateData)}
+		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateDataMin: int64(minGenerateData), GenerateDataMax: int64(maxGenerateData)}
 
 		// define the ranges for the input validation (1 range per data provider output)
 		var u, l int64
@@ -351,7 +351,6 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 
 	diffPri := false
 
-	nbrRows := int64(1)
 	nbrServers := 3
 	nbrDPs := 5
 	nbrVNs := 3
@@ -406,7 +405,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	meanFscore := 0.0
 	meanAUC := 0.0
 
-	operationList := []string{"logistic regression"}
+	operationList := []string{"logreg"}
 
 	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 	//------------------------
@@ -558,7 +557,8 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 
 		surveyID := "query-" + op
 
-		sq := client.GenerateSurveyQuery(elServers, elVNs, dpToServers, idToPublic, surveyID, operation, ranges, ps, proofs, obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor)
+		sq := client.GenerateSurveyQuery(elServers, elVNs, dpToServers, idToPublic, surveyID, operation, ranges, ps, proofs, obfuscation,
+			thresholdEntityProofsVerif, diffP, dpData, cuttingFactor)
 		if !libdrynx.CheckParameters(sq, diffPri) {
 			log.Fatal("Oups!")
 		}
@@ -612,7 +612,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 				means = nil
 				standardDeviations = nil
 			}
-			accuracy, precision, recall, fscore, auc := performanceEvaluation(weights, XTest, yTest, means, standardDeviations)
+			accuracy, precision, recall, fscore, auc := PerformanceEvaluation(weights, XTest, yTest, means, standardDeviations)
 
 			meanAccuracy += accuracy
 			meanPrecision += precision
@@ -848,7 +848,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 		lrParameters.Means = means
 		lrParameters.StandardDeviations = standardDeviations
 
-		operation := libdrynx.Operation{NameOp: "logistic regression", LRParameters: lrParameters}
+		operation := libdrynx.Operation{NameOp: "logreg", LRParameters: lrParameters}
 
 		// data providers data generation
 		// define the number of groups for groupBy (1 per default)
@@ -933,7 +933,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 				means = nil
 				standardDeviations = nil
 			}
-			accuracy, precision, recall, fscore, auc := performanceEvaluation(weights, XTest, yTest, means, standardDeviations)
+			accuracy, precision, recall, fscore, auc := PerformanceEvaluation(weights, XTest, yTest, means, standardDeviations)
 
 			meanAccuracy += accuracy
 			meanPrecision += precision
@@ -963,7 +963,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 	encoding.PrintForLatex(meanAccuracy, meanPrecision, meanRecall, meanFscore, meanAUC)
 }
 
-func performanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, means []float64,
+func PerformanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, means []float64,
 	standardDeviations []float64) (float64,
 	float64, float64, float64, float64) {
 	fmt.Println("weights:", weights)
@@ -986,6 +986,7 @@ func performanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, 
 		predictions[i] = int64(math.Round(predictionsFloat[i]))
 		fmt.Printf("%12.8e %1d %2d\n", predictionsFloat[i], predictions[i], yTest[i])
 	}
+
 
 	accuracy := encoding.Accuracy(predictions, yTest)
 	precision := encoding.Precision(predictions, yTest)
