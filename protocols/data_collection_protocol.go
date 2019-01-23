@@ -264,9 +264,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 		// scaling for simulation purposes
 		qr := queryResponse[v]
-		for i := 0; int64(i) < p.Survey.Query.CuttingFactor-1; i++ {
-			queryResponse[v] = append(queryResponse[v], qr...)
-		}
+		for i := 0; int64(i) < p.Survey.Query.CuttingFactor-1; i++ {queryResponse[v] = append(queryResponse[v], qr...)}
 		if p.Survey.Query.Proofs != 0 {
 			go func() {
 				start2 := time.Now()

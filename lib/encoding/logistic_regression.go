@@ -81,23 +81,16 @@ func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRe
 		// encrypt the aggregated approximation coefficients
 		encryptedApproxCoefficients, _ := ComputeEncryptedApproxCoefficients(aggregatedApproxCoefficientsInt, pubKey)
 
-		// pack the encrypted aggregated approximation coefficients (will need to unpack the result at the querier side)
+		nLevelPrevious := getNumberApproxCoefficients(d, -1)
 		for j := 0; int64(j) < lrParameters.K; j++ {
-			//JS: make it more efficient, keep variable for nLevelPrevious
 			nLevel := getNumberApproxCoefficients(d, j)
-			nLevelPrevious := getNumberApproxCoefficients(d, j-1)
 			for i := 0; i < nLevel; i++ {
+				// pack the encrypted aggregated approximation coefficients (will need to unpack the result at the querier side)
 				encryptedAggregatedApproxCoefficients[j*nLevelPrevious+i] = (*encryptedApproxCoefficients[j])[i]
-			}
-		}
-
-		// pack the aggregated approximation coefficients
-		for j := 0; int64(j) < lrParameters.K; j++ {
-			nLevel := getNumberApproxCoefficients(d, j)
-			nLevelPrevious := getNumberApproxCoefficients(d, j-1)
-			for i := 0; i < nLevel; i++ {
+				// pack the aggregated approximation coefficients
 				aggregatedApproxCoefficientsIntPacked[j*nLevelPrevious+i] = aggregatedApproxCoefficientsInt[j][i]
 			}
+			nLevelPrevious = nLevel
 		}
 	}
 
@@ -161,24 +154,18 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.
 		// encrypt the aggregated approximation coefficients
 		encryptedApproxCoefficients, encryptedApproxCoefficientsRs := ComputeEncryptedApproxCoefficients(aggregatedApproxCoefficientsInt, pubKey)
 
-		// pack the encrypted aggregated approximation coefficients (will need to unpack the result at the querier side)
+		nLevelPrevious := getNumberApproxCoefficients(d, -1)
 		for j := 0; int64(j) < lrParameters.K; j++ {
 			nLevel := getNumberApproxCoefficients(d, j)
-			nLevelPrevious := getNumberApproxCoefficients(d, j-1)
 			for i := 0; i < nLevel; i++ {
+				// pack the encrypted aggregated approximation coefficients (will need to unpack the result at the querier side)
 				encryptedAggregatedApproxCoefficients[j*nLevelPrevious+i].C = (*encryptedApproxCoefficients[j])[i]
 				encryptedAggregatedApproxCoefficients[j*nLevelPrevious+i].r = (encryptedApproxCoefficientsRs[j])[i]
 				encryptedAggregatedApproxCoefficientsOnlyCipher[j*nLevelPrevious+i] = (*encryptedApproxCoefficients[j])[i]
-			}
-		}
-
-		// pack the aggregated approximation coefficients
-		for j := 0; int64(j) < lrParameters.K; j++ {
-			nLevel := getNumberApproxCoefficients(d, j)
-			nLevelPrevious := getNumberApproxCoefficients(d, j-1)
-			for i := 0; i < nLevel; i++ {
+				// pack the aggregated approximation coefficients
 				aggregatedApproxCoefficientsIntPacked[j*nLevelPrevious+i] = aggregatedApproxCoefficientsInt[j][i]
 			}
+			nLevelPrevious = nLevel
 		}
 	}
 
@@ -224,23 +211,19 @@ func DecodeLogisticRegression(result []libunlynx.CipherText, privKey kyber.Scala
 
 	decryption := libunlynx.StartTimer("Decryption")
 	// decrypt the encrypted aggregated approximation coefficients
-	for i := 0; i < len(result); i++ {
-		approxCoefficientsPacked[i] = libunlynx.DecryptIntWithNeg(privKey, result[i])
-	}
+	for i := 0; i < len(result); i++ {approxCoefficientsPacked[i] = libunlynx.DecryptIntWithNeg(privKey, result[i])}
 	libunlynx.EndTimer(decryption)
 
 	gradientDescent := libunlynx.StartTimer("GradientDescent")
 	// unpack the aggregated approximation coefficients
 	approxCoefficients := make([][]int64, k)
+	nLevelPrevious := getNumberApproxCoefficients(d,-1)
 	for j := 0; int64(j) < k; j++ {
 		nLevel := getNumberApproxCoefficients(d, j)
-		nLevelPrevious := getNumberApproxCoefficients(d, j-1)
-
+		//nLevelPrevious := getNumberApproxCoefficients(d, j-1)
 		approxCoefficients[j] = make([]int64, nLevel)
-
-		for i := 0; i < nLevel; i++ {
-			approxCoefficients[j][i] = approxCoefficientsPacked[j*nLevelPrevious+i]
-		}
+		for i := 0; i < nLevel; i++ {approxCoefficients[j][i] = approxCoefficientsPacked[j*nLevelPrevious+i]}
+		nLevelPrevious = nLevel
 	}
 
 	log.LLvl2("Number of approximation coefficients:", len(approxCoefficientsPacked))
@@ -296,17 +279,12 @@ func CombinationsWithRepetition(n int64, k int64) int64 {
 // getTotalNumberApproxCoefficients returns the total number of approximation coefficients to compute for <d> features and approximation degree <k>
 func getTotalNumberApproxCoefficients(d int64, k int64) int {
 	count := 0
-	for j := 0; int64(j) < k; j++ {
-		count += int(math.Pow(float64(d+1), float64(j+1)))
-	}
-
+	for j := 0; int64(j) < k; j++ {count += getNumberApproxCoefficients(d, j)}
 	return count
 }
 
 // getNumberApproxCoefficients returns the number of approximation coefficients to compute for <d> features at approximation degree <level>
-func getNumberApproxCoefficients(d int64, level int) int {
-	return int(math.Pow(float64(d+1), float64(level+1)))
-}
+func getNumberApproxCoefficients(d int64, level int) int {return int(math.Pow(float64(d+1), float64(level+1)))}
 
 // ComputeDistinctApproxCoefficients computes the distinct coefficients of the approximated logistic regression cost function
 func ComputeDistinctApproxCoefficients(X []float64, y int64, k int64) [][]float64 {
@@ -358,9 +336,7 @@ func ComputeAllApproxCoefficients(X []float64, y int64, k int64) [][]float64 {
 
 	// case k <= 3 ok
 	approxCoefficients := make([][]float64, k)
-	for j := 0; int64(j) < k; j++ {
-		approxCoefficients[j] = make([]float64, int(math.Pow(float64(d+1), float64(j+1))))
-	}
+	for j := 0; int64(j) < k; j++ {approxCoefficients[j] = make([]float64, getNumberApproxCoefficients(int64(d), j))}
 
 	// initialisation: computation of the coefficients for k = 1
 	for s := 0; s <= d; s++ {
@@ -426,7 +402,7 @@ func AggregateApproxCoefficients(approxCoeffs [][][]float64) [][]float64 {
 	// store one array of int64 per approximation degree
 	aggregatedApproxCoeffs := make([][]float64, k)
 	for j := 0; j < k; j++ {
-		aggregatedApproxCoeffs[j] = make([]float64, int(math.Pow(float64(d+1), float64(j+1))))
+		aggregatedApproxCoeffs[j] = make([]float64, getNumberApproxCoefficients(int64(d), j))
 	}
 
 	// sum the coefficients for all data providers
