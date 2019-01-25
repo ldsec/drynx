@@ -2,7 +2,6 @@ package services
 
 import (
 	"github.com/dedis/kyber"
-	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/lib/proofs"
 	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/lib/tools"
@@ -298,7 +297,7 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 
 	// prepares the precomputation for shuffling
 	lineSize := 100 // + 1 is for the possible count attribute
-	survey.ShufflePrecompute = libunlynxshuffle.PrecomputationWritingForShuffling(false, gobFile, s.ServerIdentity().String(), libunlynx.SuiTe.Scalar().Pick(random.New()), recq.RosterServers.Aggregate, lineSize)
+	survey.ShufflePrecompute = libunlynxshuffle.PrecomputateAndWriteForShuffling(false, gobFile, s.ServerIdentity().String(), libunlynx.SuiTe.Scalar().Pick(random.New()), recq.RosterServers.Aggregate, lineSize)
 
 	// if is the root server: send query to all other servers and its data providers
 	if recq.IntraMessage == false {
