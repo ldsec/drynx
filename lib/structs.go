@@ -732,7 +732,6 @@ func ChooseOperation(operationName string, attributes string, queryMin, queryMax
 		operation.NbrOutput = 5
 		break
 	case "frequencyCount", "min", "max", "union", "inter":
-		//NbrOutput should be equal to (QueryMax - QueryMin + 1)
 		operation.NbrInput = 1
 		operation.NbrOutput = queryMax - queryMin + 1
 		break
@@ -741,7 +740,6 @@ func ChooseOperation(operationName string, attributes string, queryMin, queryMax
 		operation.NbrOutput = 1
 		break
 	case "lin_reg":
-		//NbrInput should be equal to d + 1, in the case of linear regression
 		operation.NbrInput = d + 1
 		operation.NbrOutput = (d*d + 5*d + 4) / 2
 		break

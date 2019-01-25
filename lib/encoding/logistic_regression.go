@@ -1293,8 +1293,6 @@ func LoadData(dataset string, filename string) ([][]float64, []int64) {
 		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
 	case "PCS":
 		dataString := ReadFile(filename, ",")
-
-		fmt.Println(dataString)
 		// remove the index column and the two last columns (unused)
 		dataString = RemoveColumnString(dataString, 11)
 		dataString = RemoveColumnString(dataString, 10)
@@ -1447,7 +1445,7 @@ func ReplaceString(matrix [][]string, old string, new string) [][]string {
 	return matrix
 }
 
-// PartitionDataset partitions a dataset with feature matrix X and label vector y into two datasets waccording to the given ratio
+// PartitionDataset partitions a dataset with feature matrix X and label vector y into two datasets according to the given ratio
 // optionally shuffles the dataset before partition
 func PartitionDataset(X [][]float64, y []int64, ratio float64, shuffle bool, seed int64) ([][]float64, []int64,
 	[][]float64, []int64) {
@@ -1483,43 +1481,48 @@ func PartitionDataset(X [][]float64, y []int64, ratio float64, shuffle bool, see
 	return XTrain, yTrain, XTest, yTest
 }
 
+//Partition the dataset while doing cross validation
+func PartitionDatasetCV(X [][]float64, y []int64, partition int64, kfold int64) ([][]float64, []int64, [][]float64, []int64) {
+	var XTrain [][]float64
+	var yTrain []int64
+	var XTest [][]float64
+	var yTest []int64
+
+	numRecords := int64(len(X))
+	numRecordsTest := int64(numRecords) / kfold
+	indicesTest := Range(partition * numRecordsTest, (partition+1) * numRecordsTest)
+	indicesTrain := append(Range(0, partition * numRecordsTest), Range((partition+1) * numRecordsTest, numRecords)...)
+
+	for i := 0; i < len(indicesTrain); i++ {
+		XTrain = append(XTrain, X[indicesTrain[i]])
+		yTrain = append(yTrain, y[indicesTrain[i]])
+	}
+
+	for i := 0; i < len(indicesTest); i++ {
+		XTest = append(XTest, X[indicesTest[i]])
+		yTest = append(yTest, y[indicesTest[i]])
+	}
+
+	return XTrain, yTrain, XTest, yTest
+}
+
 // GetDataForDataProvider returns data records from a file for a given data provider based on its id
 func GetDataForDataProvider(filename string, dataProviderIdentity network.ServerIdentity, NbrDps int64) [][]float64 {
-	/*var dataForDP [][]float64
-	var data [][]float64
-	dataProviderID := dataProviderIdentity.String()
-	dpID, err := strconv.Atoi(dataProviderID[len(dataProviderID)-2 : len(dataProviderID)-1])
-
-	csvFile, _ := os.Open(filename)
-	reader := csv.NewReader(bufio.NewReader(csvFile))
-	for {
-		line, error := reader.Read()
-		if error == io.EOF {break} else if error != nil {log.Fatal(error)}
-
-		var array []float64
-		for _, e := range line {
-			i, _ := strconv.ParseFloat(strings.TrimSpace(e), 64)
-			array = append(array, i)
-		}
-		data = append(data, array)
-	}
-
-	if err == nil {
-		for i := int64(0); i < int64(len(data)); i++ {if i%NbrDps == int64(dpID) {dataForDP = append(dataForDP, data[i])}}
-		fmt.Println("DP", dataProviderIdentity.String(), " has:", len(dataForDP), "records")
-	}
-
-	//data := String2DToFloat64(ReadFile(filename, ","))
-	return dataForDP*/
-
 	var dataForDP [][]float64
 	data := String2DToFloat64(ReadFile(filename, ","))
-
 	dataProviderID := dataProviderIdentity.String()
 	dpID, err := strconv.Atoi(dataProviderID[len(dataProviderID)-2 : len(dataProviderID)-1])
 
+	//log.LLvl1("NUMBER OF DPS",NbrDps)
+
 	if err == nil {
-		for i := int64(0); i < int64(len(data)); i++ {if i % NbrDps == int64(dpID) {dataForDP = append(dataForDP, data[i])}}
+		for i := int64(0); i < int64(len(data)); i++ {
+			log.LLvl1(i, dpID, NbrDps)
+			if i % NbrDps == int64(dpID) {
+				dataForDP = append(dataForDP, data[i])
+				log.LLvl1("TRUE", dataProviderIdentity.String())
+				}
+		}
 		fmt.Println("DP", dataProviderIdentity.String(), " has:", len(dataForDP), "records")
 	}
 

@@ -69,7 +69,7 @@ func TestServiceDrynx(t *testing.T) {
 
 	diffPri := false
 	diffPriOpti := false
-	nbrRows := int64(1)
+	//nbrRows := int64(1)
 	nbrServers := 3
 	nbrDPs := 5
 	nbrVNs := 0
@@ -96,9 +96,10 @@ func TestServiceDrynx(t *testing.T) {
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	elServers, elDPs, elVNs := generateNodes(local, nbrServers, nbrDPs, nbrVNs)
 
-	if proofs == 0 {
-		elVNs = nil
-	}
+	dpsUsed := make([]*network.ServerIdentity, len(elDPs.List))
+	for i := range elDPs.List {dpsUsed[i] = elDPs.List[i]}
+
+	if proofs == 0 {elVNs = nil}
 	defer local.CloseAll()
 
 	//Create dpToServers manually based on the group tomls
@@ -114,12 +115,14 @@ func TestServiceDrynx(t *testing.T) {
 		listBlocks = make([]*skipchain.SkipBlock, len(operationList))
 	}
 
+	lrParameters := libdrynx.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: 1e0, Lambda: 1.0, Step: 0.012, MaxIterations: 450}
+
 	for i, op := range operationList {
 		// data providers data generation
 		minGenerateData := int64(3)
 		maxGenerateData := int64(4)
 		dimensions := int64(5)
-		operation := libdrynx.ChooseOperation(op, "", minGenerateData, maxGenerateData, dimensions, cuttingFactor)
+		operation := libdrynx.ChooseOperation(op, "", minGenerateData, maxGenerateData, dimensions, cuttingFactor, lrParameters)
 
 		// define the number of groups for groupBy (1 per default)
 		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateDataMin: int64(minGenerateData), GenerateDataMax: int64(maxGenerateData)}
@@ -230,7 +233,8 @@ func TestServiceDrynx(t *testing.T) {
 		// query generation
 
 		surveyID := "query-" + op
-		sq := client.GenerateSurveyQuery(elServers, nil, dpToServers, idToPublic, surveyID, operation, ranges, ps, proofs, obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor)
+		sq := client.GenerateSurveyQuery(elServers, nil, dpToServers, idToPublic, surveyID, operation, ranges, ps, proofs,
+			obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor, dpsUsed)
 		if !libdrynx.CheckParameters(sq, diffPri) {
 			log.Fatal("Oups!")
 		}
@@ -413,19 +417,15 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	if proofs == 1 {
 		if obfuscation {
 			thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 1.0}
-		} else {
-			thresholdEntityProofsVerif = []float64{1.0, 1.0, 0.0, 1.0}
-		}
-	} else {
-		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
-	}
+		} else {thresholdEntityProofsVerif = []float64{1.0, 1.0, 0.0, 1.0}}
+	} else {thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}}
 
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	elServers, elDPs, elVNs := generateNodes(local, nbrServers, nbrDPs, nbrVNs)
 
-	if proofs == 0 {
-		elVNs = nil
-	}
+	lrParameters.NbrDps = int64(len(elDPs.List))
+
+	if proofs == 0 {elVNs = nil}
 	defer local.CloseAll()
 
 	dpToServers := repartitionDPs(elServers, elDPs, repartition)
@@ -445,10 +445,9 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		minGenerateData := int64(3)
 		maxGenerateData := int64(4)
 		dimensions := int64(5)
-		operation := libdrynx.ChooseOperation(op, minGenerateData, maxGenerateData, dimensions, cuttingFactor)
-		operation.LRParameters = lrParameters
+		operation := libdrynx.ChooseOperation(op, "", minGenerateData, maxGenerateData, dimensions, cuttingFactor, lrParameters)
 		// define the number of groups for groupBy (1 per default)
-		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1} /*, GenerateRows: nbrRows*/, GenerateDataMin: int64(minGenerateData), GenerateDataMax: int64(maxGenerateData)}
+		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateDataMin: int64(minGenerateData), GenerateDataMax: int64(maxGenerateData)}
 
 		// define the ranges for the input validation (1 range per data provider output)
 		var u, l int64
@@ -483,12 +482,8 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		ranges := make([]*[]int64, operation.NbrOutput)
 
 		if rangeProofs {
-			for i := range ranges {
-				ranges[i] = &[]int64{u, l}
-			}
-		} else {
-			ranges = nil
-		}
+			for i := range ranges {ranges[i] = &[]int64{u, l}}
+		} else {ranges = nil}
 
 		// choose if differential privacy or not, no diffP by default
 		// choosing the limit is done by drawing the curve (e.g. wolframalpha)
@@ -517,9 +512,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 				}
 				ps[i] = &temp
 			}
-		} else {
-			ps = nil
-		}
+		} else {ps = nil}
 
 		// QUERY RECAP
 		log.LLvl1("\n")
@@ -540,28 +533,18 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		//-----------
 
 		idToPublic := make(map[string]kyber.Point)
-		for _, v := range elServers.List {
-			idToPublic[v.String()] = v.Public
-		}
-		for _, v := range elDPs.List {
-			idToPublic[v.String()] = v.Public
-		}
+		for _, v := range elServers.List {idToPublic[v.String()] = v.Public}
+		for _, v := range elDPs.List {idToPublic[v.String()] = v.Public}
+		if proofs != 0 {for _, v := range elVNs.List {idToPublic[v.String()] = v.Public}}
 
-		if proofs != 0 {
-			for _, v := range elVNs.List {
-				idToPublic[v.String()] = v.Public
-			}
-		}
+		dpsUsed := make([]*network.ServerIdentity, len(elDPs.List))
+		for i := range elDPs.List {dpsUsed[i] = elDPs.List[i]}
 
 		// query generation
-
 		surveyID := "query-" + op
-
 		sq := client.GenerateSurveyQuery(elServers, elVNs, dpToServers, idToPublic, surveyID, operation, ranges, ps, proofs, obfuscation,
-			thresholdEntityProofsVerif, diffP, dpData, cuttingFactor)
-		if !libdrynx.CheckParameters(sq, diffPri) {
-			log.Fatal("Oups!")
-		}
+			thresholdEntityProofsVerif, diffP, dpData, cuttingFactor, dpsUsed)
+		if !libdrynx.CheckParameters(sq, diffPri) {log.Fatal("Oups!")}
 
 		var wg *sync.WaitGroup
 		if proofs != 0 {
@@ -573,9 +556,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 				defer wg.Done()
 
 				err := clientSkip.SendSurveyQueryToVNs(elVNs, &sq)
-				if err != nil {
-					log.Fatal("Error sending query to VNs:", err)
-				}
+				if err != nil {log.Fatal("Error sending query to VNs:", err)}
 			}(elVNs)
 			libunlynx.EndParallelize(wg)
 
@@ -635,21 +616,16 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	fmt.Println("F-score:  ", meanFscore)
 	fmt.Println("AUC:      ", meanAUC)
 	fmt.Println()
-	log.LLvl1("ICI")
 	//encoding.PrintForLatex(meanAccuracy, meanPrecision, meanRecall, meanFscore, meanAUC)
 
 	if proofs != 0 {
 		clientSkip := NewDrynxClient(elVNs.List[0], "test-skip")
-		for _, wg := range wgProofs {
-			libunlynx.EndParallelize(wg)
-		}
+		for _, wg := range wgProofs {libunlynx.EndParallelize(wg)}
 
 		// check genesis block
 		if len(listBlocks) > 2 {
 			sb, err := clientSkip.SendGetGenesis(elVNs.List[0])
-			if err != nil {
-				t.Fatal("Something wrong when fetching genesis block")
-			}
+			if err != nil {t.Fatal("Something wrong when fetching genesis block")}
 			assert.Equal(t, sb.Data, listBlocks[0].Data)
 
 			sb, err = clientSkip.SendGetLatestBlock(elVNs, listBlocks[0])
@@ -658,19 +634,13 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 			}
 
 			sbRepeat, err := clientSkip.SendGetLatestBlock(elVNs, listBlocks[2])
-			if err != nil {
-				t.Fatal("Something wrong when fetching the last block")
-			}
+			if err != nil {t.Fatal("Something wrong when fetching the last block")}
 
 			assert.Equal(t, sb.Data, sbRepeat.Data)
 		}
 
 		queryMean := false
-		for i, op := range operationList {
-			if op == "mean" && i == 1 {
-				queryMean = true
-			}
-		}
+		for i, op := range operationList {if op == "mean" && i == 1 {queryMean = true}}
 
 		// only check the blocks when testing all the operation (mean operation must be executed in 2nd place
 		if queryMean {
@@ -705,9 +675,9 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 	local2 := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// create servers and data providers
-	_, el, _ := local.GenTree(10, true)
+	_, elServers, _ := local.GenTree(10, true)
 	//data providers
-	_, el1, _ := local1.GenTree(10, true)
+	_, elDPs, _ := local1.GenTree(10, true)
 	//VNS
 	_, elVNs, _ := local2.GenTree(3, true)
 	//repartition
@@ -715,23 +685,26 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 	//dpRepartition := []int64{1}
 	dpToServers := make(map[string]*[]network.ServerIdentity, 0)
 	count := 0
-	for i, v := range el.List {
+	for i, v := range elDPs.List {
 		index := v.String()
 		value := make([]network.ServerIdentity, dpRepartition[i])
 		dpToServers[index] = &value
 		for j := range *dpToServers[index] {
-			val := el1.List[count]
+			val := elDPs.List[count]
 			count = count + 1
 			(*dpToServers[index])[j] = *val
 		}
 	}
+
+	dpsUsed := make([]*network.ServerIdentity, len(elDPs.List))
+	for i := range elDPs.List {dpsUsed[i] = elDPs.List[i]}
 
 	proofs := int64(0) // 0 is not proof, 1 is proofs, 2 is optimized proofs
 
 	defer local.CloseAll()
 
 	// Create a client (querier) for the service)
-	client := NewDrynxClient(el.List[0], strconv.Itoa(0))
+	client := NewDrynxClient(elServers.List[0], strconv.Itoa(0))
 
 	// ---- simulation parameters -----
 	numberTrials := 10
@@ -748,21 +721,21 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 	// to activate
 
 	// ---- PCS dataset parameters ----
-	dataset := "PCS"
+	/*dataset := "PCS"
 	ratio := 0.8
 	lrParameters := libdrynx.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: scale, Lambda: 1.0, Step: 0.1, MaxIterations: 25,
-		InitialWeights: []float64{0, 0, 0, 0, 0, 0, 0, 0, 0}}
+		InitialWeights: []float64{0, 0, 0, 0, 0, 0, 0, 0, 0}, NbrDps: int64(len(elDPs.List))}*/
 	//diffP = common.QueryDiffP{LapMean:0.0, LapScale:30.0, NoiseListSize: 90, Quanta: 0.0, Scale:scale, Limit:60}
 
 	// ---- Pima dataset parameters ----
-	/*
+
 		dataset := "Pima"
 		ratio := 0.75
-		lrParameters := common.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: scale, Lambda: 1.0,
+		lrParameters := libdrynx.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: scale, Lambda: 1.0,
 		Step: 0.1, MaxIterations: 200, InitialWeights: []float64{0.334781, -0.633628, 0.225721, -0.648192, 0.406207,
 		0.044424, -0.426648, 0.877499, -0.426819}}
-		diffP = common.QueryDiffP{LapMean:0.0, LapScale:30.0, NoiseListSize: 90, Quanta: 0.0, Scale:scale, Limit:60}
-	*/
+		//diffP = common.QueryDiffP{LapMean:0.0, LapScale:30.0, NoiseListSize: 90, Quanta: 0.0, Scale:scale, Limit:60}
+
 
 	// ---- SPECTF dataset parameters ----
 	/*
@@ -865,7 +838,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 		l := int64(6)
 
 		ranges := make([]*[]int64, operation.NbrOutput)
-		ps := make([]*[]libdrynx.PublishSignatureBytes, len(el.List))
+		ps := make([]*[]libdrynx.PublishSignatureBytes, len(elDPs.List))
 		for i := range ranges {
 			ranges[i] = &[]int64{u, l}
 		}
@@ -874,7 +847,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 
 		// signatures for Input Validation
 		if !(ranges == nil) {
-			for i := range el.List {
+			for i := range elServers.List {
 				temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
 				for j := 0; j < len(ranges); j++ {
 					temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
@@ -887,7 +860,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 
 		// query parameters recap
 		log.LLvl1("Service Drynx Test with suite: ", libunlynx.SuiTe.String(), " and query:")
-		log.LLvl1("SELECT ", operation, " ... FROM DP0, ..., DP", len(el1.List), " WHERE ... GROUP BY ", dpData.GroupByValues)
+		log.LLvl1("SELECT ", operation, " ... FROM DP0, ..., DP", len(elDPs.List), " WHERE ... GROUP BY ", dpData.GroupByValues)
 		if ranges == nil {
 			log.LLvl1("No input range validation")
 		} else {
@@ -898,10 +871,10 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 		}
 
 		idToPublic := make(map[string]kyber.Point)
-		for _, v := range el.List {
+		for _, v := range elServers.List {
 			idToPublic[v.String()] = v.Public
 		}
-		for _, v := range el1.List {
+		for _, v := range elDPs.List {
 			idToPublic[v.String()] = v.Public
 		}
 		for _, v := range elVNs.List {
@@ -911,7 +884,8 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 		thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 		// query sending + results receiving
 		cuttingFactor := int64(0)
-		sq := client.GenerateSurveyQuery(el, elVNs, dpToServers, idToPublic, uuid.NewV4().String(), operation, ranges, ps, proofs, false, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor)
+		sq := client.GenerateSurveyQuery(elServers, elVNs, dpToServers, idToPublic, uuid.NewV4().String(),
+			operation, ranges, ps, proofs, false, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor, dpsUsed)
 		grp, aggr, err := client.SendSurveyQuery(sq)
 
 		if err != nil {

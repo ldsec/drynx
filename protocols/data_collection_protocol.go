@@ -211,8 +211,8 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 			// set the number of records to the number of records owned by this data provider
 			lrParameters.NbrRecords = int64(len(datasFloat))
-			//Not sure
 			lrParameters.NbrFeatures = int64(len(datasFloat[0])-1)
+
 		} else {
 			// create dummy data
 			datasFloat = make([][]float64, lrParameters.NbrRecords)

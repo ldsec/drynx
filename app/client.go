@@ -216,17 +216,17 @@ func RunDrynx(c *cli.Context) error {
 	// Create a client (querier) for the service)
 	client := services.NewDrynxClient(elServers.List[0], "test-Drynx")
 
+	// ---- dataset parameters ----
+	dataset := "CSV"
+	//ratio := 0.8
+	scale := 1e0
+	lrParameters := libdrynx.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: scale, Lambda: 1.0, Step: 0.1, MaxIterations: 25,
+		InitialWeights: []float64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, NbrDps: int64(len(dpsUsed))}
+	//diffP = common.QueryDiffP{LapMean:0.0, LapScale:30.0, NoiseListSize: 90, Quanta: 0.0, Scale:scale, Limit:60}
 
-	//logistic regression parameters
-	precision := 1e2
-	// gradient descent parameters
-	lambda := 1.0
-	step := 0.001
-	maxIterations := 100
-	initialWeights := []float64{0.1, 0.2, 0.3, 0.4, 0.5}
-	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "/Users/jstephan/Desktop/temp/total22_final_99.csv", NbrRecords: 0,
-	NbrFeatures: 0, NbrDps: int64(len(dpsUsed)), Lambda: lambda, Step: step, MaxIterations: int64(maxIterations),
-	InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
+	// create the filenames
+	filePathTraining := "/Users/jstephan/Desktop/dataset_training.txt"
+	filePathTesting := "/Users/jstephan/Desktop/dataset_testing.txt"
 
 	for _, op := range operationList {
 
@@ -388,33 +388,18 @@ func RunDrynx(c *cli.Context) error {
 				clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1})
 			}
 		} else {
-
-			proofs := int64(0) // 0 is not proof, 1 is proofs, 2 is optimized proofs
 			// ---- simulation parameters -----
-			numberTrials := 10
-			initSeed := int64(5432109876)
+			numberTrials := 100
+			kfold := int64(10)
+			//initSeed := int64(rand.Intn(5432109876))
 			// 0: train together, test together
 			// 1: train together, test separate
 			// 2: train separate, test separate
 			standardisationMode := 2
-			scale := 1e0
 
 			// choose if differential privacy or not, no diffP by default
-			//diffP := common.QueryDiffP{LapMean:0.0, LapScale:30.0, NoiseListSize: 90, Quanta: 0.0, Scale:scale, Limit:60}
 			diffP := libdrynx.QueryDiffP{LapMean: 0.0, LapScale: 0.0, NoiseListSize: 0, Quanta: 0.0, Scale: 0}
 			// to activate
-
-			// ---- PCS dataset parameters ----
-			dataset := "CSV"
-			ratio := 0.8
-			lrParameters := libdrynx.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: scale, Lambda: 1.0, Step: 0.1, MaxIterations: 25,
-				InitialWeights: []float64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, NbrDps: int64(len(dpsUsed))}
-			//diffP = common.QueryDiffP{LapMean:0.0, LapScale:30.0, NoiseListSize: 90, Quanta: 0.0, Scale:scale, Limit:60}
-
-			// create the filenames
-			filepath := "/Users/jstephan/Desktop/temp/total22_final_99.csv"
-			filePathTraining := "/Users/jstephan/Desktop/dataset_training.txt"
-			filePathTesting := "/Users/jstephan/Desktop/dataset_testing.txt"
 
 			meanAccuracy := 0.0
 			meanPrecision := 0.0
@@ -423,123 +408,174 @@ func RunDrynx(c *cli.Context) error {
 			meanAUC := 0.0
 
 			log.LLvl1("Simulating homomorphism-aware logistic regression for the " + dataset + " dataset")
-			fmt.Println(filepath)
 
 			// load the dataset
-			X, y := encoding2.LoadData(dataset, filepath)
-
 			for i := 0; i < numberTrials; i++ {
+				filepath := "/Users/jstephan/Desktop/Swisscom/LogisticRegression/temp/total22_final_" + strconv.Itoa(i) + ".csv"
+				X, y := encoding2.LoadData(dataset, filepath)
+
 				log.LLvl1("Evaluating prediction on dataset for trial:", i)
 
 				// split into training and testing set
-				seed := initSeed + int64(i)
-				XTrain, yTrain, XTest, yTest := encoding2.PartitionDataset(X, y, ratio, true, seed)
+				//seed := initSeed + int64(i)
+				//seed := int64(rand.Intn(5432109876))
+				//XTrain, yTrain, XTest, yTest := encoding2.PartitionDataset(X, y, ratio, true, seed)
 
-				// write to file
-				trainingSet := encoding2.InsertColumn(XTrain, encoding2.Int64ToFloat641DArray(yTrain), 0)
-				testingSet := encoding2.InsertColumn(XTest, encoding2.Int64ToFloat641DArray(yTest), 0)
+				accuracy := 0.0
+				precision := 0.0
+				recall := 0.0
+				fscore := 0.0
+				auc := 0.0
 
-				fileTraining, _ := os.Create(filePathTraining)
-				fileTesting, _ := os.Create(filePathTesting)
+				for partition := int64(0); partition < kfold; partition++ {
+					XTrain, yTrain, XTest, yTest := encoding2.PartitionDatasetCV(X, y, partition, kfold)
 
-				for i := 0; i < len(trainingSet); i++ {
-					for j := 0; j < len(trainingSet[i])-1; j++ {
-						_, _ = fileTraining.WriteString(fmt.Sprint(trainingSet[i][j]) + ",")
-					}
-					_, _ = fileTraining.WriteString(fmt.Sprintln(trainingSet[i][len(trainingSet[i])-1]))
-				}
+					// write to file
+					trainingSet := encoding2.InsertColumn(XTrain, encoding2.Int64ToFloat641DArray(yTrain), 0)
+					testingSet := encoding2.InsertColumn(XTest, encoding2.Int64ToFloat641DArray(yTest), 0)
 
-				for i := 0; i < len(testingSet); i++ {
-					for j := 0; j < len(testingSet[i])-1; j++ {
-						_, _ = fileTesting.WriteString(fmt.Sprint(testingSet[i][j]) + ",")
-					}
-					_, _ = fileTesting.WriteString(fmt.Sprintln(testingSet[i][len(testingSet[i])-1]))
-				}
+					fileTraining, _ := os.Create(filePathTraining)
+					fileTesting, _ := os.Create(filePathTesting)
 
-				var means = make([]float64, 0)
-				var standardDeviations = make([]float64, 0)
-				if standardisationMode == 0 || standardisationMode == 1 {
-					means = encoding2.ComputeMeans(XTrain)
-					standardDeviations = encoding2.ComputeStandardDeviations(XTrain)
-				} else {
-					means = nil
-					standardDeviations = nil
-				}
-
-				lrParameters.FilePath = filePathTraining
-				lrParameters.NbrRecords = int64(len(trainingSet))
-				lrParameters.NbrFeatures = int64(len(XTrain[0]))
-				lrParameters.Means = means
-				lrParameters.StandardDeviations = standardDeviations
-				operation := libdrynx.Operation{NameOp: "logreg", LRParameters: lrParameters}
-
-				//dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{}, GenerateDataMin: minGenerateData, GenerateDataMax: maxGenerateData}
-				dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateDataMin: queryMin, GenerateDataMax: queryMax}
-
-				// define the ranges for the input validation (1 range per data provider output)
-				u := int64(2)
-				l := int64(6)
-
-				ranges := make([]*[]int64, operation.NbrOutput)
-				ps := make([]*[]libdrynx.PublishSignatureBytes, len(elServers.List))
-				for i := range ranges {ranges[i] = &[]int64{u, l}}
-				// if no input validation
-				//ranges = nil
-
-				// signatures for Input Validation
-				if !(ranges == nil) {
-					for i := range elServers.List {
-						temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
-						for j := 0; j < len(ranges); j++ {
-							temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+					for i := 0; i < len(trainingSet); i++ {
+						for j := 0; j < len(trainingSet[i])-1; j++ {
+							_, _ = fileTraining.WriteString(fmt.Sprint(trainingSet[i][j]) + ",")
 						}
-						ps[i] = &temp
+						_, _ = fileTraining.WriteString(fmt.Sprintln(trainingSet[i][len(trainingSet[i])-1]))
 					}
-				} else {ps = nil}
 
-				// query parameters recap
-				log.LLvl1("Service Drynx Test with suite: ", libunlynx.SuiTe.String(), " and query:")
-				log.LLvl1("SELECT ", operation, " ... FROM DP0, ..., DP", len(elDPs.List), " WHERE ... GROUP BY ", dpData.GroupByValues)
-				if ranges == nil {
-					log.LLvl1("No input range validation")
-				} else {log.LLvl1("with input range validation (", len(ps), " x ", len(*ps[0]), ")")}
-				if libdrynx.AddDiffP(diffP) {
-					log.LLvl1(" with differential privacy with epsilon=", diffP.LapMean, " and delta=", diffP.LapScale)
-				}
+					for i := 0; i < len(testingSet); i++ {
+						for j := 0; j < len(testingSet[i])-1; j++ {
+							_, _ = fileTesting.WriteString(fmt.Sprint(testingSet[i][j]) + ",")
+						}
+						_, _ = fileTesting.WriteString(fmt.Sprintln(testingSet[i][len(testingSet[i])-1]))
+					}
 
-				idToPublic := make(map[string]kyber.Point)
-				for _, v := range elServers.List {idToPublic[v.String()] = v.Public}
-				for _, v := range elDPs.List {idToPublic[v.String()] = v.Public}
-				if proofs != 0 {for _, v := range elVNs.List {idToPublic[v.String()] = v.Public}}
-
-				thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
-				// query sending + results receiving
-				cuttingFactor := int64(0)
-
-				surveyID := "query-" + op
-				sq := client.GenerateSurveyQuery(elServers, elVNs, dpToServers, idToPublic, surveyID, operation,
-					ranges, ps, proofs, obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor, dpsUsed)
-
-				_, aggr, _ := client.SendSurveyQuery(sq)
-
-				if len(*aggr) != 0 {
-					weights := (*aggr)[0]
-					if standardisationMode == 1 || standardisationMode == 2 {
+					var means = make([]float64, 0)
+					var standardDeviations = make([]float64, 0)
+					if standardisationMode == 0 || standardisationMode == 1 {
+						means = encoding2.ComputeMeans(XTrain)
+						standardDeviations = encoding2.ComputeStandardDeviations(XTrain)
+					} else {
 						means = nil
 						standardDeviations = nil
 					}
 
-					accuracy, precision, recall, fscore, auc := PerformanceEvaluation(weights, XTest, yTest, means, standardDeviations)
+					lrParameters.FilePath = filePathTraining
+					lrParameters.NbrRecords = int64(len(trainingSet))
+					lrParameters.NbrFeatures = int64(len(XTrain[0]))
+					lrParameters.Means = means
+					lrParameters.StandardDeviations = standardDeviations
+					operation := libdrynx.Operation{NameOp: "logreg", LRParameters: lrParameters}
 
-					meanAccuracy += accuracy
-					meanPrecision += precision
-					meanRecall += recall
-					meanFscore += fscore
-					meanAUC += auc
-				}
+					dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateDataMin: queryMin, GenerateDataMax: queryMax}
 
-				fileTraining.Close()
-				fileTesting.Close()
+					/*ranges := make([]*[]int64, operation.NbrOutput)
+					if rangeProofs {
+						//for i := range ranges {ranges[i] = &[]int64{u, l}}
+						for i := range ranges {ranges[i] = &[]int64{uSmall, lSmall}}
+					} else {ranges = nil}
+
+					// choose if differential privacy or not, no diffP by default
+					// choosing the limit is done by drawing the curve (e.g. wolframalpha)
+					diffP := libdrynx.QueryDiffP{}
+					if diffPri {
+						diffP = libdrynx.QueryDiffP{LapMean: 0, LapScale: 15.0, NoiseListSize: 1000, Limit: 65, Scale: 1, Optimized: diffPriOpti}
+					} else {
+						diffP = libdrynx.QueryDiffP{LapMean: 0.0, LapScale: 0.0, NoiseListSize: 0, Quanta: 0.0, Scale: 0, Optimized: diffPriOpti}
+					}
+
+					// DPs signatures for Input Range Validation
+					ps := make([]*[]libdrynx.PublishSignatureBytes, len(elServers.List))
+
+					if ranges != nil && u != int64(0) && l != int64(0) {
+						for i := range elServers.List {
+							temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
+							for j := 0; j < len(ranges); j++ {
+								temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+							}
+							ps[i] = &temp
+						}
+					} else {ps = nil}*/
+
+					// define the ranges for the input validation (1 range per data provider output)
+					u := int64(2)
+					l := int64(6)
+
+					ranges := make([]*[]int64, operation.NbrOutput)
+					ps := make([]*[]libdrynx.PublishSignatureBytes, len(elServers.List))
+					for i := range ranges {ranges[i] = &[]int64{u, l}}
+					// if no input validation
+					//ranges = nil
+
+					// signatures for Input Validation
+					if !(ranges == nil) {
+						for i := range elServers.List {
+							temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
+							for j := 0; j < len(ranges); j++ {
+								log.LLvl1("DOING THAT NOW!!!!!")
+								temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+							}
+							ps[i] = &temp
+						}
+					} else {ps = nil}
+
+					// query parameters recap
+					log.LLvl1("Service Drynx Test with suite: ", libunlynx.SuiTe.String(), " and query:")
+					log.LLvl1("SELECT ", operation, " ... FROM DP0, ..., DP", len(elDPs.List), " WHERE ... GROUP BY ", dpData.GroupByValues)
+					if ranges == nil {
+						log.LLvl1("No input range validation")
+					} else {log.LLvl1("with input range validation (", len(ps), " x ", len(*ps[0]), ")")}
+					if libdrynx.AddDiffP(diffP) {
+						log.LLvl1(" with differential privacy with epsilon=", diffP.LapMean, " and delta=", diffP.LapScale)
+					}
+
+					idToPublic := make(map[string]kyber.Point)
+					for _, v := range elServers.List {idToPublic[v.String()] = v.Public}
+					for _, v := range elDPs.List {idToPublic[v.String()] = v.Public}
+					if proofs != 0 {for _, v := range elVNs.List {idToPublic[v.String()] = v.Public}}
+
+					thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
+					// query sending + results receiving
+					cuttingFactor := int64(0)
+
+					surveyID := "query-" + op
+					sq := client.GenerateSurveyQuery(elServers, elVNs, dpToServers, idToPublic, surveyID, operation,
+						ranges, ps, proofs, obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor, dpsUsed)
+
+					_, aggr, _ := client.SendSurveyQuery(sq)
+
+					if len(*aggr) != 0 {
+						weights := (*aggr)[0]
+						if standardisationMode == 1 || standardisationMode == 2 {
+							means = nil
+							standardDeviations = nil
+						}
+
+						accuracyTemp, precisionTemp, recallTemp, fscoreTemp, aucTemp := PerformanceEvaluation(weights, XTest, yTest, means, standardDeviations)
+
+						accuracy += accuracyTemp
+						precision += precisionTemp
+						recall += recallTemp
+						fscore += fscoreTemp
+						auc += aucTemp
+						}
+
+						fileTraining.Close()
+						fileTesting.Close()
+					}
+
+				accuracy /= float64(kfold)
+				precision /= float64(kfold)
+				recall /= float64(kfold)
+				fscore /= float64(kfold)
+				auc /= float64(kfold)
+
+				meanAccuracy += accuracy
+				meanPrecision += precision
+				meanRecall += recall
+				meanFscore += fscore
+				meanAUC += auc
 			}
 
 			meanAccuracy /= float64(numberTrials)
