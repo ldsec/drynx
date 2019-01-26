@@ -752,6 +752,7 @@ func ChooseOperation(operationName string, attributes string, queryMin, queryMax
 		operation.NbrOutput = (d*d + 5*d + 4) / 2
 		break
 	case "logreg":
+		//NbrOutput is 2x because the output is 2 arrays of equal size GetNbrOutputLogReg(d, K)
 		operation.NbrOutput = 2 * GetNbrOutputLogReg(params.NbrFeatures, params.K)
 		break
 	default:

@@ -69,9 +69,7 @@ func EncodeLinearRegressionDimsWithProofs(input1 [][]int64, input2 []int64, pubK
 		}
 	}
 
-	for _, el := range input2 {
-		sumY += el
-	}
+	for _, el := range input2 {sumY += el}
 	sumYEncrypted, ry := libunlynx.EncryptIntGetR(pubKey, sumY)
 	CiphertextTuple = append(CiphertextTuple, *sumYEncrypted)
 	plaintextValues = append(plaintextValues, sumY)
