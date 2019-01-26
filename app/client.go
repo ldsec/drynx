@@ -1,8 +1,8 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/encoding"
 	"github.com/dedis/kyber/util/key"
@@ -70,9 +70,7 @@ func openGroupToml(tomlFileName string) (*onet.Roster, error) {
 	if err != nil {return nil, err}
 	el, err := app.ReadGroupDescToml(f)
 	if err != nil {return nil, err}
-	if len(el.Roster.List) <= 0 {
-		return nil, errors.New("Empty or invalid drynx group file:" + tomlFileName)
-	}
+	if len(el.Roster.List) <= 0 {return nil, errors.New("Empty or invalid drynx group file:" + tomlFileName)}
 	return el.Roster, nil
 }
 

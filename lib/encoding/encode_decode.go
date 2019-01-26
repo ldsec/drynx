@@ -56,19 +56,13 @@ func Encode(datas [][]int64, pubKey kyber.Point, signatures [][]libdrynx.Publish
 		dataYS := make([]int64, numbValues)
 		for j := 0; j < numbValues; j++ {
 			dataDimensions[j] = make([]int64, d-1)
-			for i := 0; i < d-1; i++ {
-				dataDimensions[j][i] = datas[i][j]
-			}
+			for i := 0; i < d-1; i++ {dataDimensions[j][i] = datas[i][j]}
 			dataYS[j] = datas[d-1][j]
 		}
 
 		if withProofs {
 			encryptedResponse, clearResponse, createPrf = EncodeLinearRegressionDimsWithProofs(dataDimensions, dataYS, pubKey, signatures, ranges)
-			encryptedResponse, clearResponse, createPrf = EncodeLinearRegressionDimsWithProofs(dataDimensions, dataYS, pubKey, signatures, ranges)
-
-		} else {
-			encryptedResponse, clearResponse = EncodeLinearRegressionDims(dataDimensions, dataYS, pubKey)
-		}
+		} else {encryptedResponse, clearResponse = EncodeLinearRegressionDims(dataDimensions, dataYS, pubKey)}
 		break
 	case "frequencyCount":
 		if withProofs {
