@@ -1499,15 +1499,9 @@ func GetDataForDataProvider(filename string, dataProviderIdentity network.Server
 	dataProviderID := dataProviderIdentity.String()
 	dpID, err := strconv.Atoi(dataProviderID[len(dataProviderID)-2 : len(dataProviderID)-1])
 
-	//log.LLvl1("NUMBER OF DPS",NbrDps)
-
 	if err == nil {
 		for i := int64(0); i < int64(len(data)); i++ {
-			log.LLvl1(i, dpID, NbrDps)
-			if i % NbrDps == int64(dpID) {
-				dataForDP = append(dataForDP, data[i])
-				log.LLvl1("TRUE", dataProviderIdentity.String())
-				}
+			if i % NbrDps == int64(dpID) {dataForDP = append(dataForDP, data[i])}
 		}
 		fmt.Println("DP", dataProviderIdentity.String(), " has:", len(dataForDP), "records")
 	}
