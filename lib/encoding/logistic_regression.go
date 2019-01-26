@@ -36,7 +36,7 @@ var PolyApproxCoefficients = MinAreaCoefficients
 // EncodeLogisticRegression computes and encrypts the data provider's coefficients for logistic regression
 func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point) ([]libunlynx.CipherText, []int64) {
 	d := lrParameters.NbrFeatures
-	n := getTotalNumberApproxCoefficients(d, lrParameters.K)
+	n := GetTotalNumberApproxCoefficients(d, lrParameters.K)
 
 	aggregatedApproxCoefficientsIntPacked := make([]int64, n)
 	encryptedAggregatedApproxCoefficients := make([]libunlynx.CipherText, n)
@@ -71,20 +71,17 @@ func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRe
 		for i := 0; i < len(XStandardised); i++ {
 			approxCoefficients[i] = ComputeAllApproxCoefficients(XStandardised[i], y[i], lrParameters.K)
 		}
-
 		// aggregate the approximation coefficients locally
 		aggregatedApproxCoefficients := AggregateApproxCoefficients(approxCoefficients)
-
 		// convert (and optionally scale) the aggregated approximation coefficients to int
 		aggregatedApproxCoefficientsInt := Float64ToInt642DArrayWithPrecision(aggregatedApproxCoefficients, lrParameters.PrecisionApproxCoefficients)
-
 		// encrypt the aggregated approximation coefficients
 		encryptedApproxCoefficients, _ := ComputeEncryptedApproxCoefficients(aggregatedApproxCoefficientsInt, pubKey)
 
 		nLevelPrevious := getNumberApproxCoefficients(d, -1)
-		for j := 0; int64(j) < lrParameters.K; j++ {
+		for j := int64(0); j < lrParameters.K; j++ {
 			nLevel := getNumberApproxCoefficients(d, j)
-			for i := 0; i < nLevel; i++ {
+			for i := int64(0); i < nLevel; i++ {
 				// pack the encrypted aggregated approximation coefficients (will need to unpack the result at the querier side)
 				encryptedAggregatedApproxCoefficients[j*nLevelPrevious+i] = (*encryptedApproxCoefficients[j])[i]
 				// pack the aggregated approximation coefficients
@@ -96,7 +93,6 @@ func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRe
 
 	log.LLvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
 	log.LLvl2("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
-
 	return encryptedAggregatedApproxCoefficients, aggregatedApproxCoefficientsIntPacked
 }
 
@@ -109,7 +105,7 @@ type CipherAndRandom struct {
 // EncodeLogisticRegressionWithProofs computes and encrypts the data provider's coefficients for logistic regression with range proofs
 func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
 	d := lrParameters.NbrFeatures
-	n := getTotalNumberApproxCoefficients(d, lrParameters.K)
+	n := GetTotalNumberApproxCoefficients(d, lrParameters.K)
 
 	aggregatedApproxCoefficientsIntPacked := make([]int64, n)
 	encryptedAggregatedApproxCoefficients := make([]CipherAndRandom, n)
@@ -147,17 +143,15 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.
 
 		// aggregate the approximation coefficients locally
 		aggregatedApproxCoefficients := AggregateApproxCoefficients(approxCoefficients)
-
 		// convert (and optionally scale) the aggregated approximation coefficients to int
 		aggregatedApproxCoefficientsInt := Float64ToInt642DArrayWithPrecision(aggregatedApproxCoefficients, lrParameters.PrecisionApproxCoefficients)
-
 		// encrypt the aggregated approximation coefficients
 		encryptedApproxCoefficients, encryptedApproxCoefficientsRs := ComputeEncryptedApproxCoefficients(aggregatedApproxCoefficientsInt, pubKey)
 
 		nLevelPrevious := getNumberApproxCoefficients(d, -1)
-		for j := 0; int64(j) < lrParameters.K; j++ {
+		for j := int64(0); j < lrParameters.K; j++ {
 			nLevel := getNumberApproxCoefficients(d, j)
-			for i := 0; i < nLevel; i++ {
+			for i := int64(0); i < nLevel; i++ {
 				// pack the encrypted aggregated approximation coefficients (will need to unpack the result at the querier side)
 				encryptedAggregatedApproxCoefficients[j*nLevelPrevious+i].C = (*encryptedApproxCoefficients[j])[i]
 				encryptedAggregatedApproxCoefficients[j*nLevelPrevious+i].r = (encryptedApproxCoefficientsRs[j])[i]
@@ -187,7 +181,6 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.
 		}
 	}
 	libunlynx.EndParallelize(wg1)
-
 	return encryptedAggregatedApproxCoefficientsOnlyCipher, aggregatedApproxCoefficientsIntPacked, createRangeProof
 }
 
@@ -218,11 +211,11 @@ func DecodeLogisticRegression(result []libunlynx.CipherText, privKey kyber.Scala
 	// unpack the aggregated approximation coefficients
 	approxCoefficients := make([][]int64, k)
 	nLevelPrevious := getNumberApproxCoefficients(d,-1)
-	for j := 0; int64(j) < k; j++ {
+	for j := int64(0); j < k; j++ {
 		nLevel := getNumberApproxCoefficients(d, j)
 		//nLevelPrevious := getNumberApproxCoefficients(d, j-1)
 		approxCoefficients[j] = make([]int64, nLevel)
-		for i := 0; i < nLevel; i++ {approxCoefficients[j][i] = approxCoefficientsPacked[j*nLevelPrevious+i]}
+		for i := int64(0); i < nLevel; i++ {approxCoefficients[j][i] = approxCoefficientsPacked[j*nLevelPrevious+i]}
 		nLevelPrevious = nLevel
 	}
 
@@ -277,14 +270,14 @@ func CombinationsWithRepetition(n int64, k int64) int64 {
 }
 
 // getTotalNumberApproxCoefficients returns the total number of approximation coefficients to compute for <d> features and approximation degree <k>
-func getTotalNumberApproxCoefficients(d int64, k int64) int {
-	count := 0
-	for j := 0; int64(j) < k; j++ {count += getNumberApproxCoefficients(d, j)}
+func GetTotalNumberApproxCoefficients(d int64, k int64) int64 {
+	count := int64(0)
+	for j := int64(0); j < k; j++ {count += getNumberApproxCoefficients(d, j)}
 	return count
 }
 
 // getNumberApproxCoefficients returns the number of approximation coefficients to compute for <d> features at approximation degree <level>
-func getNumberApproxCoefficients(d int64, level int) int {return int(math.Pow(float64(d+1), float64(level+1)))}
+func getNumberApproxCoefficients(d int64, level int64) int64 {return int64(math.Pow(float64(d+1), float64(level+1)))}
 
 // ComputeDistinctApproxCoefficients computes the distinct coefficients of the approximated logistic regression cost function
 func ComputeDistinctApproxCoefficients(X []float64, y int64, k int64) [][]float64 {
@@ -298,9 +291,7 @@ func ComputeDistinctApproxCoefficients(X []float64, y int64, k int64) [][]float6
 	}
 
 	// initialisation: computation of the coefficients for k = 1
-	for s := 0; s <= d; s++ {
-		approxCoeffs[0][s] = X[s] * (2*float64(y) - 1)
-	}
+	for s := 0; s <= d; s++ {approxCoeffs[0][s] = X[s] * (2*float64(y) - 1)}
 
 	// computation of the coefficients for k >= 2
 	for j := int64(1); j < k; j++ {
@@ -336,7 +327,7 @@ func ComputeAllApproxCoefficients(X []float64, y int64, k int64) [][]float64 {
 
 	// case k <= 3 ok
 	approxCoefficients := make([][]float64, k)
-	for j := 0; int64(j) < k; j++ {approxCoefficients[j] = make([]float64, getNumberApproxCoefficients(int64(d), j))}
+	for j := int64(0); j < k; j++ {approxCoefficients[j] = make([]float64, getNumberApproxCoefficients(int64(d), j))}
 
 	// initialisation: computation of the coefficients for k = 1
 	for s := 0; s <= d; s++ {
@@ -401,7 +392,7 @@ func AggregateApproxCoefficients(approxCoeffs [][][]float64) [][]float64 {
 
 	// store one array of int64 per approximation degree
 	aggregatedApproxCoeffs := make([][]float64, k)
-	for j := 0; j < k; j++ {
+	for j := int64(0); j < int64(k); j++ {
 		aggregatedApproxCoeffs[j] = make([]float64, getNumberApproxCoefficients(int64(d), j))
 	}
 
@@ -1435,13 +1426,8 @@ func RemoveColumnString(matrix [][]string, idx int) [][]string {
 // ReplaceString replaces all strings <old> by string <new> in the given string matrix
 func ReplaceString(matrix [][]string, old string, new string) [][]string {
 	for i := 0; i < len(matrix); i++ {
-		for j := 0; j < len(matrix[i]); j++ {
-			if matrix[i][j] == old {
-				matrix[i][j] = new
-			}
-		}
+		for j := 0; j < len(matrix[i]); j++ {if matrix[i][j] == old {matrix[i][j] = new}}
 	}
-
 	return matrix
 }
 

@@ -172,9 +172,7 @@ func Decode(ciphers []libunlynx.CipherText, secKey kyber.Scalar, operation libdr
 	case "frequencyCount":
 		freqCount := DecodeFreqCount(ciphers, secKey)
 		result := make([]float64, len(freqCount))
-		for i := range result {
-			result[i] = float64(freqCount[i])
-		}
+		for i := range result {result[i] = float64(freqCount[i])}
 		return result
 	case "min":
 		return []float64{float64(DecodeMin(ciphers, operation.QueryMin, secKey))}
@@ -183,46 +181,34 @@ func Decode(ciphers []libunlynx.CipherText, secKey kyber.Scalar, operation libdr
 	case "bool_AND":
 		boolResult := DecodeBitAND(ciphers[0], secKey)
 		result := float64(0)
-		if boolResult {
-			result = float64(1)
-		}
+		if boolResult {result = float64(1)}
 		return []float64{result}
 	case "bool_OR":
 		boolResult := DecodeBitOR(ciphers[0], secKey)
 		result := float64(0)
-		if boolResult {
-			result = float64(1)
-		}
+		if boolResult {result = float64(1)}
 		return []float64{result}
 	case "union":
 		unionSet := DecodeUnion(ciphers, secKey)
 		result := make([]float64, len(unionSet))
-		for i := range result {
-			result[i] = float64(unionSet[i])
-		}
+		for i := range result {result[i] = float64(unionSet[i])}
 		return result
 	case "inter":
 		interSet := DecodeInter(ciphers, secKey)
 		result := make([]float64, len(interSet))
-		for i := range result {
-			result[i] = float64(interSet[i])
-		}
+		for i := range result {result[i] = float64(interSet[i])}
 		return result
 	case "logreg":
 		lrParameters := operation.LRParameters
 		return DecodeLogisticRegression(ciphers, secKey, lrParameters)
-
 	case "MLeval":
 		return []float64{DecodeModelEvaluation(ciphers, secKey)}
-
 	default:
 		log.Info("no such operation:", operation)
 		cv := libunlynx.CipherVector(ciphers)
 		temp := libunlynx.DecryptIntVectorWithNeg(secKey, &cv)
 		result := make([]float64, len(temp))
-		for i, v := range temp {
-			result[i] = float64(v)
-		}
+		for i, v := range temp {result[i] = float64(v)}
 		return result
 	}
 }

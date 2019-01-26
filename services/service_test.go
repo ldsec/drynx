@@ -12,7 +12,6 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/satori/go.uuid.v1"
-	"math"
 	"os"
 	"strconv"
 	"sync"
@@ -34,28 +33,6 @@ func generateNodes(local *onet.LocalTest, nbrServers int, nbrDPs int, nbrVNs int
 	rosterVNs := onet.NewRoster(elVNs)
 
 	return rosterServers, rosterDPs, rosterVNs
-}
-
-// how to repartition the DPs: each server as a list of data providers
-func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []int64) map[string]*[]network.ServerIdentity {
-	if len(dpRepartition) > len(elServers.List) {
-		log.Fatal("Cannot assign the DPs to", len(dpRepartition), "servers (", len(elServers.List), ")")
-	}
-
-	dpToServers := make(map[string]*[]network.ServerIdentity, 0)
-	count := 0
-	for i, v := range elServers.List {
-		index := v.String()
-		value := make([]network.ServerIdentity, dpRepartition[i])
-		dpToServers[index] = &value
-		for j := range *dpToServers[index] {
-			val := elDPs.List[count]
-			count = count + 1
-			(*dpToServers[index])[j] = *val
-		}
-	}
-
-	return dpToServers
 }
 
 //______________________________________________________________________________________________________________________
@@ -103,7 +80,7 @@ func TestServiceDrynx(t *testing.T) {
 	defer local.CloseAll()
 
 	//Create dpToServers manually based on the group tomls
-	dpToServers := repartitionDPs(elServers, elDPs, repartition)
+	dpToServers := RepartitionDPs(elServers, elDPs, repartition)
 
 	// Create a client (querier) for the service)
 	client := NewDrynxClient(elServers.List[0], "test-Drynx")
@@ -160,12 +137,8 @@ func TestServiceDrynx(t *testing.T) {
 		ranges := make([]*[]int64, operation.NbrOutput)
 
 		if rangeProofs {
-			for i := range ranges {
-				ranges[i] = &[]int64{u, l}
-			}
-		} else {
-			ranges = nil
-		}
+			for i := range ranges {ranges[i] = &[]int64{u, l}}
+		} else {ranges = nil}
 
 		// choose if differential privacy or not, no diffP by default
 		// choosing the limit is done by drawing the curve (e.g. wolframalpha)
@@ -428,7 +401,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	if proofs == 0 {elVNs = nil}
 	defer local.CloseAll()
 
-	dpToServers := repartitionDPs(elServers, elDPs, repartition)
+	dpToServers := RepartitionDPs(elServers, elDPs, repartition)
 
 	// Create a client (querier) for the service)
 	client := NewDrynxClient(elServers.List[0], "test-Drynx")
@@ -935,53 +908,4 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 	fmt.Println()
 
 	encoding.PrintForLatex(meanAccuracy, meanPrecision, meanRecall, meanFscore, meanAUC)
-}
-
-func PerformanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, means []float64,
-	standardDeviations []float64) (float64,
-	float64, float64, float64, float64) {
-	fmt.Println("weights:", weights)
-
-	if means != nil && standardDeviations != nil &&
-		len(means) > 0 && len(standardDeviations) > 0 {
-		// using global means and standard deviations, if given
-		log.Lvl1("Standardising the testing set with global means and standard deviations...")
-		XTest = encoding.StandardiseWith(XTest, means, standardDeviations)
-	} else {
-		// using local means and standard deviations, if not given
-		log.Lvl1("Standardising the testing set with local means and standard deviations...")
-		XTest = encoding.Standardise(XTest)
-	}
-
-	predictions := make([]int64, len(XTest))
-	predictionsFloat := make([]float64, len(XTest))
-	for i := range XTest {
-		predictionsFloat[i] = encoding.PredictInClear(XTest[i], weights)
-		predictions[i] = int64(math.Round(predictionsFloat[i]))
-		fmt.Printf("%12.8e %1d %2d\n", predictionsFloat[i], predictions[i], yTest[i])
-	}
-
-
-	accuracy := encoding.Accuracy(predictions, yTest)
-	precision := encoding.Precision(predictions, yTest)
-	recall := encoding.Recall(predictions, yTest)
-	fscore := encoding.Fscore(predictions, yTest)
-	auc := encoding.AreaUnderCurve(predictionsFloat, yTest)
-
-	fmt.Println("accuracy: ", accuracy)
-	fmt.Println("precision:", precision)
-	fmt.Println("recall:   ", recall)
-	fmt.Println("F-score:  ", fscore)
-	fmt.Println("AUC:      ", auc)
-	fmt.Println()
-
-	//encoding.PlotROC(predictionsFloat, yTest)
-
-	// compute the TPR (True Positive Rate) and FPR (False Positive Rate)
-	//tpr, fpr := encoding.ComputeTPRFPR(predictionsFloat, yTest)
-	// save to file (for plotting the ROC)
-	//encoding.SaveToFile(tpr, "../data/tpr.txt")
-	//encoding.SaveToFile(fpr, "../data/fpr.txt")
-
-	return accuracy, precision, recall, fscore, auc
 }

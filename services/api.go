@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/key"
 	"github.com/dedis/onet"
@@ -9,6 +10,7 @@ import (
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
+	"math"
 	"time"
 )
 
@@ -45,6 +47,66 @@ func NewDrynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 	limit := int64(10000)
 	libdrynx.CreateDecryptionTable(limit, newClient.public, newClient.private)
 	return newClient
+}
+
+
+// how to repartition the DPs: each server as a list of data providers
+func RepartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []int64) map[string]*[]network.ServerIdentity {
+	if len(dpRepartition) > len(elServers.List) {
+		log.Fatal("Cannot assign the DPs to", len(dpRepartition), "servers (", len(elServers.List), ")")
+	}
+
+	dpToServers := make(map[string]*[]network.ServerIdentity, 0)
+	count := 0
+	for i, v := range elServers.List {
+		index := v.String()
+		value := make([]network.ServerIdentity, dpRepartition[i])
+		dpToServers[index] = &value
+		for j := range *dpToServers[index] {
+			val := elDPs.List[count]
+			count = count + 1
+			(*dpToServers[index])[j] = *val
+		}
+	}
+	return dpToServers
+}
+
+// Evaluate the performance of (trained) logistic regression model
+func PerformanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, means []float64,
+	standardDeviations []float64) (float64,
+	float64, float64, float64, float64) {
+	fmt.Println("weights:", weights)
+
+	if means != nil && standardDeviations != nil &&
+		len(means) > 0 && len(standardDeviations) > 0 {
+		// using global means and standard deviations, if given
+		log.Lvl1("Standardising the testing set with global means and standard deviations...")
+		XTest = encoding.StandardiseWith(XTest, means, standardDeviations)
+	} else {
+		// using local means and standard deviations, if not given
+		log.Lvl1("Standardising the testing set with local means and standard deviations...")
+		XTest = encoding.Standardise(XTest)
+	}
+
+	predictions := make([]int64, len(XTest))
+	predictionsFloat := make([]float64, len(XTest))
+	for i := range XTest {
+		predictionsFloat[i] = encoding.PredictInClear(XTest[i], weights)
+		predictions[i] = int64(math.Round(predictionsFloat[i]))
+	}
+
+	accuracy := encoding.Accuracy(predictions, yTest)
+	precision := encoding.Precision(predictions, yTest)
+	recall := encoding.Recall(predictions, yTest)
+	fscore := encoding.Fscore(predictions, yTest)
+	auc := encoding.AreaUnderCurve(predictionsFloat, yTest)
+
+	fmt.Println("accuracy: ", accuracy)
+	fmt.Println("precision:", precision)
+	fmt.Println("recall:   ", recall)
+	fmt.Println("F-score:  ", fscore)
+	fmt.Println("AUC:      ", auc)
+	return accuracy, precision, recall, fscore, auc
 }
 
 // Send Query

@@ -10,6 +10,7 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
+	"math"
 	"sync"
 	"time"
 )
@@ -701,6 +702,13 @@ func UpdateDB(db *bbolt.DB, bucketName string, key string, value []byte) {
 	}
 }
 
+//Based on GetTotalNumberApproxCoefficients in logistic_regression.go
+func GetNbrOutputLogReg(d int64, k int64) int64 {
+	count := int64(0)
+	for j := int64(0); j < k; j++ {count += int64(math.Pow(float64(d+1), float64(j+1)))}
+	return 2 * count
+}
+
 // ChooseOperation sets the parameters according to the operation
 func ChooseOperation(operationName string, attributes string, queryMin, queryMax, d int64, cuttingFactor int64,
 	params LogisticRegressionParameters) Operation {
@@ -744,13 +752,12 @@ func ChooseOperation(operationName string, attributes string, queryMin, queryMax
 		operation.NbrOutput = (d*d + 5*d + 4) / 2
 		break
 	case "logreg":
+		operation.NbrOutput = 2 * GetNbrOutputLogReg(params.NbrFeatures, params.K)
 		break
 	default:
 		log.Fatal("Operation: <", operation, "> does not exist")
 	}
 
-	if cuttingFactor != 0 {
-		operation.NbrOutput *= cuttingFactor
-	}
+	if cuttingFactor != 0 {operation.NbrOutput *= cuttingFactor}
 	return operation
 }

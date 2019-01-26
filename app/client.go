@@ -13,10 +13,8 @@ import (
 	"github.com/lca1/drynx/lib"
 	encoding2 "github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/drynx/services"
-	//services2 "github.com/lca1/drynx/services"
 	"github.com/lca1/unlynx/lib"
 	"gopkg.in/urfave/cli.v1"
-	"math"
 	"os"
 	"os/exec"
 	"strconv"
@@ -61,9 +59,7 @@ func NonInteractiveSetup(c *cli.Context) error {
 	group := app.NewGroupToml(server)
 
 	err := conf.Save(privateTomlPath)
-	if err != nil {
-		log.Fatal(err)
-	}
+	if err != nil {log.Fatal(err)}
 
 	group.Save(publicTomlPath)
 	return nil
@@ -71,13 +67,9 @@ func NonInteractiveSetup(c *cli.Context) error {
 
 func openGroupToml(tomlFileName string) (*onet.Roster, error) {
 	f, err := os.Open(tomlFileName)
-	if err != nil {
-		return nil, err
-	}
+	if err != nil {return nil, err}
 	el, err := app.ReadGroupDescToml(f)
-	if err != nil {
-		return nil, err
-	}
+	if err != nil {return nil, err}
 	if len(el.Roster.List) <= 0 {
 		return nil, errors.New("Empty or invalid drynx group file:" + tomlFileName)
 	}
@@ -85,65 +77,6 @@ func openGroupToml(tomlFileName string) (*onet.Roster, error) {
 }
 
 // BEGIN CLIENT: QUERIER ----------
-// how to repartition the DPs: each server as a list of data providers
-func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []int64) map[string]*[]network.ServerIdentity {
-	if len(dpRepartition) > len(elServers.List) {
-		log.Fatal("Cannot assign the DPs to", len(dpRepartition), "servers (", len(elServers.List), ")")
-	}
-
-	dpToServers := make(map[string]*[]network.ServerIdentity, 0)
-	count := 0
-	for i, v := range elServers.List {
-		index := v.String()
-		value := make([]network.ServerIdentity, dpRepartition[i])
-		dpToServers[index] = &value
-		for j := range *dpToServers[index] {
-			val := elDPs.List[count]
-			count = count + 1
-			(*dpToServers[index])[j] = *val
-		}
-	}
-	return dpToServers
-}
-
-func PerformanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, means []float64,
-	standardDeviations []float64) (float64,
-	float64, float64, float64, float64) {
-	fmt.Println("weights:", weights)
-
-	if means != nil && standardDeviations != nil &&
-		len(means) > 0 && len(standardDeviations) > 0 {
-		// using global means and standard deviations, if given
-		log.Lvl1("Standardising the testing set with global means and standard deviations...")
-		XTest = encoding2.StandardiseWith(XTest, means, standardDeviations)
-	} else {
-		// using local means and standard deviations, if not given
-		log.Lvl1("Standardising the testing set with local means and standard deviations...")
-		XTest = encoding2.Standardise(XTest)
-	}
-
-	predictions := make([]int64, len(XTest))
-	predictionsFloat := make([]float64, len(XTest))
-	for i := range XTest {
-		predictionsFloat[i] = encoding2.PredictInClear(XTest[i], weights)
-		predictions[i] = int64(math.Round(predictionsFloat[i]))
-		fmt.Printf("%12.8e %1d %2d\n", predictionsFloat[i], predictions[i], yTest[i])
-	}
-
-	//encoding.PointToStringHex()
-	accuracy := encoding2.Accuracy(predictions, yTest)
-	precision := encoding2.Precision(predictions, yTest)
-	recall := encoding2.Recall(predictions, yTest)
-	fscore := encoding2.Fscore(predictions, yTest)
-	auc := encoding2.AreaUnderCurve(predictionsFloat, yTest)
-
-	fmt.Println("accuracy: ", accuracy)
-	fmt.Println("precision:", precision)
-	fmt.Println("recall:   ", recall)
-	fmt.Println("F-score:  ", fscore)
-	fmt.Println("AUC:      ", auc)
-	return accuracy, precision, recall, fscore, auc
-}
 
 // RunDrynx runs a query
 func RunDrynx(c *cli.Context) error {
@@ -156,7 +89,6 @@ func RunDrynx(c *cli.Context) error {
 
 	rangeProofs := false
 	obfuscation := false
-
 	diffPri := false
 	diffPriOpti := false
 	//repartition: server1: 1 DP, server2: 1 DP, server3: 1 DP
@@ -211,7 +143,7 @@ func RunDrynx(c *cli.Context) error {
 		}
 	} else {thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}}
 
-	dpToServers := repartitionDPs(elServers, elDPs, repartition)
+	dpToServers := services.RepartitionDPs(elServers, elDPs, repartition)
 
 	// Create a client (querier) for the service)
 	client := services.NewDrynxClient(elServers.List[0], "test-Drynx")
@@ -244,9 +176,8 @@ func RunDrynx(c *cli.Context) error {
 			dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateDataMin: queryMin, GenerateDataMax: queryMax}
 
 			// define the ranges for the input validation (1 range per data provider output)
-			var u, l int64
-			uSmall := int64(16)
-			lSmall := int64(7)
+			u := int64(16)
+			l := int64(7)
 
 			if rangeProofs {
 				if op == "bool_AND" || op == "bool_OR" || op == "min" || op == "max" || op == "union" || op == "inter" {
@@ -266,8 +197,7 @@ func RunDrynx(c *cli.Context) error {
 
 			ranges := make([]*[]int64, operation.NbrOutput)
 			if rangeProofs {
-				//for i := range ranges {ranges[i] = &[]int64{u, l}}
-				for i := range ranges {ranges[i] = &[]int64{uSmall, lSmall}}
+				for i := range ranges {ranges[i] = &[]int64{u, l}}
 			} else {ranges = nil}
 
 			// choose if differential privacy or not, no diffP by default
@@ -552,7 +482,7 @@ func RunDrynx(c *cli.Context) error {
 							standardDeviations = nil
 						}
 
-						accuracyTemp, precisionTemp, recallTemp, fscoreTemp, aucTemp := PerformanceEvaluation(weights, XTest, yTest, means, standardDeviations)
+						accuracyTemp, precisionTemp, recallTemp, fscoreTemp, aucTemp := services.PerformanceEvaluation(weights, XTest, yTest, means, standardDeviations)
 
 						accuracy += accuracyTemp
 						precision += precisionTemp
