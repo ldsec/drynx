@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/dedis/cothority/skipchain"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/encoding"
 	"github.com/dedis/kyber/util/key"
@@ -136,6 +137,16 @@ func RunDrynx(c *cli.Context) error {
 
 	// Create a client (querier) for the service)
 	client := services.NewDrynxClient(elServers.List[0], "test-Drynx")
+
+	numberTrials := 1
+	kfold := int64(4)
+
+	var wgProofs []*sync.WaitGroup
+	var listBlocks []*skipchain.SkipBlock
+	if proofs != int64(0) {
+		wgProofs = make([]*sync.WaitGroup, kfold * int64(numberTrials))
+		listBlocks = make([]*skipchain.SkipBlock,  kfold * int64(numberTrials))
+	}
 
 	// ---- dataset parameters ----
 	dataset := "CSV"
@@ -291,8 +302,6 @@ func RunDrynx(c *cli.Context) error {
 			}
 		} else {
 			// ---- simulation parameters -----
-			numberTrials := 1
-			kfold := int64(5)
 			//initSeed := int64(rand.Intn(5432109876))
 			// 0: train together, test together
 			// 1: train together, test separate
@@ -312,12 +321,12 @@ func RunDrynx(c *cli.Context) error {
 			log.LLvl1("Simulating homomorphism-aware logistic regression for the " + dataset + " dataset")
 
 			// load the dataset
-			for i := 0; i < numberTrials; i++ {
-				filepath := "/Users/jstephan/Desktop/Swisscom/LogisticRegression/temp/total22_final_" + strconv.Itoa(i) + ".csv"
+			for trial := 0; trial < numberTrials; trial++ {
+				filepath := "/Users/jstephan/Desktop/Swisscom/LogisticRegression/temp/total22_final_" + strconv.Itoa(trial) + ".csv"
 				//filepath := "/Users/jstephan/Desktop/Swisscom/LogisticRegression/temp/total22_final_"
 				X, y := encoding2.LoadData(dataset, filepath)
 
-				log.LLvl1("Evaluating prediction on dataset for trial:", i)
+				log.LLvl1("Evaluating prediction on dataset for trial:", trial)
 
 				// split into training and testing set
 				//seed := initSeed + int64(i)
@@ -427,19 +436,25 @@ func RunDrynx(c *cli.Context) error {
 						}(elVNs)
 						libunlynx.EndParallelize(wg)
 
-						wg = libunlynx.StartParallelize(1)
+						/*wg = libunlynx.StartParallelize(1)
 						go func(si *network.ServerIdentity) {
 							defer wg.Done()
 							block, err := clientSkip.SendEndVerification(si, surveyID)
 							if err != nil {log.Fatal("Error starting the 'waiting' threads:", err)}
 							log.LLvl1("Inserted new block", block)
-						}(elVNs.List[0])
-						////ADDDDDEDDDD THISSSS
-						//libunlynx.EndParallelize(wg)
+						}(elVNs.List[0])*/
+
+						proofIndex := int(int64(trial) * kfold + partition)
+						wgProofs[proofIndex] = libunlynx.StartParallelize(1)
+						go func(index int, si *network.ServerIdentity) {
+							defer wgProofs[index].Done()
+							sb, err := clientSkip.SendEndVerification(si, surveyID)
+							if err != nil {log.Fatal("Error starting the 'waiting' threads:", err)}
+							listBlocks[index] = sb
+						}(proofIndex, elVNs.List[0])
 					}
 
 					_, aggr, _ := client.SendSurveyQuery(sq)
-
 					if len(*aggr) != 0 {
 						weights := (*aggr)[0]
 						if standardisationMode == 1 || standardisationMode == 2 {
@@ -456,17 +471,9 @@ func RunDrynx(c *cli.Context) error {
 						auc += aucTemp
 						}
 
-						if proofs != 0 {
-							clientSkip := services.NewDrynxClient(elVNs.List[0], "close-DB")
-							libunlynx.EndParallelize(wg)
-							// close DB
-							clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1})
-						}
-
 						fileTraining.Close()
 						fileTesting.Close()
 					}
-
 
 
 				accuracy /= float64(kfold)
@@ -482,14 +489,6 @@ func RunDrynx(c *cli.Context) error {
 				meanAUC += auc
 			}
 
-
-			/*if proofs != 0 {
-				clientSkip := services.NewDrynxClient(elVNs.List[0], "close-DB")
-				libunlynx.EndParallelize(wg)
-				// close DB
-				clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1})
-			}*/
-
 			meanAccuracy /= float64(numberTrials)
 			meanPrecision /= float64(numberTrials)
 			meanRecall /= float64(numberTrials)
@@ -502,6 +501,26 @@ func RunDrynx(c *cli.Context) error {
 			fmt.Println("recall:   ", meanRecall)
 			fmt.Println("F-score:  ", meanFscore)
 			fmt.Println("AUC:      ", meanAUC)
+
+
+			if proofs != 0 {
+				clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip")
+				for _, wg := range wgProofs {libunlynx.EndParallelize(wg)}
+
+				// check genesis block
+				if len(listBlocks) > 2 {
+					_, err := clientSkip.SendGetGenesis(elVNs.List[0])
+					if err != nil {log.LLvl1("Something wrong when fetching genesis block")}
+
+					_, err = clientSkip.SendGetLatestBlock(elVNs, listBlocks[0])
+					if err != nil {log.LLvl1("Something wrong when fetching the last block")}
+
+					_, err = clientSkip.SendGetLatestBlock(elVNs, listBlocks[2])
+					if err != nil {log.LLvl1("Something wrong when fetching the last block")}
+				}
+				// close DB
+				clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1})
+			}
 		}
 
 	}
