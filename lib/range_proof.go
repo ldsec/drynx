@@ -491,9 +491,7 @@ func RangeProofListVerification(rangeProofsList RangeProofList, ranges []*[]int6
 		}(i)
 	}
 	libunlynx.EndParallelize(wg)
-	for _, v := range allRes {
-		result = result && v
-	}
+	for _, v := range allRes {result = result && v}
 	return result
 }
 

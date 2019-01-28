@@ -706,7 +706,7 @@ func UpdateDB(db *bbolt.DB, bucketName string, key string, value []byte) {
 func GetNbrOutputLogReg(d int64, k int64) int64 {
 	count := int64(0)
 	for j := int64(0); j < k; j++ {count += int64(math.Pow(float64(d+1), float64(j+1)))}
-	return 2 * count
+	return count
 }
 
 // ChooseOperation sets the parameters according to the operation
@@ -752,8 +752,7 @@ func ChooseOperation(operationName string, attributes string, queryMin, queryMax
 		operation.NbrOutput = (d*d + 5*d + 4) / 2
 		break
 	case "logreg":
-		//NbrOutput is 2x because the output is 2 arrays of equal size GetNbrOutputLogReg(d, K)
-		operation.NbrOutput = 2 * GetNbrOutputLogReg(params.NbrFeatures, params.K)
+		operation.NbrOutput = GetNbrOutputLogReg(params.NbrFeatures, params.K)
 		break
 	default:
 		log.Fatal("Operation: <", operation, "> does not exist")

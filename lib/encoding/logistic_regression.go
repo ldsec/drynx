@@ -1503,10 +1503,24 @@ func GetDataForDataProvider(filename string, dataProviderIdentity network.Server
 		for i := int64(0); i < int64(len(data)); i++ {
 			if i % NbrDps == int64(dpID) {dataForDP = append(dataForDP, data[i])}
 		}
-		fmt.Println("DP", dataProviderIdentity.String(), " has:", len(dataForDP), "records")
+		fmt.Println("DP", dpID, " has:", len(dataForDP), "records")
 	}
 
 	return dataForDP
+}
+
+
+// GetDataForDataProvider returns data records from a file for a given data provider based on its id
+func GetDataForDataProviderWithoutSplitting (filename string, dataProviderIdentity network.ServerIdentity) [][]float64 {
+	var dpData [][]float64
+	dataProviderID := dataProviderIdentity.String()
+	dpID, err := strconv.Atoi(dataProviderID[len(dataProviderID)-2 : len(dataProviderID)-1])
+
+	if err == nil {
+		dpData = String2DToFloat64(ReadFile(filename + "_" + strconv.Itoa(dpID) + ".csv", ","))
+		fmt.Println("DP", dpID, " has:", len(dpData), "records")
+	}
+	return dpData
 }
 
 // -----------------

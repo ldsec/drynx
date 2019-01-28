@@ -208,6 +208,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 			// note: GetDataForDataProvider(...) business only for testing purpose
 			dataProviderID := p.TreeNode().ServerIdentity
 			datasFloat = encoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.FilePath, *dataProviderID, lrParameters.NbrDps)
+			//datasFloat = encoding.GetDataForDataProviderWithoutSplitting(p.Survey.Query.Operation.LRParameters.FilePath, *dataProviderID)
 
 			// set the number of records to the number of records owned by this data provider
 			lrParameters.NbrRecords = int64(len(datasFloat))
