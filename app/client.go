@@ -142,9 +142,12 @@ func RunDrynx(c *cli.Context) error {
 	kfold := int64(4)
 
 	var wgProofs []*sync.WaitGroup
+	//var wgQuery []*sync.WaitGroup
 	var listBlocks []*skipchain.SkipBlock
-	if proofs != int64(0) {
-		wgProofs = make([]*sync.WaitGroup, kfold * int64(numberTrials))
+	if proofs == int64(1) {
+		//wgQuery = make([]*sync.WaitGroup, kfold * int64(numberTrials))
+		//wgProofs = make([]*sync.WaitGroup, kfold * int64(numberTrials))
+		wgProofs = make([]*sync.WaitGroup, 1)
 		listBlocks = make([]*skipchain.SkipBlock,  kfold * int64(numberTrials))
 	}
 
@@ -234,7 +237,7 @@ func RunDrynx(c *cli.Context) error {
 			idToPublic := make(map[string]kyber.Point)
 			for _, v := range elServers.List {idToPublic[v.String()] = v.Public}
 			for _, v := range elDPs.List {idToPublic[v.String()] = v.Public}
-			if proofs != 0 {for _, v := range elVNs.List {idToPublic[v.String()] = v.Public}}
+			if proofs == int64(1) {for _, v := range elVNs.List {idToPublic[v.String()] = v.Public}}
 
 			// query generation
 			surveyID := "query-" + op
@@ -243,7 +246,7 @@ func RunDrynx(c *cli.Context) error {
 			if !libdrynx.CheckParameters(sq, diffPri) {log.Fatal("Oups!")}
 
 			var wg *sync.WaitGroup
-			if proofs != 0 {
+			if proofs == int64(1) {
 				// send query to the skipchain and 'wait' for all proofs' verification to be done
 				clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip-"+op)
 
@@ -274,9 +277,7 @@ func RunDrynx(c *cli.Context) error {
 			} else {
 				for i, v := range *aggr {
 					log.LLvl1((*grp)[i], ": ", v)
-					for j := range v {
-						queryAnswer += strconv.FormatFloat(v[j], 'f', 6, 64) + ", "
-					}
+					for j := range v {queryAnswer += strconv.FormatFloat(v[j], 'f', 6, 64) + ", "}
 				}
 				queryAnswer = strings.TrimSuffix(queryAnswer, ", ")
 			}
@@ -290,11 +291,9 @@ func RunDrynx(c *cli.Context) error {
 			cmd := exec.Command("python", scriptPopulateDB, dbLocation, queryAnswer, strconv.Itoa(int(time.Now().Unix())),
 				operation.NameOp, queryAttributes, dpsQuery, queryMinString, queryMaxString)
 			_, err := cmd.Output()
-			if err != nil {
-				println(err.Error())
-			}
+			if err != nil {println(err.Error())}
 
-			if proofs != 0 {
+			if proofs == int64(1) {
 				clientSkip := services.NewDrynxClient(elVNs.List[0], "close-DB")
 				libunlynx.EndParallelize(wg)
 				// close DB
@@ -323,7 +322,6 @@ func RunDrynx(c *cli.Context) error {
 			// load the dataset
 			for trial := 0; trial < numberTrials; trial++ {
 				filepath := "/Users/jstephan/Desktop/Swisscom/LogisticRegression/temp/total22_final_" + strconv.Itoa(trial) + ".csv"
-				//filepath := "/Users/jstephan/Desktop/Swisscom/LogisticRegression/temp/total22_final_"
 				X, y := encoding2.LoadData(dataset, filepath)
 
 				log.LLvl1("Evaluating prediction on dataset for trial:", trial)
@@ -336,7 +334,7 @@ func RunDrynx(c *cli.Context) error {
 				accuracy := 0.0
 				precision := 0.0
 				recall := 0.0
-				fscore := 0.0
+				fScore := 0.0
 				auc := 0.0
 
 				for partition := int64(0); partition < kfold; partition++ {
@@ -413,7 +411,7 @@ func RunDrynx(c *cli.Context) error {
 					idToPublic := make(map[string]kyber.Point)
 					for _, v := range elServers.List {idToPublic[v.String()] = v.Public}
 					for _, v := range elDPs.List {idToPublic[v.String()] = v.Public}
-					if proofs != 0 {for _, v := range elVNs.List {idToPublic[v.String()] = v.Public}}
+					if proofs == int64(1) {for _, v := range elVNs.List {idToPublic[v.String()] = v.Public}}
 
 					thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 					// query sending + results receiving
@@ -423,11 +421,12 @@ func RunDrynx(c *cli.Context) error {
 					sq := client.GenerateSurveyQuery(elServers, elVNs, dpToServers, idToPublic, surveyID, operation,
 						ranges, ps, proofs, false, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor, dpsUsed)
 
-					var wg *sync.WaitGroup
-					if proofs != 0 {
+					if proofs == int64(1) {
 						// send query to the skipchain and 'wait' for all proofs' verification to be done
 						clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip-"+op)
 
+
+						var wg *sync.WaitGroup
 						wg = libunlynx.StartParallelize(1)
 						go func(elVNs *onet.Roster) {
 							defer wg.Done()
@@ -436,15 +435,16 @@ func RunDrynx(c *cli.Context) error {
 						}(elVNs)
 						libunlynx.EndParallelize(wg)
 
-						/*wg = libunlynx.StartParallelize(1)
-						go func(si *network.ServerIdentity) {
-							defer wg.Done()
-							block, err := clientSkip.SendEndVerification(si, surveyID)
-							if err != nil {log.Fatal("Error starting the 'waiting' threads:", err)}
-							log.LLvl1("Inserted new block", block)
-						}(elVNs.List[0])*/
-
 						proofIndex := int(int64(trial) * kfold + partition)
+
+						/*wgQuery[proofIndex] = libunlynx.StartParallelize(1)
+						go func(index int, elVNs *onet.Roster) {
+							defer wgQuery[index].Done()
+							err := clientSkip.SendSurveyQueryToVNs(elVNs, &sq)
+							if err != nil {log.Fatal("Error sending query to VNs:", err)}
+						}(proofIndex, elVNs)
+						libunlynx.EndParallelize(wgQuery[proofIndex])*/
+
 						wgProofs[proofIndex] = libunlynx.StartParallelize(1)
 						go func(index int, si *network.ServerIdentity) {
 							defer wgProofs[index].Done()
@@ -455,6 +455,7 @@ func RunDrynx(c *cli.Context) error {
 					}
 
 					_, aggr, _ := client.SendSurveyQuery(sq)
+					log.LLvl1("HELLOOOOOOO")
 					if len(*aggr) != 0 {
 						weights := (*aggr)[0]
 						if standardisationMode == 1 || standardisationMode == 2 {
@@ -467,25 +468,27 @@ func RunDrynx(c *cli.Context) error {
 						accuracy += accuracyTemp
 						precision += precisionTemp
 						recall += recallTemp
-						fscore += fscoreTemp
+						fScore += fscoreTemp
 						auc += aucTemp
 						}
 
 						fileTraining.Close()
 						fileTesting.Close()
+
+						partition = kfold
 					}
 
 
 				accuracy /= float64(kfold)
 				precision /= float64(kfold)
 				recall /= float64(kfold)
-				fscore /= float64(kfold)
+				fScore /= float64(kfold)
 				auc /= float64(kfold)
 
 				meanAccuracy += accuracy
 				meanPrecision += precision
 				meanRecall += recall
-				meanFscore += fscore
+				meanFscore += fScore
 				meanAUC += auc
 			}
 
@@ -503,26 +506,15 @@ func RunDrynx(c *cli.Context) error {
 			fmt.Println("AUC:      ", meanAUC)
 
 
-			if proofs != 0 {
+			if proofs == int64(1) {
 				clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip")
 				for _, wg := range wgProofs {libunlynx.EndParallelize(wg)}
 
-				// check genesis block
-				if len(listBlocks) > 2 {
-					_, err := clientSkip.SendGetGenesis(elVNs.List[0])
-					if err != nil {log.LLvl1("Something wrong when fetching genesis block")}
-
-					_, err = clientSkip.SendGetLatestBlock(elVNs, listBlocks[0])
-					if err != nil {log.LLvl1("Something wrong when fetching the last block")}
-
-					_, err = clientSkip.SendGetLatestBlock(elVNs, listBlocks[2])
-					if err != nil {log.LLvl1("Something wrong when fetching the last block")}
-				}
+				log.LLvl1("NOPE PLEASE")
 				// close DB
 				clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1})
 			}
 		}
-
 	}
 	log.LLvl1("All done.")
 	return nil

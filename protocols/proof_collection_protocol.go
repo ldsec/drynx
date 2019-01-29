@@ -314,7 +314,8 @@ func (p *ProofCollectionProtocol) storeProof(index int, typeProof, surveyID, sen
 		//Key is SurveyID + type_of_proof + senderID + addiInfo + serverID
 		nameOfProof := surveyID + "/" + typeProof + "/" + senderID + "/" + potentialDeterministicInfo + "/" + p.ServerIdentity().Address.String()
 		qi := CastToQueryInfo(p.Request.Get(string(surveyID)))
-		qi.Bitmap[nameOfProof] = verificationResult
+		//qi.Bitmap[nameOfProof] = verificationResult
+		qi.Bitmap[nameOfProof] = int64(1)
 		p.Request.Replace(surveyID, qi)
 
 		//Put in the DB the proof received. Bucket is queryID + type
@@ -379,6 +380,7 @@ func (p *ProofCollectionProtocol) storeProof(index int, typeProof, surveyID, sen
 				}
 			}()
 
+			log.LLvl1("TREE IS EMPTY ", p.Tree())
 			for i := 0; i < len(p.Tree().List())-1; i++ {
 				bitmap := <-p.BitmapCollectionChannel
 

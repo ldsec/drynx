@@ -679,6 +679,7 @@ func QueryToProofsNbrs(q SurveyQuery) []int64 {
 
 	// key switching
 	prfKS := nbrServers
+
 	return []int64{int64(prfRange), int64(prfShuffling), int64(prfAggr), int64(prfObf), int64(prfKS)}
 }
 

@@ -325,18 +325,14 @@ func ComputeDistinctApproxCoefficients(X []float64, y int64, k int64) [][]float6
 func ComputeAllApproxCoefficients(X []float64, y int64, k int64) [][]float64 {
 	d := len(X) - 1 // the dimension of the data
 
-	// case k <= 3 ok
 	approxCoefficients := make([][]float64, k)
 	for j := int64(0); j < k; j++ {approxCoefficients[j] = make([]float64, getNumberApproxCoefficients(int64(d), j))}
 
-	// initialisation: computation of the coefficients for k = 1
-	for s := 0; s <= d; s++ {
-		approxCoefficients[0][s] = X[s] * (2*float64(y) - 1)
-	}
+	// initialisation: computation of the coefficients for j = 1
+	for s := 0; s <= d; s++ {approxCoefficients[0][s] = X[s] * (2*float64(y) - 1)}
 
-	// computation of the coefficients for k >= 2
+	// computation of the coefficients for j >= 2
 	for j := int64(2); int64(j) <= k; j++ {
-		//nbCoefficientsForK := len(approxCoefficients[j])
 		ypart := float64(y - y*int64(math.Pow(-1, float64(j))) - 1)
 
 		// generate all indices combinations with repetitions, order matters, of size j (cartesian product)
@@ -346,14 +342,10 @@ func ComputeAllApproxCoefficients(X []float64, y int64, k int64) [][]float64 {
 		for ri := 0; ri < len(combinations); ri++ {
 			XProduct := 1.0
 			combination := combinations[ri]
-			for i := 0; i < len(combination); i++ {
-				XProduct *= X[int(combination[i])]
-			}
-
+			for i := 0; i < len(combination); i++ {XProduct *= X[int(combination[i])]}
 			approxCoefficients[j-1][ri] = ypart * XProduct
 		}
 	}
-
 	return approxCoefficients
 }
 
@@ -376,7 +368,6 @@ func ComputeEncryptedApproxCoefficients(approxCoefficients [][]int64, pubKey kyb
 			encryptedApproxCoefficients[j] = tmpCv
 			encryptedApproxCoefficientsRs[j] = tmpRs
 		}(j)
-
 	}
 	libunlynx.EndParallelize(wg)
 
@@ -401,37 +392,7 @@ func AggregateApproxCoefficients(approxCoeffs [][][]float64) [][]float64 {
 		// sum the coefficients for the k different approximation degrees
 		for j := 0; j < k; j++ {
 			nbCoeffs := len(approxCoeffs[i][j])
-			for ri := 0; ri < nbCoeffs; ri++ {
-				aggregatedApproxCoeffs[j][ri] += approxCoeffs[i][j][ri]
-			}
-		}
-	}
-	return aggregatedApproxCoeffs
-}
-
-// ONLY FOR TESTING PURPOSES
-
-// AggregateApproxCoefficientsInts aggregates the approximation coefficients of the data providers by summing the corresponding approximation
-// coefficients for all indices, and this for the k different approximation degrees
-func AggregateApproxCoefficientsInts(approxCoeffs [][][]int64) [][]float64 {
-	nbDataProviders := len(approxCoeffs)
-	k := len(approxCoeffs[0])        // the logarithm function approximation degree
-	d := len(approxCoeffs[0][0]) - 1 // the dimension of the data
-
-	// store one array of int64 per approximation degree
-	aggregatedApproxCoeffs := make([][]float64, k)
-	for j := 0; j < k; j++ {
-		aggregatedApproxCoeffs[j] = make([]float64, int(math.Pow(float64(d+1), float64(j+1))))
-	}
-
-	// sum the coefficients for all data providers
-	for i := 0; i < nbDataProviders; i++ {
-		// sum the coefficients for the k different approximation degrees
-		for j := 0; j < k; j++ {
-			nbCoeffs := len(approxCoeffs[i][j])
-			for ri := 0; ri < nbCoeffs; ri++ {
-				aggregatedApproxCoeffs[j][ri] += float64(approxCoeffs[i][j][ri])
-			}
+			for ri := 0; ri < nbCoeffs; ri++ {aggregatedApproxCoeffs[j][ri] += approxCoeffs[i][j][ri]}
 		}
 	}
 	return aggregatedApproxCoeffs
@@ -1039,48 +1000,28 @@ func InsertColumn(matrix [][]float64, column []float64, idx int) [][]float64 {
 // returns the number of true positives in the prediction
 func truePositive(predicted []int64, actual []int64) int {
 	count := 0
-	for i := range predicted {
-		if predicted[i] == 1 && actual[i] == 1 {
-			count++
-		}
-	}
-
+	for i := range predicted {if predicted[i] == 1 && actual[i] == 1 {count++}}
 	return count
 }
 
 // returns the number of true negatives in the prediction
 func trueNegative(predicted []int64, actual []int64) int {
 	count := 0
-	for i := range predicted {
-		if predicted[i] == 0 && actual[i] == 0 {
-			count++
-		}
-	}
-
+	for i := range predicted {if predicted[i] == 0 && actual[i] == 0 {count++}}
 	return count
 }
 
 // returns the number of false positive in the prediction
 func falsePositive(predicted []int64, actual []int64) int {
 	count := 0
-	for i := range predicted {
-		if predicted[i] == 1 && actual[i] == 0 {
-			count++
-		}
-	}
-
+	for i := range predicted {if predicted[i] == 1 && actual[i] == 0 {count++}}
 	return count
 }
 
 // returns the number of false negatives in the prediction
 func falseNegative(predicted []int64, actual []int64) int {
 	count := 0
-	for i := range predicted {
-		if predicted[i] == 0 && actual[i] == 1 {
-			count++
-		}
-	}
-
+	for i := range predicted {if predicted[i] == 0 && actual[i] == 1 {count++}}
 	return count
 }
 
@@ -1093,15 +1034,13 @@ func Accuracy(predicted []int64, actual []int64) float64 {
 // Precision computes the precision of the prediction
 // i.e. Precision = TP / (TP + FP)
 func Precision(predicted []int64, actual []int64) float64 {
-	return float64(truePositive(predicted, actual)) / float64(truePositive(predicted,
-		actual)+falsePositive(predicted, actual))
+	return float64(truePositive(predicted, actual)) / float64(truePositive(predicted, actual)+falsePositive(predicted, actual))
 }
 
 // Recall computes the recall of the prediction
 // i.e. Recall = TP / (TP + FN)
 func Recall(predicted []int64, actual []int64) float64 {
-	return float64(truePositive(predicted, actual)) / float64(truePositive(predicted,
-		actual)+falseNegative(predicted, actual))
+	return float64(truePositive(predicted, actual)) / float64(truePositive(predicted, actual)+falseNegative(predicted, actual))
 }
 
 // Fscore computes the F-score of the prediction
@@ -1121,11 +1060,7 @@ func ComputeTPRFPR(predicted []float64, actual []int64) ([]float64, []float64) {
 
 	// convert the 0/1 labels to true/false labels
 	labels := make([]bool, len(actual))
-	for i := 0; i < len(actual); i++ {
-		if actual[i] == 0 {
-			labels[i] = true
-		}
-	}
+	for i := 0; i < len(actual); i++ {if actual[i] == 0 {labels[i] = true}}
 
 	// sort the predicted values in increasing order together with their true labels (ROC() function requirement)
 	sortedPredictions := make([]float64, len(predicted))
@@ -1142,10 +1077,8 @@ func ComputeTPRFPR(predicted []float64, actual []int64) ([]float64, []float64) {
 func AreaUnderCurve(predicted []float64, actual []int64) float64 {
 	// compute the TPR (True Positive Rate) and FPR (False Positive Rate)
 	tpr, fpr := ComputeTPRFPR(predicted, actual)
-
 	// compute the Area Under Curve (AUC)
 	auc := integrate.Trapezoidal(fpr, tpr)
-
 	return auc
 }
 
