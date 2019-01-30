@@ -573,9 +573,9 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 	labelColumn := 0
 
 	// features
-	X := RemoveColumn(data, labelColumn)
+	X := RemoveColumn(data, int64(labelColumn))
 	// labels
-	y := Float64ToInt641DArray(GetColumn(data, labelColumn))
+	y := Float64ToInt641DArray(GetColumn(data, int64(labelColumn)))
 
 	XStandardised := Standardise(X)
 	XStandardised = Augment(XStandardised)
@@ -635,9 +635,9 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 	labelColumn := 0
 
 	// features
-	X := RemoveColumn(data, labelColumn)
+	X := RemoveColumn(data, int64(labelColumn))
 	// labels
-	y := Float64ToInt641DArray(GetColumn(data, labelColumn))
+	y := Float64ToInt641DArray(GetColumn(data, int64(labelColumn)))
 
 	XStandardised := Standardise(X)
 	XStandardised = Augment(XStandardised)

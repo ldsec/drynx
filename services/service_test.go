@@ -136,9 +136,7 @@ func TestServiceDrynx(t *testing.T) {
 
 		ranges := make([]*[]int64, operation.NbrOutput)
 
-		if rangeProofs {
-			for i := range ranges {ranges[i] = &[]int64{u, l}}
-		} else {ranges = nil}
+		if rangeProofs {for i := range ranges {ranges[i] = &[]int64{u, l}}} else {ranges = nil}
 
 		// choose if differential privacy or not, no diffP by default
 		// choosing the limit is done by drawing the curve (e.g. wolframalpha)
@@ -167,9 +165,7 @@ func TestServiceDrynx(t *testing.T) {
 				}
 				ps[i] = &temp
 			}
-		} else {
-			ps = nil
-		}
+		} else {ps = nil}
 
 		// QUERY RECAP
 		log.LLvl1("\n")
@@ -190,27 +186,15 @@ func TestServiceDrynx(t *testing.T) {
 		//-----------
 
 		idToPublic := make(map[string]kyber.Point)
-		for _, v := range elServers.List {
-			idToPublic[v.String()] = v.Public
-		}
-		for _, v := range elDPs.List {
-			idToPublic[v.String()] = v.Public
-		}
-
-		if proofs != 0 {
-			for _, v := range elVNs.List {
-				idToPublic[v.String()] = v.Public
-			}
-		}
+		for _, v := range elServers.List {idToPublic[v.String()] = v.Public}
+		for _, v := range elDPs.List {idToPublic[v.String()] = v.Public}
+		if proofs != 0 {for _, v := range elVNs.List {idToPublic[v.String()] = v.Public}}
 
 		// query generation
-
 		surveyID := "query-" + op
 		sq := client.GenerateSurveyQuery(elServers, nil, dpToServers, idToPublic, surveyID, operation, ranges, ps, proofs,
 			obfuscation, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor, dpsUsed)
-		if !libdrynx.CheckParameters(sq, diffPri) {
-			log.Fatal("Oups!")
-		}
+		if !libdrynx.CheckParameters(sq, diffPri) {log.Fatal("Oups!")}
 
 		var wg *sync.WaitGroup
 		if proofs != 0 {
@@ -220,22 +204,16 @@ func TestServiceDrynx(t *testing.T) {
 			wg = libunlynx.StartParallelize(1)
 			go func(elVNs *onet.Roster) {
 				defer wg.Done()
-
 				err := clientSkip.SendSurveyQueryToVNs(elVNs, &sq)
-				if err != nil {
-					log.Fatal("Error sending query to VNs:", err)
-				}
+				if err != nil {log.Fatal("Error sending query to VNs:", err)}
 			}(elVNs)
 			libunlynx.EndParallelize(wg)
 
 			wgProofs[i] = libunlynx.StartParallelize(1)
 			go func(index int, si *network.ServerIdentity) {
 				defer wgProofs[index].Done()
-
 				sb, err := clientSkip.SendEndVerification(si, surveyID)
-				if err != nil {
-					log.Fatal("Error starting the 'waiting' threads:", err)
-				}
+				if err != nil {log.Fatal("Error starting the 'waiting' threads:", err)}
 				listBlocks[index] = sb
 			}(i, elVNs.List[0])
 		}
@@ -243,69 +221,50 @@ func TestServiceDrynx(t *testing.T) {
 		// send query and receive results
 		grp, aggr, err := client.SendSurveyQuery(sq)
 
-		if err != nil {
-			t.Fatal("'Drynx' service did not start.", err)
-		}
+		if err != nil {t.Fatal("'Drynx' service did not start.", err)}
 
 		// Result printing
 		if len(*grp) != 0 && len(*grp) != len(*aggr) {
 			t.Fatal("Results format problem")
 		} else {
-			for i, v := range *aggr {
-				log.LLvl1((*grp)[i], ": ", v, v[0])
-			}
-
+			for i, v := range *aggr {log.LLvl1((*grp)[i], ": ", v, v[0])}
 			log.LLvl1((*aggr)[0][0])
 		}
 	}
 
 	if proofs != 0 {
 		clientSkip := NewDrynxClient(elVNs.List[0], "test-skip")
-		for _, wg := range wgProofs {
-			libunlynx.EndParallelize(wg)
-		}
+		for _, wg := range wgProofs {libunlynx.EndParallelize(wg)}
 
 		// check genesis block
 		if len(listBlocks) > 2 {
 			sb, err := clientSkip.SendGetGenesis(elVNs.List[0])
-			if err != nil {
-				t.Fatal("Something wrong when fetching genesis block")
-			}
+			if err != nil {t.Fatal("Something wrong when fetching genesis block")}
 			assert.Equal(t, sb.Data, listBlocks[0].Data)
 
 			sb, err = clientSkip.SendGetLatestBlock(elVNs, listBlocks[0])
-			if err != nil {
-				t.Fatal("Something wrong when fetching the last block")
-			}
+			if err != nil {t.Fatal("Something wrong when fetching the last block")}
 
 			sbRepeat, err := clientSkip.SendGetLatestBlock(elVNs, listBlocks[2])
-			if err != nil {
-				t.Fatal("Something wrong when fetching the last block")
-			}
+			if err != nil {t.Fatal("Something wrong when fetching the last block")}
 
 			assert.Equal(t, sb.Data, sbRepeat.Data)
 		}
 
 		queryMean := false
 		for i, op := range operationList {
-			if op == "mean" && i == 1 {
-				queryMean = true
-			}
+			if op == "mean" && i == 1 {queryMean = true}
 		}
 
 		// only check the blocks when testing all the operation (mean operation must be executed in 2nd place
 		if queryMean {
 			// check getting one random block
 			sb, err := clientSkip.SendGetBlock(elVNs, "query-mean")
-			if err != nil {
-				t.Fatal("Something wrong when fetching the 'query-mean' block:", err)
-			}
+			if err != nil {t.Fatal("Something wrong when fetching the 'query-mean' block:", err)}
 			assert.Equal(t, sb.Data, listBlocks[1].Data)
 
 			res, err := clientSkip.SendGetProofs(elVNs.List[0], "query-mean")
-			if err != nil {
-				t.Fatal("Something wrong when fetching the 'query-mean' form the DB", err)
-			}
+			if err != nil {t.Fatal("Something wrong when fetching the 'query-mean' form the DB", err)}
 
 			// just check if map is not empty
 			assert.NotEmpty(t, res)
@@ -373,6 +332,10 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	lrParameters.FilePath = filePathTraining
 	lrParameters.NbrRecords = int64(len(XTrain))
 	lrParameters.NbrFeatures = int64(len(XTrain[0]))
+
+
+	log.LLvl1("LYLALSLLS", lrParameters.NbrFeatures)
+
 	lrParameters.Means = means
 	lrParameters.StandardDeviations = standardDeviations
 
@@ -454,18 +417,14 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 
 		ranges := make([]*[]int64, operation.NbrOutput)
 
-		if rangeProofs {
-			for i := range ranges {ranges[i] = &[]int64{u, l}}
-		} else {ranges = nil}
+		if rangeProofs {for i := range ranges {ranges[i] = &[]int64{u, l}}} else {ranges = nil}
 
 		// choose if differential privacy or not, no diffP by default
 		// choosing the limit is done by drawing the curve (e.g. wolframalpha)
 		diffP := libdrynx.QueryDiffP{}
 		if diffPri {
 			diffP = libdrynx.QueryDiffP{LapMean: 0, LapScale: 15.0, NoiseListSize: 1000, Limit: 65, Scale: 1}
-		} else {
-			diffP = libdrynx.QueryDiffP{LapMean: 0.0, LapScale: 0.0, NoiseListSize: 0, Quanta: 0.0, Scale: 0}
-		}
+		} else {diffP = libdrynx.QueryDiffP{LapMean: 0.0, LapScale: 0.0, NoiseListSize: 0, Quanta: 0.0, Scale: 0}}
 
 		// DPs signatures for Input Range Validation
 		ps := make([]*[]libdrynx.PublishSignatureBytes, len(elServers.List))

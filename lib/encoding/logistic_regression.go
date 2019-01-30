@@ -352,7 +352,6 @@ func ComputeAllApproxCoefficients(X []float64, y int64, k int64) [][]float64 {
 // ComputeEncryptedApproxCoefficients computes the ElGamal encryption of the coefficients of the approximated logistic regression cost function
 func ComputeEncryptedApproxCoefficients(approxCoefficients [][]int64, pubKey kyber.Point) ([]*libunlynx.CipherVector, [][]kyber.Scalar) {
 	k := len(approxCoefficients) // the logarithm function approximation degree
-	// log.LLvl1(approxCoefficients[1][11])
 	encryptedApproxCoefficients := make([]*libunlynx.CipherVector, k)
 	encryptedApproxCoefficientsRs := make([][]kyber.Scalar, k)
 	wg := libunlynx.StartParallelize(k)
@@ -1156,9 +1155,7 @@ func String2DToFloat64(dataString [][]string) [][]float64 {
 		for _, e := range line {
 			i, err := strconv.ParseFloat(strings.TrimSpace(e), 64)
 
-			if err == nil {
-				nbFeatures = len(line)
-			}
+			if err == nil {nbFeatures = len(line)}
 
 			if err != nil {
 				log.LLvl1("Incorrect record formatting: record", idx, "will be ignored")
@@ -1174,9 +1171,7 @@ func String2DToFloat64(dataString [][]string) [][]float64 {
 	// remove the incorrectly formatted records
 	var data [][]float64
 	for _, row := range dataFloat64 {
-		if len(row) == nbFeatures {
-			data = append(data, row)
-		}
+		if len(row) == nbFeatures {data = append(data, row)}
 	}
 
 	log.LLvl2("Total number of records ignored:", nbRecordsIgnored)
@@ -1198,23 +1193,23 @@ func LoadData(dataset string, filename string) ([][]float64, []int64) {
 	case "CSV":
 		dataString := ReadFile(filename, ",")
 		data = String2DToFloat64(dataString)
-		//labelColumn = int64(0)
 		X = RemoveColumn(data, int64(len(data[0])-1))
 		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
+		break
 	case "SPECTF":
 		dataString := ReadFile(filename, ",")
 		data = String2DToFloat64(dataString)
 		labelColumn = int64(0)
-
 		X = RemoveColumn(data, labelColumn)
 		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
+		break
 	case "Pima":
 		dataString := ReadFile(filename, ",")
 		data = String2DToFloat64(dataString)
-
 		labelColumn = int64(8)
 		X = RemoveColumn(data, labelColumn)
 		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
+		break
 	case "PCS":
 		dataString := ReadFile(filename, ",")
 		// remove the index column and the two last columns (unused)
@@ -1227,6 +1222,7 @@ func LoadData(dataset string, filename string) ([][]float64, []int64) {
 
 		X = RemoveColumn(data, 0)
 		y = Float64ToInt641DArray(GetColumn(data, 0))
+		break
 	case "LBW":
 		dataString := ReadFile(filename, " ")
 
@@ -1244,6 +1240,7 @@ func LoadData(dataset string, filename string) ([][]float64, []int64) {
 		labelColumn := int64(2)
 		X = RemoveColumn(data, labelColumn)
 		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
+		break
 	default:
 		dataString := ReadFile(filename, ",")
 		data = String2DToFloat64(dataString)
@@ -1324,14 +1321,13 @@ func GetColumn(matrix [][]float64, idx int64) []float64 {
 
 // RemoveColumn returns a 2D array with the column at index <idx> removed from the given 2D array <matrix>
 func RemoveColumn(matrix [][]float64, idx int64) [][]float64 {
-	if idx >= int64(len(matrix)) {
+	if idx >= int64(len(matrix[0])) {
 		log.Fatalf("error: column index exceeds matrix dimension")
 		os.Exit(2)
 	}
 
 	truncatedMatrix := make([][]float64, len(matrix))
 	for i := range matrix {
-		//truncatedMatrix[i] = make([]float64, len(matrix[i]) - 1)
 		truncatedMatrix[i] = append(truncatedMatrix[i], matrix[i][:idx]...)
 		truncatedMatrix[i] = append(truncatedMatrix[i], matrix[i][idx+1:]...)
 	}
@@ -1341,14 +1337,13 @@ func RemoveColumn(matrix [][]float64, idx int64) [][]float64 {
 
 // RemoveColumnString removes the column at index <idx> of the given string matrix
 func RemoveColumnString(matrix [][]string, idx int) [][]string {
-	if idx >= len(matrix) {
+	if idx >= len(matrix[0]) {
 		log.Fatalf("error: column index exceeds matrix dimension")
 		os.Exit(2)
 	}
 
 	truncatedMatrix := make([][]string, len(matrix))
 	for i := range matrix {
-		//truncatedMatrix[i] = make([]float64, len(matrix[i]) - 1)
 		truncatedMatrix[i] = append(truncatedMatrix[i], matrix[i][:idx]...)
 		truncatedMatrix[i] = append(truncatedMatrix[i], matrix[i][idx+1:]...)
 	}
@@ -1432,13 +1427,13 @@ func GetDataForDataProvider(filename string, dataProviderIdentity network.Server
 	dataProviderID := dataProviderIdentity.String()
 	dpID, err := strconv.Atoi(dataProviderID[len(dataProviderID)-2 : len(dataProviderID)-1])
 
-	if err == nil {
-		for i := int64(0); i < int64(len(data)); i++ {
-			if i % NbrDps == int64(dpID) {dataForDP = append(dataForDP, data[i])}
-		}
-		fmt.Println("DP", dpID, " has:", len(dataForDP), "records")
-	}
+	//Add this so that service_test.go works (in case we get dpID >= NbrDps)
+	dpID = int(math.Mod(float64(dpID), float64(NbrDps)))
 
+	if err == nil {
+		for i := int64(0); i < int64(len(data)); i++ {if i % NbrDps == int64(dpID) {dataForDP = append(dataForDP, data[i])}}
+		log.LLvl1("DP", dpID, " has:", len(dataForDP), "records")
+	}
 	return dataForDP
 }
 

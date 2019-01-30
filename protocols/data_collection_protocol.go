@@ -186,9 +186,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	data.AllPossibleGroups(numType[:], group, 0)
 	groupsString := make([]string, len(data.Groups))
 
-	for i, v := range data.Groups {
-		groupsString[i] = fmt.Sprint(v)
-	}
+	for i, v := range data.Groups {groupsString[i] = fmt.Sprint(v)}
 	data.Groups = make([][]int64, 0)
 	mutexGroups.Unlock()
 	// read the signatures needed to compute the range proofs
