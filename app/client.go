@@ -425,7 +425,6 @@ func RunDrynx(c *cli.Context) error {
 						// send query to the skipchain and 'wait' for all proofs' verification to be done
 						clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip-"+op)
 
-
 						var wg *sync.WaitGroup
 						wg = libunlynx.StartParallelize(1)
 						go func(elVNs *onet.Roster) {
@@ -436,15 +435,6 @@ func RunDrynx(c *cli.Context) error {
 						libunlynx.EndParallelize(wg)
 
 						proofIndex := int(int64(trial) * kfold + partition)
-
-						/*wgQuery[proofIndex] = libunlynx.StartParallelize(1)
-						go func(index int, elVNs *onet.Roster) {
-							defer wgQuery[index].Done()
-							err := clientSkip.SendSurveyQueryToVNs(elVNs, &sq)
-							if err != nil {log.Fatal("Error sending query to VNs:", err)}
-						}(proofIndex, elVNs)
-						libunlynx.EndParallelize(wgQuery[proofIndex])*/
-
 						wgProofs[proofIndex] = libunlynx.StartParallelize(1)
 						go func(index int, si *network.ServerIdentity) {
 							defer wgProofs[index].Done()
@@ -455,7 +445,6 @@ func RunDrynx(c *cli.Context) error {
 					}
 
 					_, aggr, _ := client.SendSurveyQuery(sq)
-					log.LLvl1("HELLOOOOOOO")
 					if len(*aggr) != 0 {
 						weights := (*aggr)[0]
 						if standardisationMode == 1 || standardisationMode == 2 {
@@ -474,10 +463,7 @@ func RunDrynx(c *cli.Context) error {
 
 						fileTraining.Close()
 						fileTesting.Close()
-
-						partition = kfold
 					}
-
 
 				accuracy /= float64(kfold)
 				precision /= float64(kfold)
@@ -505,12 +491,9 @@ func RunDrynx(c *cli.Context) error {
 			fmt.Println("F-score:  ", meanFscore)
 			fmt.Println("AUC:      ", meanAUC)
 
-
 			if proofs == int64(1) {
 				clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip")
 				for _, wg := range wgProofs {libunlynx.EndParallelize(wg)}
-
-				log.LLvl1("NOPE PLEASE")
 				// close DB
 				clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1})
 			}

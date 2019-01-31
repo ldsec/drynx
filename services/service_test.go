@@ -280,7 +280,6 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	log.SetDebugVisible(2)
 
 	//------SET PARAMS--------
-
 	proofs := int64(0) // 0 is not proof, 1 is proofs, 2 is optimized proofs
 	rangeProofs := true
 	obfuscation := false
@@ -332,10 +331,6 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	lrParameters.FilePath = filePathTraining
 	lrParameters.NbrRecords = int64(len(XTrain))
 	lrParameters.NbrFeatures = int64(len(XTrain[0]))
-
-
-	log.LLvl1("LYLALSLLS", lrParameters.NbrFeatures)
-
 	lrParameters.Means = means
 	lrParameters.StandardDeviations = standardDeviations
 
@@ -416,7 +411,6 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		}
 
 		ranges := make([]*[]int64, operation.NbrOutput)
-
 		if rangeProofs {for i := range ranges {ranges[i] = &[]int64{u, l}}} else {ranges = nil}
 
 		// choose if differential privacy or not, no diffP by default
@@ -453,14 +447,10 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		log.LLvl1("SELECT ", operation, " ... FROM DP1, ..., DP", len(elDPs.List), " WHERE ... GROUP BY ", dpData.GroupByValues)
 		if ranges == nil || (u == int64(0) && l == int64(0)) {
 			log.LLvl1("No input range validation")
-		} else {
-			log.LLvl1("with input range validation (", len(ps), " x ", len(*ps[0]), ")")
-		}
+		} else {log.LLvl1("with input range validation (", len(ps), " x ", len(*ps[0]), ")")}
 		if libdrynx.AddDiffP(diffP) {
 			log.LLvl1(" with differential privacy with epsilon=", diffP.LapMean, " and delta=", diffP.LapScale)
-		} else {
-			log.LLvl1(" no differential privacy")
-		}
+		} else {log.LLvl1(" no differential privacy")}
 		log.LLvl1("#-----------------#\n")
 		//-----------
 
@@ -486,7 +476,6 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 			wg = libunlynx.StartParallelize(1)
 			go func(elVNs *onet.Roster) {
 				defer wg.Done()
-
 				err := clientSkip.SendSurveyQueryToVNs(elVNs, &sq)
 				if err != nil {log.Fatal("Error sending query to VNs:", err)}
 			}(elVNs)
@@ -495,30 +484,20 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 			wgProofs[i] = libunlynx.StartParallelize(1)
 			go func(index int, si *network.ServerIdentity) {
 				defer wgProofs[index].Done()
-
 				sb, err := clientSkip.SendEndVerification(si, surveyID)
-				if err != nil {
-					log.Fatal("Error starting the 'waiting' threads:", err)
-				}
+				if err != nil {log.Fatal("Error starting the 'waiting' threads:", err)}
 				listBlocks[index] = sb
 			}(i, elVNs.List[0])
 		}
 
 		// send query and receive results
 		grp, aggr, err := client.SendSurveyQuery(sq)
-
-		if err != nil {
-			t.Fatal("'Drynx' service did not start.", err)
-		}
+		if err != nil {t.Fatal("'Drynx' service did not start.", err)}
 
 		// Result printing
 		if len(*grp) != 0 && len(*grp) != len(*aggr) {
 			t.Fatal("Results format problem")
-		} else {
-			for i, v := range *aggr {
-				log.LLvl1((*grp)[i], ": ", v)
-			}
-		}
+		} else {for i, v := range *aggr {log.LLvl1((*grp)[i], ": ", v)}}
 		if len(*aggr) != 0 {
 			weights := (*aggr)[0]
 			if standardisationMode == 1 || standardisationMode == 2 {
@@ -547,8 +526,6 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	fmt.Println("recall:   ", meanRecall)
 	fmt.Println("F-score:  ", meanFscore)
 	fmt.Println("AUC:      ", meanAUC)
-	fmt.Println()
-	//encoding.PrintForLatex(meanAccuracy, meanPrecision, meanRecall, meanFscore, meanAUC)
 
 	if proofs != 0 {
 		clientSkip := NewDrynxClient(elVNs.List[0], "test-skip")
@@ -561,9 +538,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 			assert.Equal(t, sb.Data, listBlocks[0].Data)
 
 			sb, err = clientSkip.SendGetLatestBlock(elVNs, listBlocks[0])
-			if err != nil {
-				t.Fatal("Something wrong when fetching the last block")
-			}
+			if err != nil {t.Fatal("Something wrong when fetching the last block")}
 
 			sbRepeat, err := clientSkip.SendGetLatestBlock(elVNs, listBlocks[2])
 			if err != nil {t.Fatal("Something wrong when fetching the last block")}
@@ -578,15 +553,11 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		if queryMean {
 			// check getting one random block
 			sb, err := clientSkip.SendGetBlock(elVNs, "query-mean")
-			if err != nil {
-				t.Fatal("Something wrong when fetching the 'query-mean' block:", err)
-			}
+			if err != nil {t.Fatal("Something wrong when fetching the 'query-mean' block:", err)}
 			assert.Equal(t, sb.Data, listBlocks[1].Data)
 
 			res, err := clientSkip.SendGetProofs(elVNs.List[0], "query-mean")
-			if err != nil {
-				t.Fatal("Something wrong when fetching the 'query-mean' form the DB", err)
-			}
+			if err != nil {t.Fatal("Something wrong when fetching the 'query-mean' form the DB", err)}
 
 			// just check if map is not empty
 			assert.NotEmpty(t, res)
@@ -623,7 +594,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 		dpToServers[index] = &value
 		for j := range *dpToServers[index] {
 			val := elDPs.List[count]
-			count = count + 1
+			count += 1
 			(*dpToServers[index])[j] = *val
 		}
 	}
