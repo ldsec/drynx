@@ -209,7 +209,6 @@ func (p *ProofCollectionProtocol) Dispatch() error {
 				p.Proof.RangeProof.Signature,
 				p.Proof.RangeProof.Roster,
 				p.Proof.RangeProof.SB)
-
 		} else if p.Proof.AggregationProof != nil {
 			verif, err = p.Proof.AggregationProof.VerifyProof(*p.ServerIdentity(), p.SQ)
 			// store aggregation proof in db and skipchain (transaction)
@@ -380,7 +379,6 @@ func (p *ProofCollectionProtocol) storeProof(index int, typeProof, surveyID, sen
 				}
 			}()
 
-			log.LLvl1("TREE IS EMPTY ", p.Tree())
 			for i := 0; i < len(p.Tree().List())-1; i++ {
 				bitmap := <-p.BitmapCollectionChannel
 

@@ -12,6 +12,7 @@ import (
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/drynx/services/data"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/services/default/data"
 	"math/rand"
 	"os/exec"
 	"strconv"
@@ -22,8 +23,6 @@ import (
 
 // DataCollectionProtocolName is the registered name for the data provider protocol.
 const DataCollectionProtocolName = "DataCollection"
-
-var mutexGroups sync.Mutex
 
 func init() {
 	network.RegisterMessage(AnnouncementDCMessage{})
@@ -180,15 +179,17 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	for i, v := range p.Survey.Query.DPDataGen.GroupByValues {
 		numType[i] = v
 	}
-	mutexGroups.Lock()
-	data.Groups = make([][]int64, 0)
-	group := make([]int64, 0)
-	data.AllPossibleGroups(numType[:], group, 0)
-	groupsString := make([]string, len(data.Groups))
 
-	for i, v := range data.Groups {groupsString[i] = fmt.Sprint(v)}
-	data.Groups = make([][]int64, 0)
-	mutexGroups.Unlock()
+	groups := make([][]int64, 0)
+	group := make([]int64, 0)
+	data.AllPossibleGroups(numType[:], group, 0, &groups)
+	groupsString := make([]string, len(groups))
+
+	for i, v := range groups {
+		groupsString[i] = fmt.Sprint(v)
+	}
+	groups = make([][]int64, 0)
+
 	// read the signatures needed to compute the range proofs
 	signatures := make([][]libdrynx.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize1)
 	for i := 0; int64(i) < p.Survey.Query.IVSigs.InputValidationSize1; i++ {
@@ -196,6 +197,12 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		for j := 0; int64(j) < p.Survey.Query.IVSigs.InputValidationSize2; j++ {
 			signatures[i][j] = libdrynx.PublishSignatureBytesToPublishSignatures((*p.Survey.Query.IVSigs.InputValidationSigs[i])[j])
 		}
+	}
+
+	fakeData := make([][]int64,0)
+	if p.Survey.Query.DPDataGen.Source == 0 {
+		// generate fake random data depending on the operation
+		fakeData = createFakeDataForOperation(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
 	}
 
 	// logistic regression specific
@@ -247,14 +254,17 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 			p.Survey.Query.Operation.NbrOutput = p.Survey.Query.Operation.NbrOutput / int64(p.Survey.Query.CuttingFactor)
 		}
 		if p.Survey.Query.Operation.NameOp == "logreg" {
-			//p.Survey.Query.Ranges = nil
 			encryptedResponse, clearResponse, cprf = encoding.EncodeForFloat(datasFloat, lrParameters, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation.NameOp)
 		} else {
-			//startDB := time.Now()
-			// fetch data from db
-			dpData := fetchDataFromDB(p.Survey.Query.Operation)
-			//log.LLvl1("Actual DB fetch took", time.Since(startDB))
-			encryptedResponse, clearResponse, cprf = encoding.Encode(dpData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
+			if p.Survey.Query.DPDataGen.Source == 0 {
+				encryptedResponse, clearResponse, cprf = encoding.Encode(fakeData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
+			} else if p.Survey.Query.DPDataGen.Source == 1 {
+				//startDB := time.Now()
+				// fetch data from db
+				dpData := fetchDataFromDB(p.Survey.Query.Operation)
+				//log.LLvl1("Actual DB fetch took", time.Since(startDB))
+				encryptedResponse, clearResponse, cprf = encoding.Encode(dpData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
+			}
 		}
 
 		log.Lvl2("Data Provider", p.Name(), "computes the query response", clearResponse, "for groups:", groupsString, "with operation:", p.Survey.Query.Operation)
@@ -418,4 +428,26 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 		tab[0] = dpValues
 		return tab
 	}
+}
+
+// createFakeDataForOperation creates fake data to be used
+func createFakeDataForOperation(operation libdrynx.Operation, nbrRows, min, max int64) [][]int64 {
+	//either use the min and max defined by the query or the default constants
+	zero := int64(0)
+	if min == zero && max == zero {
+		log.Lvl2("Only generating 0s!")
+	}
+
+	//generate response tab
+	tab := make([][]int64, operation.NbrInput)
+	wg := libunlynx.StartParallelize(len(tab))
+	for i := range tab {
+		go func(i int) {
+			defer wg.Done()
+			tab[i] = dataunlynx.CreateInt64Slice(nbrRows, min, max)
+		}(i)
+
+	}
+	libunlynx.EndParallelize(wg)
+	return tab
 }

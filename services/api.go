@@ -136,12 +136,12 @@ func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToSer
 		ClientPubKey:               c.public,
 		IntraMessage:               false,
 		ServerToDP:                 dpToServer,
+		DPsUsed:                    dpsUsed,
 		IDtoPublic:                 idToPublic,
 		Threshold:                  thresholds[0],
 		RangeProofThreshold:        thresholds[1],
 		ObfuscationProofThreshold:  thresholds[2],
 		KeySwitchingProofThreshold: thresholds[3],
-		DPsUsed:                    dpsUsed,
 
 		// query statement
 		Query: libdrynx.Query{

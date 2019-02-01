@@ -56,7 +56,6 @@ func (s *ServiceDrynx) HandleSurveyQueryToVN(recq *libdrynx.SurveyQueryToVN) (ne
 	sizeQuery = append(sizeQuery, size[1])
 	sizeQuery = append(sizeQuery, size[4])
 	totalNbrProofs = size[0] + size[2] + size[3] + size[1] + size[4]
-	log.LLvl1("TOTAL NUMBER PROOFS", totalNbrProofs)
 
 	if s.ServerIdentity().String() == recq.SQ.Query.RosterVNs.List[0].String() {
 		s.Request.Put(recq.SQ.SurveyID, &libdrynx.QueryInfo{Bitmap: proofsVerified, TotalNbrProofs: sizeQuery, Query: &recq.SQ, SharedBMChannel: make(chan map[string]int64, 100), SharedBMChannelToTerminate: make(chan struct{}, 100), EndVerificationChannel: make(chan skipchain.SkipBlock, 100)})
@@ -127,7 +126,7 @@ func (s *ServiceDrynx) HandleSurveyQueryToVN(recq *libdrynx.SurveyQueryToVN) (ne
 				//Store Genesis in DB
 				genesisBytes, _ := network.Marshal(newSB)
 
-				log.LLvl1("SIZE OF BLOCK:", len(genesisBytes))
+				//log.Lvl2("SIZE OF BLOCK:", len(genesisBytes))
 				libdrynx.UpdateDB(s.DB, "genesis", "genesis", genesisBytes)
 
 				s.LastSkipBlock = newSB

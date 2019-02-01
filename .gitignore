@@ -34,8 +34,12 @@ app/test/
 app/drynx
 app/app
 
+data/dataset_training.txt
+data/dataset_testing.txt
+
 simul/test_data/*.csv
 simul/build/
+simul/deploy/
 simul/simul
 
 

@@ -15,9 +15,6 @@ import (
 	"time"
 )
 
-// Groups identifies all different groups to be added to the test data file
-var Groups [][]int64
-
 // FillInt64Slice fills a slice with the same value v
 func FillInt64Slice(s []int64, v int64) {
 	for i := 0; i < len(s); i++ {
@@ -49,19 +46,19 @@ func CreateInt64Slice(size int64, min int64, max int64) []int64 {
 
 // AllPossibleGroups generates all possible groups given the different groups for the grouping attributes
 // e.g. numType:1,2 -> Group: [0,0], [0,1]
-func AllPossibleGroups(numType []int64, group []int64, pos int) {
+func AllPossibleGroups(numType []int64, group []int64, pos int, groups *[][]int64) {
 	if pos == len(numType) {
 		tmp := make([]int64, 0)
 		for _, el := range group {
 			tmp = append(tmp, el)
 		}
-		Groups = append(Groups, tmp)
+		*groups = append(*groups, tmp)
 	} else {
 		for i := 0; i < int(numType[pos]); i++ {
 			group = append(group, int64(i))
 
 			pos++
-			AllPossibleGroups(numType, group, pos)
+			AllPossibleGroups(numType, group, pos, groups)
 			pos--
 
 			group = append(group[:len(group)-1], group[len(group):]...)
@@ -93,6 +90,8 @@ func GenerateUnLynxData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, 
 	}
 
 	testData := make(map[string][]libunlynx.DpClearResponse)
+	groups := make([][]int64, 0)
+	group := make([]int64, 0)
 
 	if !randomGroups {
 		numElem := 1
@@ -101,9 +100,7 @@ func GenerateUnLynxData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, 
 		}
 
 		if int64(numElem) == numEntries {
-			Groups = make([][]int64, 0)
-			group := make([]int64, 0)
-			AllPossibleGroups(numType[:], group, 0)
+			AllPossibleGroups(numType[:], group, 0, &groups)
 		} else {
 			log.Fatal("Please ensure that the number of groups is the same as the number of entries")
 			return nil
@@ -137,7 +134,7 @@ func GenerateUnLynxData(numDPs, numEntries, numEntriesFiltered, numGroupsClear, 
 					grp[k] = int64(random(0, int(numType[k])))
 				}
 			} else {
-				grp = Groups[j]
+				grp = groups[j]
 			}
 
 			dpData[j] = libunlynx.DpClearResponse{

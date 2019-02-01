@@ -177,7 +177,6 @@ func NewService(c *onet.Context) (onet.Service, error) {
 	if err := skipchain.RegisterVerification(c, VerifyBitmap, newDrynxInstance.verifyFuncBitmap); err != nil {
 		return nil, err
 	}
-
 	return newDrynxInstance, cerr
 }
 
@@ -224,6 +223,8 @@ func (s *ServiceDrynx) HandleDPqueryReceived(recq *DPqueryReceived) (network.Mes
 
 // HandleSyncDCP handles the messages to synchronize between computing nodes
 func (s *ServiceDrynx) HandleSyncDCP(recq *SyncDCP) (network.Message, error) {
+
+
 	var el interface{}
 	el = nil
 	for el == nil {
@@ -366,7 +367,7 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 		libunlynx.EndTimer(startDataCollectionProtocol)
 	}
 	elapsed := time.Since(start)
-	log.LLvl1("DataCollectionProtocol took %s", elapsed)
+	log.LLvl1("DataCollectionProtocol took", elapsed)
 
 	//startWaitTimeDPs := libunlynx.StartTimer(s.ServerIdentity().String() + "_WaitTimeDPs")
 	// signal other nodes that the data provider(s) already sent their data (response)
@@ -395,7 +396,7 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 		libunlynx.EndTimer(startJustExecution)
 
 		elapsed := time.Since(start)
-		log.LLvl1("JustExecution took %s", elapsed)
+		log.LLvl1("JustExecution took", elapsed)
 		return &result, nil
 	}
 
