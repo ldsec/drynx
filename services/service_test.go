@@ -39,8 +39,7 @@ func generateNodes(local *onet.LocalTest, nbrServers int, nbrDPs int, nbrVNs int
 /// Test service Drynx for all operations
 func TestServiceDrynx(t *testing.T) {
 	//------SET PARAMS--------
-
-	proofs := int64(0) // 0 is not proof, 1 is proofs, 2 is optimized proofs
+	proofs := int64(1) // 0 is not proof, 1 is proofs, 2 is optimized proofs
 	rangeProofs := false
 	obfuscation := false
 
@@ -48,9 +47,9 @@ func TestServiceDrynx(t *testing.T) {
 	diffPriOpti := false
 	//nbrRows := int64(1)
 	nbrServers := 3
-	nbrDPs := 5
-	nbrVNs := 0
-	repartition := []int64{2, 1, 2} //repartition: server1: 1 DPs, server2: 1 DPs, server3: 1 DPs
+	nbrDPs := 3
+	nbrVNs := 3
+	repartition := []int64{1, 1, 1} //repartition: server1: 1 DPs, server2: 1 DPs, server3: 1 DPs
 
 	//simulation
 	cuttingFactor := int64(0)
@@ -60,23 +59,17 @@ func TestServiceDrynx(t *testing.T) {
 	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 	//------------------------
 
-	if proofs == 1 {
+	if proofs == int64(1) {
 		if obfuscation {
 			thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 1.0}
-		} else {
-			thresholdEntityProofsVerif = []float64{1.0, 1.0, 0.0, 1.0}
-		}
-	} else {
-		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
-	}
+		} else {thresholdEntityProofsVerif = []float64{1.0, 1.0, 0.0, 1.0}}
+	} else {thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}}
 
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	elServers, elDPs, elVNs := generateNodes(local, nbrServers, nbrDPs, nbrVNs)
-
 	dpsUsed := make([]*network.ServerIdentity, len(elDPs.List))
 	for i := range elDPs.List {dpsUsed[i] = elDPs.List[i]}
-
-	if proofs == 0 {elVNs = nil}
+	if proofs == int64(0) {elVNs = nil}
 	defer local.CloseAll()
 
 	//Create dpToServers manually based on the group tomls
@@ -87,7 +80,7 @@ func TestServiceDrynx(t *testing.T) {
 
 	var wgProofs []*sync.WaitGroup
 	var listBlocks []*skipchain.SkipBlock
-	if proofs != 0 {
+	if proofs != int64(0) {
 		wgProofs = make([]*sync.WaitGroup, len(operationList))
 		listBlocks = make([]*skipchain.SkipBlock, len(operationList))
 	}
@@ -96,17 +89,20 @@ func TestServiceDrynx(t *testing.T) {
 
 	for i, op := range operationList {
 		// data providers data generation
-		minGenerateData := int64(3)
-		maxGenerateData := int64(4)
+		minGenerateData := int64(0)
+		maxGenerateData := int64(100)
 		dimensions := int64(5)
-		operation := libdrynx.ChooseOperation(op, "", minGenerateData, maxGenerateData, dimensions, cuttingFactor, lrParameters)
+		operation := libdrynx.ChooseOperation(op, "RR", minGenerateData, maxGenerateData, dimensions, cuttingFactor, lrParameters)
 
 		// define the number of groups for groupBy (1 per default)
 		dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateDataMin: int64(minGenerateData), GenerateDataMax: int64(maxGenerateData)}
 
 		// define the ranges for the input validation (1 range per data provider output)
+
+		if proofs == int64(1) {rangeProofs = true} else {elVNs = nil}
+
 		var u, l int64
-		if proofs == 0 {
+		if proofs == int64(0) {
 			rangeProofs = false
 		} else {
 			if op == "bool_AND" || op == "bool_OR" || op == "min" || op == "max" || op == "union" || op == "inter" {
@@ -135,7 +131,6 @@ func TestServiceDrynx(t *testing.T) {
 		}
 
 		ranges := make([]*[]int64, operation.NbrOutput)
-
 		if rangeProofs {for i := range ranges {ranges[i] = &[]int64{u, l}}} else {ranges = nil}
 
 		// choose if differential privacy or not, no diffP by default
@@ -149,19 +144,13 @@ func TestServiceDrynx(t *testing.T) {
 
 		// DPs signatures for Input Range Validation
 		ps := make([]*[]libdrynx.PublishSignatureBytes, len(elServers.List))
-		//var modulo int
-		//if cuttingFactor != 0 {
-		//	modulo = operation.NbrOutput / cuttingFactor
-		//}
 		if ranges != nil && u != int64(0) && l != int64(0) {
 			for i := range elServers.List {
 				temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
 				for j := 0; j < len(ranges); j++ {
 					if cuttingFactor != 0 {
 						temp[j] = libdrynx.InitRangeProofSignatureDeterministic((*ranges[j])[0])
-					} else {
-						temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
-					}
+					} else {temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0])}
 				}
 				ps[i] = &temp
 			}
@@ -188,7 +177,7 @@ func TestServiceDrynx(t *testing.T) {
 		idToPublic := make(map[string]kyber.Point)
 		for _, v := range elServers.List {idToPublic[v.String()] = v.Public}
 		for _, v := range elDPs.List {idToPublic[v.String()] = v.Public}
-		if proofs != 0 {for _, v := range elVNs.List {idToPublic[v.String()] = v.Public}}
+		if proofs != int64(0) {for _, v := range elVNs.List {idToPublic[v.String()] = v.Public}}
 
 		// query generation
 		surveyID := "query-" + op
@@ -197,7 +186,7 @@ func TestServiceDrynx(t *testing.T) {
 		if !libdrynx.CheckParameters(sq, diffPri) {log.Fatal("Oups!")}
 
 		var wg *sync.WaitGroup
-		if proofs != 0 {
+		if proofs != int64(0) {
 			// send query to the skipchain and 'wait' for all proofs' verification to be done
 			clientSkip := NewDrynxClient(elVNs.List[0], "test-skip-"+op)
 
@@ -356,7 +345,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 
 	lrParameters.NbrDps = int64(len(elDPs.List))
 
-	if proofs == 0 {elVNs = nil}
+	if proofs == int64(0) {elVNs = nil}
 	defer local.CloseAll()
 
 	dpToServers := RepartitionDPs(elServers, elDPs, repartition)
@@ -366,7 +355,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 
 	var wgProofs []*sync.WaitGroup
 	var listBlocks []*skipchain.SkipBlock
-	if proofs != 0 {
+	if proofs != int64(0) {
 		wgProofs = make([]*sync.WaitGroup, len(operationList))
 		listBlocks = make([]*skipchain.SkipBlock, len(operationList))
 	}

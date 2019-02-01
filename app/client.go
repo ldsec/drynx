@@ -90,7 +90,7 @@ func RunDrynx(c *cli.Context) error {
 	diffPri := false
 	diffPriOpti := false
 	//repartition: server1: 1 DP, server2: 1 DP, server3: 1 DP
-	repartition := []int64{1, 1, 1}
+	repartition := []int64{3, 2, 2}
 
 	//simulation
 	cuttingFactor := int64(0)
@@ -138,16 +138,13 @@ func RunDrynx(c *cli.Context) error {
 	// Create a client (querier) for the service)
 	client := services.NewDrynxClient(elServers.List[0], "test-Drynx")
 
-	numberTrials := 1
-	kfold := int64(4)
+	numberTrials := 50
+	kfold := int64(10)
 
 	var wgProofs []*sync.WaitGroup
-	//var wgQuery []*sync.WaitGroup
 	var listBlocks []*skipchain.SkipBlock
 	if proofs == int64(1) {
-		//wgQuery = make([]*sync.WaitGroup, kfold * int64(numberTrials))
-		//wgProofs = make([]*sync.WaitGroup, kfold * int64(numberTrials))
-		wgProofs = make([]*sync.WaitGroup, 1)
+		wgProofs = make([]*sync.WaitGroup, kfold * int64(numberTrials))
 		listBlocks = make([]*skipchain.SkipBlock,  kfold * int64(numberTrials))
 	}
 
@@ -331,12 +328,6 @@ func RunDrynx(c *cli.Context) error {
 				//seed := int64(rand.Intn(5432109876))
 				//XTrain, yTrain, XTest, yTest := encoding2.PartitionDataset(X, y, ratio, true, seed)
 
-				accuracy := 0.0
-				precision := 0.0
-				recall := 0.0
-				fScore := 0.0
-				auc := 0.0
-
 				for partition := int64(0); partition < kfold; partition++ {
 					XTrain, yTrain, XTest, yTest := encoding2.PartitionDatasetCV(X, y, partition, kfold)
 
@@ -421,9 +412,12 @@ func RunDrynx(c *cli.Context) error {
 					sq := client.GenerateSurveyQuery(elServers, elVNs, dpToServers, idToPublic, surveyID, operation,
 						ranges, ps, proofs, false, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor, dpsUsed)
 
+					log.LLvl1("SENT QUERY", int64(trial) * kfold + partition)
+
+
 					if proofs == int64(1) {
 						// send query to the skipchain and 'wait' for all proofs' verification to be done
-						clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip-"+op)
+						clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip-" + op)
 
 						var wg *sync.WaitGroup
 						wg = libunlynx.StartParallelize(1)
@@ -454,35 +448,23 @@ func RunDrynx(c *cli.Context) error {
 
 						accuracyTemp, precisionTemp, recallTemp, fscoreTemp, aucTemp := services.PerformanceEvaluation(weights, XTest, yTest, means, standardDeviations)
 
-						accuracy += accuracyTemp
-						precision += precisionTemp
-						recall += recallTemp
-						fScore += fscoreTemp
-						auc += aucTemp
+						meanAccuracy += accuracyTemp
+						meanPrecision += precisionTemp
+						meanRecall += recallTemp
+						meanFscore += fscoreTemp
+						meanAUC += aucTemp
 						}
 
 						fileTraining.Close()
 						fileTesting.Close()
 					}
-
-				accuracy /= float64(kfold)
-				precision /= float64(kfold)
-				recall /= float64(kfold)
-				fScore /= float64(kfold)
-				auc /= float64(kfold)
-
-				meanAccuracy += accuracy
-				meanPrecision += precision
-				meanRecall += recall
-				meanFscore += fScore
-				meanAUC += auc
 			}
 
-			meanAccuracy /= float64(numberTrials)
-			meanPrecision /= float64(numberTrials)
-			meanRecall /= float64(numberTrials)
-			meanFscore /= float64(numberTrials)
-			meanAUC /= float64(numberTrials)
+			meanAccuracy /= float64(int64(numberTrials) * kfold)
+			meanPrecision /= float64(int64(numberTrials) * kfold)
+			meanRecall /= float64(int64(numberTrials) * kfold)
+			meanFscore /= float64(int64(numberTrials) * kfold)
+			meanAUC /= float64(int64(numberTrials) * kfold)
 
 			fmt.Println("Final evaluation over", numberTrials, "trials")
 			fmt.Println("accuracy: ", meanAccuracy)
