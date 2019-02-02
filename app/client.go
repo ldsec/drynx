@@ -90,7 +90,7 @@ func RunDrynx(c *cli.Context) error {
 	diffPri := false
 	diffPriOpti := false
 	//repartition: server1: 1 DP, server2: 1 DP, server3: 1 DP
-	repartition := []int64{3, 2, 2}
+	repartition := []int64{1, 1, 1}
 
 	//simulation
 	cuttingFactor := int64(0)
@@ -138,8 +138,8 @@ func RunDrynx(c *cli.Context) error {
 	// Create a client (querier) for the service)
 	client := services.NewDrynxClient(elServers.List[0], "test-Drynx")
 
-	numberTrials := 50
-	kfold := int64(10)
+	numberTrials := 1
+	kfold := int64(4)
 
 	var wgProofs []*sync.WaitGroup
 	var listBlocks []*skipchain.SkipBlock
@@ -170,7 +170,7 @@ func RunDrynx(c *cli.Context) error {
 			operation := libdrynx.ChooseOperation(op, queryAttributes, queryMin, queryMax, dimensions, cuttingFactor, lrParameters)
 
 			// define the number of groups for groupBy (1 per default)
-			dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateDataMin: queryMin, GenerateDataMax: queryMax}
+			dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, Source: 1, GenerateDataMin: queryMin, GenerateDataMax: queryMax}
 
 			// define the ranges for the input validation (1 range per data provider output)
 			u := int64(16)
@@ -187,18 +187,14 @@ func RunDrynx(c *cli.Context) error {
 			}
 
 			ranges := make([]*[]int64, operation.NbrOutput)
-			if rangeProofs {
-				for i := range ranges {ranges[i] = &[]int64{u, l}}
-			} else {ranges = nil}
+			if rangeProofs {for i := range ranges {ranges[i] = &[]int64{u, l}}} else {ranges = nil}
 
 			// choose if differential privacy or not, no diffP by default
 			// choosing the limit is done by drawing the curve (e.g. wolframalpha)
 			diffP := libdrynx.QueryDiffP{}
 			if diffPri {
 				diffP = libdrynx.QueryDiffP{LapMean: 0, LapScale: 15.0, NoiseListSize: 1000, Limit: 65, Scale: 1, Optimized: diffPriOpti}
-			} else {
-				diffP = libdrynx.QueryDiffP{LapMean: 0.0, LapScale: 0.0, NoiseListSize: 0, Quanta: 0.0, Scale: 0, Optimized: diffPriOpti}
-			}
+			} else {diffP = libdrynx.QueryDiffP{LapMean: 0.0, LapScale: 0.0, NoiseListSize: 0, Quanta: 0.0, Scale: 0, Optimized: diffPriOpti}}
 
 			// DPs signatures for Input Range Validation
 			ps := make([]*[]libdrynx.PublishSignatureBytes, len(elServers.List))
@@ -206,9 +202,7 @@ func RunDrynx(c *cli.Context) error {
 			if ranges != nil && u != int64(0) && l != int64(0) {
 				for i := range elServers.List {
 					temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
-					for j := 0; j < len(ranges); j++ {
-						temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
-					}
+					for j := 0; j < len(ranges); j++ {temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0])}
 					ps[i] = &temp
 				}
 			} else {ps = nil}
@@ -368,12 +362,11 @@ func RunDrynx(c *cli.Context) error {
 					lrParameters.Means = means
 					lrParameters.StandardDeviations = standardDeviations
 					operation := libdrynx.ChooseOperation(op, "", 0, 0, 0, cuttingFactor, lrParameters)
-
 					dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, GenerateDataMin: queryMin, GenerateDataMax: queryMax}
 
 					// define the ranges for the input validation (1 range per data provider output)
-					u := int64(2)
-					l := int64(10)
+					u := int64(4)
+					l := int64(6)
 
 					ranges := make([]*[]int64, operation.NbrOutput)
 					if rangeProofs {for i := range ranges {ranges[i] = &[]int64{u, l}}} else {ranges = nil}
@@ -408,16 +401,16 @@ func RunDrynx(c *cli.Context) error {
 					// query sending + results receiving
 					cuttingFactor := int64(0)
 
-					surveyID := "query-" + op
+					queryIndex := int(int64(trial) * kfold + partition)
+					surveyID := "query-" + op + "-" + strconv.Itoa(queryIndex)
 					sq := client.GenerateSurveyQuery(elServers, elVNs, dpToServers, idToPublic, surveyID, operation,
 						ranges, ps, proofs, false, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor, dpsUsed)
 
 					log.LLvl1("SENT QUERY", int64(trial) * kfold + partition)
 
-
 					if proofs == int64(1) {
 						// send query to the skipchain and 'wait' for all proofs' verification to be done
-						clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip-" + op)
+						clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip-" + op + "-" + strconv.Itoa(queryIndex))
 
 						var wg *sync.WaitGroup
 						wg = libunlynx.StartParallelize(1)
@@ -428,14 +421,13 @@ func RunDrynx(c *cli.Context) error {
 						}(elVNs)
 						libunlynx.EndParallelize(wg)
 
-						proofIndex := int(int64(trial) * kfold + partition)
-						wgProofs[proofIndex] = libunlynx.StartParallelize(1)
+						wgProofs[queryIndex] = libunlynx.StartParallelize(1)
 						go func(index int, si *network.ServerIdentity) {
 							defer wgProofs[index].Done()
 							sb, err := clientSkip.SendEndVerification(si, surveyID)
 							if err != nil {log.Fatal("Error starting the 'waiting' threads:", err)}
 							listBlocks[index] = sb
-						}(proofIndex, elVNs.List[0])
+						}(queryIndex, elVNs.List[0])
 					}
 
 					_, aggr, _ := client.SendSurveyQuery(sq)

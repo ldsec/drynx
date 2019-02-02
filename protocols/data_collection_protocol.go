@@ -199,12 +199,6 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		}
 	}
 
-	fakeData := make([][]int64,0)
-	if p.Survey.Query.DPDataGen.Source == 0 {
-		// generate fake random data depending on the operation
-		fakeData = createFakeDataForOperation(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
-	}
-
 	// logistic regression specific
 	var datasFloat [][]float64
 	lrParameters := p.Survey.Query.Operation.LRParameters
@@ -257,6 +251,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 			encryptedResponse, clearResponse, cprf = encoding.EncodeForFloat(datasFloat, lrParameters, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation.NameOp)
 		} else {
 			if p.Survey.Query.DPDataGen.Source == 0 {
+				fakeData := createFakeDataForOperation(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
 				encryptedResponse, clearResponse, cprf = encoding.Encode(fakeData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
 			} else if p.Survey.Query.DPDataGen.Source == 1 {
 				//startDB := time.Now()
@@ -385,16 +380,12 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 		//QueryMin and QueryMax are not useful in this case
 		cmd := exec.Command("python", scriptFetchDataDB, dbLocation, "true", operation.Attributes)
 		out, err := cmd.Output()
-		if err != nil {
-			println(err.Error())
-		}
+		if err != nil {println(err.Error())}
 
 		dpData := strings.Split(string(out), "\n")
 		tab := make([][]int64, operation.NbrInput)
 		values := strings.Split(strings.TrimSuffix(strings.TrimPrefix(dpData[0], "("), ")"), ", ")
-		for j := range values {
-			tab[j] = make([]int64, len(dpData)-1)
-		}
+		for j := range values {tab[j] = make([]int64, len(dpData)-1)}
 
 		for i, row := range dpData {
 			row = strings.TrimSuffix(strings.TrimPrefix(row, "("), ")")
@@ -409,13 +400,11 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 		return tab
 	} else {
 		//Send "false" as an argument if the operation in question is not linear regression
-		cmd := exec.Command("python", scriptFetchDataDB, dbLocation, "false", operation.Attributes, strconv.FormatInt(operation.QueryMin, 10),
-			strconv.FormatInt(operation.QueryMax, 10))
+		cmd := exec.Command("python", scriptFetchDataDB, dbLocation, "false", operation.Attributes,
+			strconv.FormatInt(operation.QueryMin, 10), strconv.FormatInt(operation.QueryMax, 10))
 
 		out, err := cmd.Output()
-		if err != nil {
-			println(err.Error())
-		}
+		if err != nil {println(err.Error())}
 
 		dpData := strings.Split(string(out), "\n")
 		dpValues := make([]int64, len(dpData)-1)
@@ -434,9 +423,7 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 func createFakeDataForOperation(operation libdrynx.Operation, nbrRows, min, max int64) [][]int64 {
 	//either use the min and max defined by the query or the default constants
 	zero := int64(0)
-	if min == zero && max == zero {
-		log.Lvl2("Only generating 0s!")
-	}
+	if min == zero && max == zero {log.Lvl2("Only generating 0s!")}
 
 	//generate response tab
 	tab := make([][]int64, operation.NbrInput)
@@ -446,7 +433,6 @@ func createFakeDataForOperation(operation libdrynx.Operation, nbrRows, min, max 
 			defer wg.Done()
 			tab[i] = dataunlynx.CreateInt64Slice(nbrRows, min, max)
 		}(i)
-
 	}
 	libunlynx.EndParallelize(wg)
 	return tab
