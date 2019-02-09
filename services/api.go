@@ -64,6 +64,7 @@ func RepartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 		dpToServers[index] = &value
 		for j := range *dpToServers[index] {
 			val := elDPs.List[count]
+			log.LLvl1("DP", val.Address, "SERVER", v.Address)
 			count += 1
 			(*dpToServers[index])[j] = *val
 		}

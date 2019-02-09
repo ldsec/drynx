@@ -313,24 +313,12 @@ func TestServiceDrynxLogisticRegressionForHeartRate(t *testing.T) {
 	elServers, elDPs, elVNs := generateNodes(local, nbrServers, nbrDPs, nbrVNs)
 
 	idToPublic := make(map[string]kyber.Point)
-	for _, v := range elServers.List {
-		idToPublic[v.String()] = v.Public
-	}
-	for _, v := range elDPs.List {
-		idToPublic[v.String()] = v.Public
-	}
-	if proofs == int64(1) {
-		for _, v := range elVNs.List {
-			idToPublic[v.String()] = v.Public
-		}
-	} else {
-		elVNs = nil
-	}
+	for _, v := range elServers.List {idToPublic[v.String()] = v.Public}
+	for _, v := range elDPs.List {idToPublic[v.String()] = v.Public}
+	if proofs == int64(1) {for _, v := range elVNs.List {idToPublic[v.String()] = v.Public}} else {elVNs = nil}
 
 	dpsUsed := make([]*network.ServerIdentity, len(elDPs.List))
-	for i := range elDPs.List {
-		dpsUsed[i] = elDPs.List[i]
-	}
+	for i := range elDPs.List {dpsUsed[i] = elDPs.List[i]}
 
 	defer local.CloseAll()
 
@@ -342,10 +330,7 @@ func TestServiceDrynxLogisticRegressionForHeartRate(t *testing.T) {
 	kfold := int64(4)
 
 	var wgProofs []*sync.WaitGroup
-	if proofs == int64(1) {
-		//wgQuery = make([]*sync.WaitGroup, kfold * int64(numberTrials))
-		wgProofs = make([]*sync.WaitGroup, kfold * int64(numberTrials))
-	}
+	if proofs == int64(1) {wgProofs = make([]*sync.WaitGroup, kfold * int64(numberTrials))}
 
 	// ---- dataset parameters ----
 	dataset := "CSV"
@@ -381,7 +366,8 @@ func TestServiceDrynxLogisticRegressionForHeartRate(t *testing.T) {
 	surveyNumber := int64(0)
 	// load the dataset
 	for trial := 0; trial < numberTrials; trial++ {
-		filepath := "../data/total22_final_"+strconv.FormatInt(int64(trial), 10)+".csv"
+		//filepath := "../data/Arrhythmia_dataset" + strconv.FormatInt(int64(trial), 10) + ".csv"
+		filepath := "../data/Arrhythmia_dataset.csv"
 		X, y := encoding.LoadData(dataset, filepath)
 
 		log.LLvl1("Evaluating prediction on dataset for trial:", trial)
@@ -440,13 +426,7 @@ func TestServiceDrynxLogisticRegressionForHeartRate(t *testing.T) {
 			l := int64(6)
 
 			ranges := make([]*[]int64, operation.NbrOutput)
-			if rangeProofs {
-				for i := range ranges {
-					ranges[i] = &[]int64{u, l}
-				}
-			} else {
-				ranges = nil
-			}
+			if rangeProofs {for i := range ranges {ranges[i] = &[]int64{u, l}}} else {ranges = nil}
 
 			// DPs signatures for Input Range Validation
 			ps := make([]*[]libdrynx.PublishSignatureBytes, len(elServers.List))
@@ -563,7 +543,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	os.Remove("pre_compute_multiplications.gob")
 
 	//------SET PARAMS--------
-	proofs := int64(0) // 0 is not proof, 1 is proofs, 2 is optimized proofs
+	proofs := int64(1) // 0 is not proof, 1 is proofs, 2 is optimized proofs
 	rangeProofs := false
 	obfuscation := false
 
@@ -639,9 +619,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 
 	lrParameters.NbrDps = int64(len(elDPs.List))
 
-	if proofs == 0 {
-		elVNs = nil
-	}
+	if proofs == 0 {elVNs = nil}
 	defer local.CloseAll()
 
 	dpToServers := RepartitionDPs(elServers, elDPs, repartition)
@@ -681,10 +659,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		for i := range ranges {
 			ranges[i] = &[]int64{u, l}
 		}
-	} else {
-		ranges = nil
-	}
-
+	} else {ranges = nil}
 
 	// choose if differential privacy or not, no diffP by default
 	// choosing the limit is done by drawing the curve (e.g. wolframalpha)
@@ -993,9 +968,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 				}
 				ps[i] = &temp
 			}
-		} else {
-			ps = nil
-		}
+		} else {ps = nil}
 
 		// query parameters recap
 		log.LLvl1("Service Drynx Test with suite: ", libunlynx.SuiTe.String(), " and query:")
@@ -1010,15 +983,9 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 		}
 
 		idToPublic := make(map[string]kyber.Point)
-		for _, v := range elServers.List {
-			idToPublic[v.String()] = v.Public
-		}
-		for _, v := range elDPs.List {
-			idToPublic[v.String()] = v.Public
-		}
-		for _, v := range elVNs.List {
-			idToPublic[v.String()] = v.Public
-		}
+		for _, v := range elServers.List {idToPublic[v.String()] = v.Public}
+		for _, v := range elDPs.List {idToPublic[v.String()] = v.Public}
+		for _, v := range elVNs.List {idToPublic[v.String()] = v.Public}
 
 		thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 		// query sending + results receiving
