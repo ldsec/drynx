@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/dedis/cothority/skipchain"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/encoding"
 	"github.com/dedis/kyber/util/key"
@@ -16,6 +15,7 @@ import (
 	"github.com/lca1/drynx/services"
 	"github.com/lca1/unlynx/lib"
 	"gopkg.in/urfave/cli.v1"
+	"math/rand"
 	"os"
 	"os/exec"
 	"strconv"
@@ -84,6 +84,7 @@ func RunDrynx(c *cli.Context) error {
 
 	elServers, _ := openGroupToml("test/groupServers.toml")
 	elDPs, _ := openGroupToml("test/groupDPs.toml")
+	log.LLvl1(elDPs)
 	elVNs, _ := openGroupToml("test/groupVNs.toml")
 
 	rangeProofs := false
@@ -134,29 +135,30 @@ func RunDrynx(c *cli.Context) error {
 	} else {operationList = []string{operationQuery}}
 
 	dpToServers := services.RepartitionDPs(elServers, elDPs, repartition)
+	log.LLvl1("JOHNNN", dpToServers)
 
 	// Create a client (querier) for the service)
 	client := services.NewDrynxClient(elServers.List[0], "test-Drynx")
 
 	numberTrials := 1
-	kfold := int64(4)
+	//kfold := int64(4)
 
 	var wgProofs []*sync.WaitGroup
-	var listBlocks []*skipchain.SkipBlock
 	if proofs == int64(1) {
-		wgProofs = make([]*sync.WaitGroup, kfold * int64(numberTrials))
-		listBlocks = make([]*skipchain.SkipBlock,  kfold * int64(numberTrials))
-	}
+		//wgProofs = make([]*sync.WaitGroup, kfold * int64(numberTrials))
+		wgProofs = make([]*sync.WaitGroup, int64(numberTrials))
+		}
 
 	// ---- dataset parameters ----
 	dataset := "CSV"
-	//ratio := 0.8
+	ratio := 0.8
 	scale := 1e0
 	lrParameters := libdrynx.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: scale, Lambda: 1.0, Step: 0.1, MaxIterations: 25,
 		InitialWeights: []float64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, NbrDps: int64(len(dpsUsed))}
 	//diffP = common.QueryDiffP{LapMean:0.0, LapScale:30.0, NoiseListSize: 90, Quanta: 0.0, Scale:scale, Limit:60}
 
 	// create the filenames
+	//JS
 	filePathTraining := "/Users/jstephan/Desktop/dataset_training.txt"
 	filePathTesting := "/Users/jstephan/Desktop/dataset_testing.txt"
 
@@ -274,8 +276,7 @@ func RunDrynx(c *cli.Context) error {
 			}
 			log.LLvl1("Operation " + op + " is done successfully.")
 
-			elapsed := time.Since(start)
-			log.LLvl1("Query took", elapsed)
+			log.LLvl1("Query took", time.Since(start))
 
 			//Store query answer in local database
 			log.LLvl1("Update local database.")
@@ -291,6 +292,8 @@ func RunDrynx(c *cli.Context) error {
 				clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1})
 			}
 		} else {
+			start := time.Now()
+
 			// ---- simulation parameters -----
 			//initSeed := int64(rand.Intn(5432109876))
 			// 0: train together, test together
@@ -311,19 +314,22 @@ func RunDrynx(c *cli.Context) error {
 			log.LLvl1("Simulating homomorphism-aware logistic regression for the " + dataset + " dataset")
 
 			// load the dataset
+			surveyNumber := int64(0)
 			for trial := 0; trial < numberTrials; trial++ {
+				//JS
 				filepath := "/Users/jstephan/Desktop/Swisscom/LogisticRegression/temp/total22_final_" + strconv.Itoa(trial) + ".csv"
+				//filepath2 := "/root/temp/total22_final_" + strconv.Itoa(trial) + ".csv"
 				X, y := encoding2.LoadData(dataset, filepath)
 
 				log.LLvl1("Evaluating prediction on dataset for trial:", trial)
 
 				// split into training and testing set
 				//seed := initSeed + int64(i)
-				//seed := int64(rand.Intn(5432109876))
-				//XTrain, yTrain, XTest, yTest := encoding2.PartitionDataset(X, y, ratio, true, seed)
+				seed := int64(rand.Intn(5432109876))
+				XTrain, yTrain, XTest, yTest := encoding2.PartitionDataset(X, y, ratio, true, seed)
 
-				for partition := int64(0); partition < kfold; partition++ {
-					XTrain, yTrain, XTest, yTest := encoding2.PartitionDatasetCV(X, y, partition, kfold)
+				//for partition := int64(0); partition < kfold; partition++ {
+				//	XTrain, yTrain, XTest, yTest := encoding2.PartitionDatasetCV(X, y, partition, kfold)
 
 					// write to file
 					trainingSet := encoding2.InsertColumn(XTrain, encoding2.Int64ToFloat641DArray(yTrain), 0)
@@ -356,7 +362,10 @@ func RunDrynx(c *cli.Context) error {
 						standardDeviations = nil
 					}
 
-					lrParameters.FilePath = filePathTraining
+					//JS
+					// lrParameters.FilePath = filePathTraining
+					lrParameters.FilePath = filepath
+					//lrParameters.FilePath = filepath2
 					lrParameters.NbrRecords = int64(len(trainingSet))
 					lrParameters.NbrFeatures = int64(len(XTrain[0]))
 					lrParameters.Means = means
@@ -401,16 +410,16 @@ func RunDrynx(c *cli.Context) error {
 					// query sending + results receiving
 					cuttingFactor := int64(0)
 
-					queryIndex := int(int64(trial) * kfold + partition)
-					surveyID := "query-" + op + "-" + strconv.Itoa(queryIndex)
+					//surveyID := "query-" + op + "-" + strconv.Itoa(queryIndex)
+					surveyID := "query_" + strconv.FormatInt(surveyNumber,10) + "-" + op
 					sq := client.GenerateSurveyQuery(elServers, elVNs, dpToServers, idToPublic, surveyID, operation,
 						ranges, ps, proofs, false, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor, dpsUsed)
 
-					log.LLvl1("SENT QUERY", int64(trial) * kfold + partition)
+					//log.LLvl1("SENT QUERY", int64(trial) * kfold + partition)
 
 					if proofs == int64(1) {
 						// send query to the skipchain and 'wait' for all proofs' verification to be done
-						clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip-" + op + "-" + strconv.Itoa(queryIndex))
+						clientSkip := services.NewDrynxClient(elVNs.List[0], "skip_" + strconv.FormatInt(surveyNumber,10) + "-" + op)
 
 						var wg *sync.WaitGroup
 						wg = libunlynx.StartParallelize(1)
@@ -421,13 +430,13 @@ func RunDrynx(c *cli.Context) error {
 						}(elVNs)
 						libunlynx.EndParallelize(wg)
 
-						wgProofs[queryIndex] = libunlynx.StartParallelize(1)
-						go func(index int, si *network.ServerIdentity) {
+						proofIndex := int(surveyNumber)
+						wgProofs[proofIndex] = libunlynx.StartParallelize(1)
+						go func(index int, si *network.ServerIdentity, sID string) {
 							defer wgProofs[index].Done()
-							sb, err := clientSkip.SendEndVerification(si, surveyID)
+							_, err := clientSkip.SendEndVerification(si, sID)
 							if err != nil {log.Fatal("Error starting the 'waiting' threads:", err)}
-							listBlocks[index] = sb
-						}(queryIndex, elVNs.List[0])
+						}(proofIndex, elVNs.List[0], surveyID)
 					}
 
 					_, aggr, _ := client.SendSurveyQuery(sq)
@@ -449,14 +458,15 @@ func RunDrynx(c *cli.Context) error {
 
 						fileTraining.Close()
 						fileTesting.Close()
-					}
+						surveyNumber++
+
 			}
 
-			meanAccuracy /= float64(int64(numberTrials) * kfold)
-			meanPrecision /= float64(int64(numberTrials) * kfold)
-			meanRecall /= float64(int64(numberTrials) * kfold)
-			meanFscore /= float64(int64(numberTrials) * kfold)
-			meanAUC /= float64(int64(numberTrials) * kfold)
+			meanAccuracy /= float64(int64(numberTrials))// * kfold)
+			meanPrecision /= float64(int64(numberTrials))// * kfold)
+			meanRecall /= float64(int64(numberTrials))// * kfold)
+			meanFscore /= float64(int64(numberTrials))// * kfold)
+			meanAUC /= float64(int64(numberTrials))// * kfold)
 
 			fmt.Println("Final evaluation over", numberTrials, "trials")
 			fmt.Println("accuracy: ", meanAccuracy)
@@ -466,12 +476,15 @@ func RunDrynx(c *cli.Context) error {
 			fmt.Println("AUC:      ", meanAUC)
 
 			if proofs == int64(1) {
-				clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip")
+				clientSkip := services.NewDrynxClient(elVNs.List[0], "closeDB")
 				for _, wg := range wgProofs {libunlynx.EndParallelize(wg)}
 				// close DB
 				clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1})
 			}
+
+			log.LLvl1("Logistic Regression operation took", time.Since(start))
 		}
+
 	}
 	log.LLvl1("All done.")
 	return nil

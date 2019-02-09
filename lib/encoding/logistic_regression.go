@@ -91,7 +91,7 @@ func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRe
 		}
 	}
 
-	log.LLvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
+	//log.LLvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
 	log.LLvl2("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
 	return encryptedAggregatedApproxCoefficients, aggregatedApproxCoefficientsIntPacked
 }
@@ -163,7 +163,7 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.
 		}
 	}
 
-	log.LLvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
+	//log.LLvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
 	log.LLvl2("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
 
 	createRangeProof := make([]libdrynx.CreateProof, len(aggregatedApproxCoefficientsIntPacked))
@@ -1437,17 +1437,10 @@ func GetDataForDataProvider(filename string, dataProviderIdentity network.Server
 	return dataForDP
 }
 
-
-// GetDataForDataProvider returns data records from a file for a given data provider based on its id
-func GetDataForDataProviderWithoutSplitting (filename string, dataProviderIdentity network.ServerIdentity) [][]float64 {
-	var dpData [][]float64
-	dataProviderID := dataProviderIdentity.String()
-	dpID, err := strconv.Atoi(dataProviderID[len(dataProviderID)-2 : len(dataProviderID)-1])
-
-	if err == nil {
-		dpData = String2DToFloat64(ReadFile(filename + "_" + strconv.Itoa(dpID) + ".csv", ","))
-		fmt.Println("DP", dpID, " has:", len(dpData), "records")
-	}
+// GetDataForDataProviderWithoutSplitting returns data records from a file for a given data provider
+func GetDataForDataProviderWithoutSplitting (filename string) [][]float64 {
+	dpData := String2DToFloat64(ReadFile(filename, ","))
+	log.LLvl1("DP has:", len(dpData), "records")
 	return dpData
 }
 

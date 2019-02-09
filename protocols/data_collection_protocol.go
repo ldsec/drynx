@@ -205,9 +205,10 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	if p.Survey.Query.Operation.NameOp == "logreg" {
 		if lrParameters.FilePath != "" {
 			// note: GetDataForDataProvider(...) business only for testing purpose
-			dataProviderID := p.TreeNode().ServerIdentity
-			datasFloat = encoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.FilePath, *dataProviderID, lrParameters.NbrDps)
-			//datasFloat = encoding.GetDataForDataProviderWithoutSplitting(p.Survey.Query.Operation.LRParameters.FilePath, *dataProviderID)
+			//JS
+			//datasFloat = encoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.FilePath, *p.TreeNode().ServerIdentity, lrParameters.NbrDps)
+			//datasFloat = encoding.GetDataForDataProviderWithoutSplitting(p.Survey.Query.Operation.LRParameters.FilePath)
+			datasFloat = fetchDBDataLogReg(lrParameters)
 
 			// set the number of records to the number of records owned by this data provider
 			lrParameters.NbrRecords = int64(len(datasFloat))
@@ -390,8 +391,8 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 		for i, row := range dpData {
 			row = strings.TrimSuffix(strings.TrimPrefix(row, "("), ")")
 			if row != "" {
-				values := strings.Split(row, ", ")
-				for j, val := range values {
+				rowValues := strings.Split(row, ", ")
+				for j, val := range rowValues {
 					val64, _ := strconv.ParseInt(val, 10, 64)
 					tab[j][i] = val64
 				}
@@ -417,6 +418,37 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 		tab[0] = dpValues
 		return tab
 	}
+}
+
+// fetchDBDataLogReg fetches the DPs' data from their databases for the logistic regression operation
+func fetchDBDataLogReg(lrParameters libdrynx.LogisticRegressionParameters) [][]float64 {
+	scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData_LogReg.py"
+	dbLocation := "/Users/jstephan/go/src/github.com/lca1/drynx/app/LogRegRPi.db"
+	//For RPis
+	//scriptFetchDataDB := "/home/pi/Desktop/fetchDPData_LogReg.py"
+	//dbLocation := "/home/pi/Desktop/LogRegRPi.db"
+
+	cmd := exec.Command("python", scriptFetchDataDB, dbLocation)
+	out, err := cmd.Output()
+	if err != nil {println(err.Error())}
+
+	dpData := strings.Split(string(out), "\n")
+	tab := make([][]float64, len(dpData) - 1)
+	dimension := lrParameters.NbrFeatures + 1
+
+	for i, row := range dpData {
+		if row != "" {
+			tab[i] = make([]float64, dimension)
+			row = strings.TrimSuffix(strings.TrimPrefix(row, "("), ")")
+			values := strings.Split(row, ", ")
+			for j, val := range values {
+				val64, _ := strconv.ParseFloat(val,64)
+				tab[i][j] = val64
+			}
+		}
+	}
+
+	return tab
 }
 
 // createFakeDataForOperation creates fake data to be used
