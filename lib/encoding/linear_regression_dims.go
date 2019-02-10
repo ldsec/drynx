@@ -152,10 +152,11 @@ func DecodeLinearRegressionDims(result []libunlynx.CipherText, secKey kyber.Scal
 	//Solve the linear system of equations and return x = [c0, c1, c2, ..., cd]
 	var solution [][]rational.Rational
 	solution, _ = gaussian.SolveGaussian(matrixRational, false)
-
 	coeffs := make([]float64, d+1)
+
 	for i := 0; i < len(solution); i++ {
-		coeffs[i] = solution[i][0].Float64()
+		//if solution[i] is empty, set coeffs[i] to 0
+		if len(solution[i]) > 0 {coeffs[i] = solution[i][0].Float64()} else {coeffs[i] = 0}
 	}
 	return coeffs
 }
