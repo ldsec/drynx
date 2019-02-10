@@ -325,7 +325,8 @@ func RunDrynx(c *cli.Context) error {
 
 				// split into training and testing set
 				//seed := initSeed + int64(i)
-				seed := int64(rand.Intn(5432109876))
+				seed := rand.Int63n(5432109876)
+				//seed := int64(rand.Intn(5432109876))
 				XTrain, yTrain, XTest, yTest := encoding2.PartitionDataset(X, y, ratio, true, seed)
 
 				//for partition := int64(0); partition < kfold; partition++ {

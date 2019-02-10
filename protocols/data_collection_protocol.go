@@ -199,39 +199,6 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		}
 	}
 
-	// logistic regression specific
-	var datasFloat [][]float64
-	lrParameters := p.Survey.Query.Operation.LRParameters
-	if p.Survey.Query.Operation.NameOp == "logreg" {
-		if lrParameters.FilePath != "" {
-			// note: GetDataForDataProvider(...) business only for testing purpose
-			//JS
-			//datasFloat = encoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.FilePath, *p.TreeNode().ServerIdentity, lrParameters.NbrDps)
-			//datasFloat = encoding.GetDataForDataProviderWithoutSplitting(p.Survey.Query.Operation.LRParameters.FilePath)
-			datasFloat = fetchDBDataLogReg(lrParameters)
-
-			// set the number of records to the number of records owned by this data provider
-			lrParameters.NbrRecords = int64(len(datasFloat))
-			lrParameters.NbrFeatures = int64(len(datasFloat[0])-1)
-
-		} else {
-			// create dummy data
-			datasFloat = make([][]float64, lrParameters.NbrRecords)
-			limit := 4
-
-			m := int(lrParameters.NbrFeatures) + 1
-			for i := 0; i < int(lrParameters.NbrRecords); i++ {
-				datasFloat[i] = make([]float64, m)
-				r := rand.Intn(2) // sample 0 or 1 randomly for the label
-				datasFloat[i][0] = float64(r)
-				for j := 1; j < m; j++ {
-					r := rand.Intn(limit)
-					datasFloat[i][j] = float64(r)
-				}
-			}
-		}
-	}
-
 	// ------- START: ENCODING & ENCRYPTION -------
 	//encodeTime := libunlynx.StartTimer(p.Name() + "_DPencoding")
 	start := time.Now()
@@ -249,6 +216,36 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 			p.Survey.Query.Operation.NbrOutput = p.Survey.Query.Operation.NbrOutput / int64(p.Survey.Query.CuttingFactor)
 		}
 		if p.Survey.Query.Operation.NameOp == "logreg" {
+			// logistic regression
+			var datasFloat [][]float64
+			lrParameters := p.Survey.Query.Operation.LRParameters
+				if lrParameters.FilePath != "" {
+					startDBLogReg := time.Now()
+					//datasFloat = encoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.FilePath, *p.TreeNode().ServerIdentity, lrParameters.NbrDps)
+					datasFloat = fetchDBDataLogReg(lrParameters)
+					log.LLvl1("Actual DB fetch took", time.Since(startDBLogReg))
+
+					// set the number of records to the number of records owned by this data provider
+					lrParameters.NbrRecords = int64(len(datasFloat))
+					lrParameters.NbrFeatures = int64(len(datasFloat[0])-1)
+
+				} else {
+					// create dummy data
+					datasFloat = make([][]float64, lrParameters.NbrRecords)
+					limit := 4
+
+					m := int(lrParameters.NbrFeatures) + 1
+					for i := 0; i < int(lrParameters.NbrRecords); i++ {
+						datasFloat[i] = make([]float64, m)
+						r := rand.Intn(2) // sample 0 or 1 randomly for the label
+						datasFloat[i][0] = float64(r)
+						for j := 1; j < m; j++ {
+							r := rand.Intn(limit)
+							datasFloat[i][j] = float64(r)
+						}
+					}
+				}
+
 			encryptedResponse, clearResponse, cprf = encoding.EncodeForFloat(datasFloat, lrParameters, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation.NameOp)
 		} else {
 			if p.Survey.Query.DPDataGen.Source == 0 {
