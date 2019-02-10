@@ -384,18 +384,19 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 		if err != nil {println(err.Error())}
 
 		dpData := strings.Split(string(out), "\n")
+		//Last entry of dpData is an empty line
+		dpData = dpData[:len(dpData)-1]
+
 		tab := make([][]int64, operation.NbrInput)
 		values := strings.Split(strings.TrimSuffix(strings.TrimPrefix(dpData[0], "("), ")"), ", ")
-		for j := range values {tab[j] = make([]int64, len(dpData)-1)}
+		for j := range values {tab[j] = make([]int64, len(dpData))}
 
 		for i, row := range dpData {
 			row = strings.TrimSuffix(strings.TrimPrefix(row, "("), ")")
-			if row != "" {
-				rowValues := strings.Split(row, ", ")
-				for j, val := range rowValues {
-					val64, _ := strconv.ParseInt(val, 10, 64)
-					tab[j][i] = val64
-				}
+			rowValues := strings.Split(row, ", ")
+			for j, val := range rowValues {
+				val64, _ := strconv.ParseInt(val, 10, 64)
+				tab[j][i] = val64
 			}
 		}
 		return tab
@@ -433,21 +434,21 @@ func fetchDBDataLogReg(lrParameters libdrynx.LogisticRegressionParameters) [][]f
 	if err != nil {println(err.Error())}
 
 	dpData := strings.Split(string(out), "\n")
-	tab := make([][]float64, len(dpData) - 1)
+	//Last entry of dpData is an empty line
+	dpData = dpData[:len(dpData)-1]
+
+	tab := make([][]float64, len(dpData))
 	dimension := lrParameters.NbrFeatures + 1
 
 	for i, row := range dpData {
-		if row != "" {
-			tab[i] = make([]float64, dimension)
-			row = strings.TrimSuffix(strings.TrimPrefix(row, "("), ")")
-			values := strings.Split(row, ", ")
-			for j, val := range values {
-				val64, _ := strconv.ParseFloat(val,64)
-				tab[i][j] = val64
-			}
+		tab[i] = make([]float64, dimension)
+		row = strings.TrimSuffix(strings.TrimPrefix(row, "("), ")")
+		values := strings.Split(row, ", ")
+		for j, val := range values {
+			val64, _ := strconv.ParseFloat(val,64)
+			tab[i][j] = val64
 		}
 	}
-
 	return tab
 }
 
