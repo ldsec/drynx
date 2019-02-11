@@ -12,5 +12,5 @@ func TestMain(m *testing.M) {
 }
 
 func TestSimulation(t *testing.T) {
-	simul.Start("runfiles/drynxVNScaling.toml")
+	simul.Start("runfiles/lemalDiffP.toml")
 }

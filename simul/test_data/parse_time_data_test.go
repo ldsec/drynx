@@ -4,9 +4,9 @@ import (
 	"testing"
 )
 
-const filenameRead = "drynxVNScaling.csv"
-const filenameWrite = "drynxBand40.txt"
-const filenameToml = "../runfiles/drynxVNScaling.toml"
+const filenameRead = "lemalDiffP.csv"
+const filenameWrite = "lemalDiffP.txt"
+const filenameToml = "../runfiles/lemalDiffP.toml"
 
 var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 	"Simulation", "\n",

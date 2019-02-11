@@ -386,6 +386,7 @@ func ComputeAllApproxCoefficients(X []float64, y int64, k int) [][]float64 {
 		for ri := 0; ri < len(combinations); ri++ {
 			XProduct := 1.0
 			combination := combinations[ri]
+
 			for i := 0; i < len(combination); i++ {
 				XProduct *= X[int(combination[i])]
 			}

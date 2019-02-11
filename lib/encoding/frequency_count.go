@@ -41,7 +41,7 @@ func EncodeFreqCountWithProofs(input []int64, min int64, max int64, pubKey kyber
 	libunlynx.EndParallelize(wg)
 
 	if sigs == nil {
-		return ciphertextTuples, []int64{0}, nil
+		return ciphertextTuples, freqcount, nil
 	}
 
 	createRangeProof := make([]libdrynx.CreateProof, len(freqcount))
@@ -59,7 +59,7 @@ func EncodeFreqCountWithProofs(input []int64, min int64, max int64, pubKey kyber
 		}
 	}
 	libunlynx.EndParallelize(wg1)
-	return ciphertextTuples, []int64{0}, createRangeProof
+	return ciphertextTuples, freqcount, createRangeProof
 }
 
 //DecodeFreqCount computes the frequency count of local DP's query results
