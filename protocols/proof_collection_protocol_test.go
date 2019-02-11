@@ -1,6 +1,7 @@
 package protocols
 
 import (
+	"github.com/coreos/bbolt"
 	"testing"
 
 	"sync"
@@ -9,7 +10,6 @@ import (
 
 	"strconv"
 
-	"github.com/coreos/bbolt"
 	"github.com/dedis/cothority/skipchain"
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet"

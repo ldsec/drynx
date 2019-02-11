@@ -127,8 +127,6 @@ func (s *ServiceDrynx) HandleSurveyQueryToVN(recq *libdrynx.SurveyQueryToVN) (ne
 
 				//Store Genesis in DB
 				genesisBytes, _ := network.Marshal(newSB)
-
-				log.LLvl1("SIZE OF BLOCK:", len(genesisBytes))
 				libdrynx.UpdateDB(s.DB, "genesis", "genesis", genesisBytes)
 
 				s.LastSkipBlock = newSB

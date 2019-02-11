@@ -2,6 +2,7 @@ package protocols
 
 import (
 	"errors"
+	"github.com/lca1/unlynx/services/default/data"
 
 	"fmt"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/dedis/onet/network"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
-	"github.com/lca1/drynx/services/data"
 	"github.com/lca1/unlynx/lib"
 )
 
@@ -181,15 +181,16 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		numType[i] = v
 	}
 	mutexGroups.Lock()
-	data.Groups = make([][]int64, 0)
-	group := make([]int64, 0)
-	data.AllPossibleGroups(numType[:], group, 0)
-	groupsString := make([]string, len(data.Groups))
 
-	for i, v := range data.Groups {
+	dataunlynx.Groups = make([][]int64, 0)
+	group := make([]int64, 0)
+	dataunlynx.AllPossibleGroups(numType[:], group, 0)
+	groupsString := make([]string, len(dataunlynx.Groups))
+
+	for i, v := range dataunlynx.Groups {
 		groupsString[i] = fmt.Sprint(v)
 	}
-	data.Groups = make([][]int64, 0)
+	dataunlynx.Groups = make([][]int64, 0)
 	mutexGroups.Unlock()
 	// read the signatures needed to compute the range proofs
 	signatures := make([][]libdrynx.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize1)
@@ -366,7 +367,7 @@ func createFakeDataForOperation(operation libdrynx.Operation, nbrRows, min, max 
 	for i := range tab {
 		go func(i int) {
 			defer wg.Done()
-			tab[i] = data.CreateInt64Slice(nbrRows, min, max)
+			tab[i] = dataunlynx.CreateInt64Slice(nbrRows, min, max)
 		}(i)
 
 	}

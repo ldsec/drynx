@@ -2,7 +2,6 @@ package libdrynx
 
 import (
 	"crypto/sha256"
-	"github.com/cbergoon/merkletree"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/dedis/onet/log"
@@ -575,11 +574,6 @@ func (t TestContent) CalculateHash() []byte {
 	}
 	h.Write(data)
 	return h.Sum(nil)
-}
-
-//Equals tests for equality of two Contents
-func (t TestContent) Equals(other merkletree.Content) bool {
-	return t.x.Equal(other.(TestContent).x)
 }
 
 //ToBase transform n in base 10 to array in base b
