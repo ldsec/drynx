@@ -24,7 +24,19 @@ To use the code of this repository you need to:
 
 ## Version
 
-The version in the `master`-branch is stable for simulation and test purposes and has no incompatible changes.
+We only have a development version. The `master`-branch in `github.com/lca1/drynx` is the development version that works but can have incompatible changes.
+
+**Very Important** 
+
+Due to the current changes being made to [onet](https://github.com/dedis/onet) and [kyber](https://github.com/dedis/kyber) (release of v3) you must revert back to previous commits for these two libraries if you want Drynx to work. This will change in the near future. 
+
+```bash
+cd $GOPATH/src/dedis/onet/
+git checkout 5796104343ef247e2eed58e573f68c566db2136f
+
+cd $GOPATH/src/dedis/kyber/
+git checkout f55fec5463cda138dfc7ff15e4091d12c4ddcbfe
+```
 
 ## License
 
