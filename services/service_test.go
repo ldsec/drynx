@@ -83,7 +83,7 @@ func TestServiceDrynx(t *testing.T) {
 	//simulation
 	cuttingFactor := 0
 
-	operationList := []string{"sum"} //, "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
+	operationList := []string{"frequencyCount"} //, "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
 	//operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "lin_reg"}
 	//operationList := []string{"bool_AND", "bool_OR", "min", "max", "union", "inter"}
 	//operationList := []string{"variance"}

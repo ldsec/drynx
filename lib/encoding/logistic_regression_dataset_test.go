@@ -406,7 +406,7 @@ var SPECTFpaperWeightsWithEncryption = []float64{
 	-1.123225, -0.036603, -0.394657, -0.485166, 0.421146}
 
 func TestFindMinimumWeightsForSPECTF(t *testing.T) {
-	t.Skip()
+	//t.Skip()
 	log.LLvl2("Find minimum weights for SPECTF")
 	log.LLvl2("-------------------------------")
 
