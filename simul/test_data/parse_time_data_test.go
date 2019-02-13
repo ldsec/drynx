@@ -4,7 +4,6 @@ import (
 	"testing"
 )
 
-
 const filenameRead = "drynx.csv"
 const filenameWrite = "drynx.txt"
 const filenameToml = "../runfiles/drynx.toml"
