@@ -44,7 +44,8 @@ func NewDrynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 		private:    keys.Private,
 	}
 
-	limit := int64(10000)
+	//limit := int64(10000)
+	limit := int64(100000)
 	libdrynx.CreateDecryptionTable(limit, newClient.public, newClient.private)
 	return newClient
 }
@@ -60,11 +61,13 @@ func RepartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 	count := 0
 	for i, v := range elServers.List {
 		index := v.String()
+		if dpRepartition[i] == 0 {
+			continue
+		}
 		value := make([]network.ServerIdentity, dpRepartition[i])
 		dpToServers[index] = &value
 		for j := range *dpToServers[index] {
 			val := elDPs.List[count]
-			log.LLvl1("DP", val.Address, "SERVER", v.Address)
 			count += 1
 			(*dpToServers[index])[j] = *val
 		}
@@ -178,7 +181,6 @@ func (c *API) SendSurveyQuery(sq libdrynx.SurveyQuery) (*[]string, *[][]float64,
 	log.Lvl2("[API] <Drynx> Client", c.clientID, "successfully executed the query with SurveyID ", sq.SurveyID)
 
 	// decrypt/decode the result
-	//clientDecode := libunlynx.StartTimer("Decode")
 	start := time.Now()
 
 	log.Lvl2("[API] <Drynx> Client", c.clientID, "is decrypting the results")
@@ -190,10 +192,9 @@ func (c *API) SendSurveyQuery(sq libdrynx.SurveyQuery) (*[]string, *[][]float64,
 	for i, res := range sr.Data {
 		grp[count] = i
 		aggr[count] = encoding.Decode(res, c.private, sq.Query.Operation)
-		//aggr[count] = []float64{1}
 		count++
 	}
-	//libunlynx.EndTimer(clientDecode)
+
 	elapsed := time.Since(start)
 	log.LLvl1("Decoding took", elapsed)
 

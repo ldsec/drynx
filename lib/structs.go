@@ -229,7 +229,6 @@ type Operation struct {
 	NbrOutput    int64
 	QueryMin     int64
 	QueryMax     int64
-	Dimension    int64
 	LRParameters LogisticRegressionParameters
 }
 
@@ -721,8 +720,13 @@ func ChooseOperation(operationName string, attributes string, queryMin, queryMax
 	operation.NbrOutput = 0
 	operation.QueryMax = queryMax
 	operation.QueryMin = queryMin
-	operation.Dimension = d
 	operation.LRParameters = params
+
+	if d == 0 {
+		//hardcoded value for second use case
+		//to get here, just include 1 attribute in the query (e.g. -a all) with the linear regression operation
+		d = 9
+	}
 
 	switch operationName {
 	case "sum":

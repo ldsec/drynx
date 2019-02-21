@@ -201,8 +201,6 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 	// ------- START: ENCODING & ENCRYPTION -------
 	//encodeTime := libunlynx.StartTimer(p.Name() + "_DPencoding")
-	start := time.Now()
-
 	cprf := make([]libdrynx.CreateProof, 0)
 
 	// compute response
@@ -219,45 +217,46 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 			// logistic regression
 			var datasFloat [][]float64
 			lrParameters := p.Survey.Query.Operation.LRParameters
-				if lrParameters.FilePath != "" {
-					startDBLogReg := time.Now()
-					//datasFloat = encoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.FilePath, *p.TreeNode().ServerIdentity, lrParameters.NbrDps)
-					datasFloat = fetchDBDataLogReg(lrParameters)
-					log.LLvl1("Actual DB fetch took", time.Since(startDBLogReg))
+			if lrParameters.FilePath != "" {
+				startDBLogReg := time.Now()
+				//datasFloat = encoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.FilePath, *p.TreeNode().ServerIdentity, lrParameters.NbrDps)
+				datasFloat = fetchDBDataLogReg(lrParameters)
+				log.LLvl1("Actual DB Log Reg fetch took", time.Since(startDBLogReg))
 
-					// set the number of records to the number of records owned by this data provider
-					lrParameters.NbrRecords = int64(len(datasFloat))
-					lrParameters.NbrFeatures = int64(len(datasFloat[0])-1)
+				// set the number of records to the number of records owned by this data provider
+				lrParameters.NbrRecords = int64(len(datasFloat))
+				lrParameters.NbrFeatures = int64(len(datasFloat[0])-1)
 
-				} else {
-					// create dummy data
-					datasFloat = make([][]float64, lrParameters.NbrRecords)
-					limit := 4
+			} else {
+				// create dummy data
+				datasFloat = make([][]float64, lrParameters.NbrRecords)
+				limit := 4
 
-					m := int(lrParameters.NbrFeatures) + 1
-					for i := 0; i < int(lrParameters.NbrRecords); i++ {
-						datasFloat[i] = make([]float64, m)
-						r := rand.Intn(2) // sample 0 or 1 randomly for the label
-						datasFloat[i][0] = float64(r)
-						for j := 1; j < m; j++ {
-							r := rand.Intn(limit)
-							datasFloat[i][j] = float64(r)
-						}
-					}
+				m := int(lrParameters.NbrFeatures) + 1
+				for i := 0; i < int(lrParameters.NbrRecords); i++ {
+					datasFloat[i] = make([]float64, m)
+					r := rand.Intn(2) // sample 0 or 1 randomly for the label
+					datasFloat[i][0] = float64(r)
+					for j := 1; j < m; j++ {datasFloat[i][j] = float64(rand.Intn(limit))}
 				}
-
-			encryptedResponse, clearResponse, cprf = encoding.EncodeForFloat(datasFloat, lrParameters, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation.NameOp)
-		} else {
-			if p.Survey.Query.DPDataGen.Source == 0 {
-				fakeData := createFakeDataForOperation(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
-				encryptedResponse, clearResponse, cprf = encoding.Encode(fakeData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
-			} else if p.Survey.Query.DPDataGen.Source == 1 {
-				//startDB := time.Now()
-				// fetch data from db
-				dpData := fetchDataFromDB(p.Survey.Query.Operation)
-				//log.LLvl1("Actual DB fetch took", time.Since(startDB))
-				encryptedResponse, clearResponse, cprf = encoding.Encode(dpData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
 			}
+			startEncodingLogReg := time.Now()
+			encryptedResponse, clearResponse, cprf = encoding.EncodeForFloat(datasFloat, lrParameters, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation.NameOp)
+			log.LLvl1("Encoding of data Log Reg took", time.Since(startEncodingLogReg))
+		} else {
+			var dpData [][]int64
+			if p.Survey.Query.DPDataGen.Source == 0 {
+				dpData = createFakeDataForOperation(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
+			} else if p.Survey.Query.DPDataGen.Source == 1 {
+				startDB := time.Now()
+				// fetch data from db
+				dpData = fetchDataFromDB(p.Survey.Query.Operation)
+				log.LLvl1("Actual DB fetch took", time.Since(startDB))
+			}
+
+			startEncryption := time.Now()
+			encryptedResponse, clearResponse, cprf = encoding.Encode(dpData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
+			log.LLvl1("Encryption of data took", time.Since(startEncryption))
 		}
 
 		log.Lvl2("Data Provider", p.Name(), "computes the query response", clearResponse, "for groups:", groupsString, "with operation:", p.Survey.Query.Operation)
@@ -269,12 +268,11 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		for i := 0; int64(i) < p.Survey.Query.CuttingFactor-1; i++ {queryResponse[v] = append(queryResponse[v], qr...)}
 		if p.Survey.Query.Proofs != 0 {
 			go func() {
-				start2 := time.Now()
-
-				startAllProofs := libunlynx.StartTimer(p.Name() + "_AllProofs")
+				startProofs := time.Now()
+				//startAllProofs := libunlynx.StartTimer(p.Name() + "_AllProofs")
 				rpl := libdrynx.RangeProofList{}
-
 				//rangeProofCreation := libunlynx.StartTimer(p.Name() + "_RangeProofCreation")
+				rangeProofCreation := time.Now()
 				// no range proofs (send only the ciphertexts)
 				if len(cprf) == 0 {
 					tmp := make([]libdrynx.RangeProof, 0)
@@ -285,6 +283,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 				} else { // if range proofs
 					rpl = libdrynx.RangeProofList{Data: libdrynx.CreatePredicateRangeProofListForAllServers(cprf)}
 				}
+
 				// scaling for simulation purposes
 				if p.Survey.Query.CuttingFactor != 0 {
 					rplNew := libdrynx.RangeProofList{}
@@ -293,7 +292,6 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 					suitePair := bn256.NewSuite()
 					for j := 0; int64(j) < p.Survey.Query.CuttingFactor; j++ {
 						for _, v := range rpl.Data {
-
 							rplNew.Data[counter].RP = &libdrynx.RangeProofData{}
 							rplNew.Data[counter].RP.V = make([][]kyber.Point, len(v.RP.V))
 							for k, w := range v.RP.V {
@@ -316,30 +314,26 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 							counter = counter + 1
 						}
 					}
-
 					rpl.Data = rplNew.Data
 				}
 
 				pi := p.MapPIs["range/"+p.ServerIdentity().String()]
 				pi.(*ProofCollectionProtocol).Proof = libdrynx.ProofRequest{RangeProof: libdrynx.NewRangeProofRequest(&rpl, p.Survey.SurveyID, p.ServerIdentity().String(), "", p.Survey.Query.RosterVNs, p.Private(), nil)}
 				//libunlynx.EndTimer(rangeProofCreation)
+				log.LLvl1("Range Proof Creation took ", time.Since(rangeProofCreation))
 
 				go pi.Dispatch()
 				go pi.Start()
 				<-pi.(*ProofCollectionProtocol).FeedbackChannel
 
-				libunlynx.EndTimer(startAllProofs)
-
-				elapsed2 := time.Since(start2)
-				log.LLvl1("AllProofs took ", elapsed2)
+				//libunlynx.EndTimer(startAllProofs)
+				log.LLvl1("AllProofs took ", time.Since(startProofs))
 
 			}()
 		}
 	}
 	//libunlynx.EndTimer(encodeTime)
-	elapsed := time.Since(start)
 	log.LLvl1("Encrypting locally aggregated answer")
-	log.LLvl1("Encryption took ", elapsed)
 
 	// ------- END -------
 
@@ -367,24 +361,28 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 // fetchDataFromDB fetches the DPs' data from their databases
 func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
+	tableName := "Prescriptions"
+	//Locally
 	scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData.py"
-	dbLocation := "/Users/jstephan/go/src/github.com/lca1/drynx/app/Client.db"
-	//For RPis
+	//dbLocation := "/Users/jstephan/go/src/github.com/lca1/drynx/app/Client.db"
+	dbLocation := "/Users/jstephan/Desktop/MedicalDispensation.db"
+	//RPis
 	//scriptFetchDataDB := "/home/pi/Desktop/fetchDPData.py"
 	//dbLocation := "/home/pi/Desktop/Client.db"
 
 	if operation.NameOp == "lin_reg" {
 		//Send "true" as an argument if the operation in question is linear regression
 		//QueryMin and QueryMax are not useful in this case
-		cmd := exec.Command("python", scriptFetchDataDB, dbLocation, "true", operation.Attributes)
+		cmd := exec.Command("python", scriptFetchDataDB, dbLocation, tableName, "true", operation.Attributes)
+
 		out, err := cmd.Output()
 		if err != nil {println(err.Error())}
 
 		dpData := strings.Split(string(out), "\n")
 		//Last entry of dpData is an empty line
 		dpData = dpData[:len(dpData)-1]
-
 		tab := make([][]int64, operation.NbrInput)
+
 		values := strings.Split(strings.TrimSuffix(strings.TrimPrefix(dpData[0], "("), ")"), ", ")
 		for j := range values {tab[j] = make([]int64, len(dpData))}
 
@@ -399,7 +397,7 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 		return tab
 	} else {
 		//Send "false" as an argument if the operation in question is not linear regression
-		cmd := exec.Command("python", scriptFetchDataDB, dbLocation, "false", operation.Attributes,
+		cmd := exec.Command("python", scriptFetchDataDB, dbLocation, tableName, "false", operation.Attributes,
 			strconv.FormatInt(operation.QueryMin, 10), strconv.FormatInt(operation.QueryMax, 10))
 
 		out, err := cmd.Output()
@@ -425,8 +423,11 @@ func fetchDBDataLogReg(lrParameters libdrynx.LogisticRegressionParameters) [][]f
 	//For RPis
 	//scriptFetchDataDB := "/home/pi/Desktop/fetchDPData_LogReg.py"
 	//dbLocation := "/home/pi/Desktop/LogRegRPi.db"
+	//For Computing Nodes on IC Cluster
+	//scriptFetchDataDB := "/root/fetchDPData_LogReg.py"
+	//dbLocation := "/root/LogRegRPi.db"
 
-	cmd := exec.Command("python", scriptFetchDataDB, dbLocation)
+	cmd := exec.Command("python3", scriptFetchDataDB, dbLocation)
 	out, err := cmd.Output()
 	if err != nil {println(err.Error())}
 

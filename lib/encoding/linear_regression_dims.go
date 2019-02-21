@@ -59,9 +59,7 @@ func EncodeLinearRegressionDimsWithProofs(input1 [][]int64, input2 []int64, pubK
 	for j := 0; j < d; j++ {
 		for k := j; k < d; k++ {
 			sumXjX = int64(0)
-			for i := 0; i < N; i++ {
-				sumXjX += input1[i][j] * input1[i][k]
-			}
+			for i := 0; i < N; i++ {sumXjX += input1[i][j] * input1[i][k]}
 			sumXjXkEncrypted, rTemp := libunlynx.EncryptIntGetR(pubKey, sumXjX)
 			CiphertextTuple = append(CiphertextTuple, *sumXjXkEncrypted)
 			plaintextValues = append(plaintextValues, sumXjX)
@@ -82,9 +80,7 @@ func EncodeLinearRegressionDimsWithProofs(input1 [][]int64, input2 []int64, pubK
 		r = append(r, rTemp)
 	}
 
-	if sigs == nil {
-		return CiphertextTuple, []int64{0}, nil
-	}
+	if sigs == nil {return CiphertextTuple, []int64{0}, nil}
 	//input range validation proof
 	createProofs := make([]libdrynx.CreateProof, len(plaintextValues))
 	wg := libunlynx.StartParallelize(len(plaintextValues))
@@ -112,9 +108,7 @@ func DecodeLinearRegressionDims(result []libunlynx.CipherText, secKey kyber.Scal
 	d := int(real(posSol))
 
 	matrixAugmented := make([][]int64, d+1, d+2)
-	for i := range matrixAugmented {
-		matrixAugmented[i] = make([]int64, d+2)
-	}
+	for i := range matrixAugmented {matrixAugmented[i] = make([]int64, d+2)}
 
 	//Build the augmented matrix
 	s := 0
@@ -124,7 +118,7 @@ func DecodeLinearRegressionDims(result []libunlynx.CipherText, secKey kyber.Scal
 	for j := 0; j < len(result)-d-1; j++ {
 		if j == l {
 			k--
-			l = l + k
+			l += k
 			i++
 			s = 0
 		}

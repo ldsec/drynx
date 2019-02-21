@@ -84,7 +84,6 @@ func RunDrynx(c *cli.Context) error {
 
 	elServers, _ := openGroupToml("test/groupServers.toml")
 	elDPs, _ := openGroupToml("test/groupDPs.toml")
-	log.LLvl1(elDPs)
 	elVNs, _ := openGroupToml("test/groupVNs.toml")
 
 	rangeProofs := false
@@ -135,7 +134,6 @@ func RunDrynx(c *cli.Context) error {
 	} else {operationList = []string{operationQuery}}
 
 	dpToServers := services.RepartitionDPs(elServers, elDPs, repartition)
-	log.LLvl1("JOHNNN", dpToServers)
 
 	// Create a client (querier) for the service)
 	client := services.NewDrynxClient(elServers.List[0], "test-Drynx")
@@ -275,7 +273,6 @@ func RunDrynx(c *cli.Context) error {
 				queryAnswer = strings.TrimSuffix(queryAnswer, ", ")
 			}
 			log.LLvl1("Operation " + op + " is done successfully.")
-
 			log.LLvl1("Query took", time.Since(start))
 
 			//Store query answer in local database

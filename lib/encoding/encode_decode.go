@@ -51,7 +51,6 @@ func Encode(datas [][]int64, pubKey kyber.Point, signatures [][]libdrynx.Publish
 	case "lin_reg":
 		d := len(datas)
 		numbValues := len(datas[0])
-
 		dataDimensions := make([][]int64, numbValues)
 		dataYS := make([]int64, numbValues)
 		for j := 0; j < numbValues; j++ {
@@ -222,7 +221,6 @@ func EncodeForFloat(datas [][]float64, lrParameters libdrynx.LogisticRegressionP
 			encryptedResponse, clearResponse, prf = EncodeLogisticRegressionWithProofs(datas, lrParameters, pubKey, signatures, ranges)
 		} else {
 			encryptedResponse, clearResponse = EncodeLogisticRegression(datas, lrParameters, pubKey)
-			log.LLvl1(clearResponse)
 		}
 	}
 	return encryptedResponse, clearResponse, prf

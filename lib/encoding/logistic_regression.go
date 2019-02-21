@@ -35,65 +35,8 @@ var PolyApproxCoefficients = MinAreaCoefficients
 
 // EncodeLogisticRegression computes and encrypts the data provider's coefficients for logistic regression
 func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point) ([]libunlynx.CipherText, []int64) {
-	d := lrParameters.NbrFeatures
-	n := GetTotalNumberApproxCoefficients(d, lrParameters.K)
-
-	aggregatedApproxCoefficientsIntPacked := make([]int64, n)
-	encryptedAggregatedApproxCoefficients := make([]libunlynx.CipherText, n)
-
-	if data != nil && len(data) > 0 {
-		// unpack the data into features and labels
-		labelColumn := d
-		X := RemoveColumn(data, labelColumn)
-		y := Float64ToInt641DArray(GetColumn(data, labelColumn))
-
-
-		// standardise the data
-		var XStandardised [][]float64
-		if lrParameters.Means != nil && lrParameters.StandardDeviations != nil &&
-			len(lrParameters.Means) > 0 && len(lrParameters.StandardDeviations) > 0 {
-			// using global means and standard deviations, if given
-			log.Lvl2("Standardising the training set with global means and standard deviations...")
-			XStandardised = StandardiseWith(X, lrParameters.Means, lrParameters.StandardDeviations)
-		} else {
-			// using local means and standard deviations, if not given
-			log.Lvl2("Standardising the training set with local means and standard deviations...")
-			XStandardised = Standardise(X)
-		}
-
-		// add an all 1s column to the data (offset term)
-		XStandardised = Augment(XStandardised)
-
-		N := lrParameters.NbrRecords
-
-		// compute all approximation coefficients per record
-		approxCoefficients := make([][][]float64, N)
-		for i := 0; i < len(XStandardised); i++ {
-			approxCoefficients[i] = ComputeAllApproxCoefficients(XStandardised[i], y[i], lrParameters.K)
-		}
-		// aggregate the approximation coefficients locally
-		aggregatedApproxCoefficients := AggregateApproxCoefficients(approxCoefficients)
-		// convert (and optionally scale) the aggregated approximation coefficients to int
-		aggregatedApproxCoefficientsInt := Float64ToInt642DArrayWithPrecision(aggregatedApproxCoefficients, lrParameters.PrecisionApproxCoefficients)
-		// encrypt the aggregated approximation coefficients
-		encryptedApproxCoefficients, _ := ComputeEncryptedApproxCoefficients(aggregatedApproxCoefficientsInt, pubKey)
-
-		nLevelPrevious := getNumberApproxCoefficients(d, -1)
-		for j := int64(0); j < lrParameters.K; j++ {
-			nLevel := getNumberApproxCoefficients(d, j)
-			for i := int64(0); i < nLevel; i++ {
-				// pack the encrypted aggregated approximation coefficients (will need to unpack the result at the querier side)
-				encryptedAggregatedApproxCoefficients[j*nLevelPrevious+i] = (*encryptedApproxCoefficients[j])[i]
-				// pack the aggregated approximation coefficients
-				aggregatedApproxCoefficientsIntPacked[j*nLevelPrevious+i] = aggregatedApproxCoefficientsInt[j][i]
-			}
-			nLevelPrevious = nLevel
-		}
-	}
-
-	//log.LLvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
-	log.LLvl2("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
-	return encryptedAggregatedApproxCoefficients, aggregatedApproxCoefficientsIntPacked
+	encryptedAggregatedApproxCoefficientsOnlyCipher, aggregatedApproxCoefficientsIntPacked, _ := EncodeLogisticRegressionWithProofs(data, lrParameters, pubKey, nil, nil)
+	return encryptedAggregatedApproxCoefficientsOnlyCipher, aggregatedApproxCoefficientsIntPacked
 }
 
 // CipherAndRandom contains one ciphertext and the scalar used in its encryption
@@ -146,7 +89,9 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.
 		// convert (and optionally scale) the aggregated approximation coefficients to int
 		aggregatedApproxCoefficientsInt := Float64ToInt642DArrayWithPrecision(aggregatedApproxCoefficients, lrParameters.PrecisionApproxCoefficients)
 		// encrypt the aggregated approximation coefficients
+		startEncryptionLogReg := time.Now()
 		encryptedApproxCoefficients, encryptedApproxCoefficientsRs := ComputeEncryptedApproxCoefficients(aggregatedApproxCoefficientsInt, pubKey)
+		log.LLvl1("Encryption Log Reg took", time.Since(startEncryptionLogReg))
 
 		nLevelPrevious := getNumberApproxCoefficients(d, -1)
 		for j := int64(0); j < lrParameters.K; j++ {
@@ -165,6 +110,10 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.
 
 	//log.LLvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
 	log.LLvl2("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
+
+	if sigs == nil {
+		return encryptedAggregatedApproxCoefficientsOnlyCipher, aggregatedApproxCoefficientsIntPacked, nil
+	}
 
 	createRangeProof := make([]libdrynx.CreateProof, len(aggregatedApproxCoefficientsIntPacked))
 	wg1 := libunlynx.StartParallelize(len(aggregatedApproxCoefficientsIntPacked))
@@ -202,18 +151,22 @@ func DecodeLogisticRegression(result []libunlynx.CipherText, privKey kyber.Scala
 	nbrApproxCoefficients := len(result)
 	approxCoefficientsPacked := make([]int64, nbrApproxCoefficients)
 
-	decryption := libunlynx.StartTimer("Decryption")
+	//decryption := libunlynx.StartTimer("Decryption")
+	startDecryptionLogReg := time.Now()
 	// decrypt the encrypted aggregated approximation coefficients
 	for i := 0; i < len(result); i++ {approxCoefficientsPacked[i] = libunlynx.DecryptIntWithNeg(privKey, result[i])}
-	libunlynx.EndTimer(decryption)
+	log.LLvl1("Decryption Log Reg took", time.Since(startDecryptionLogReg))
+	//libunlynx.EndTimer(decryption)
 
-	gradientDescent := libunlynx.StartTimer("GradientDescent")
+	log.LLvl1("Decrypted Values are", approxCoefficientsPacked)
+
+	//gradientDescent := libunlynx.StartTimer("GradientDescent")
+	startGradientDescent := time.Now()
 	// unpack the aggregated approximation coefficients
 	approxCoefficients := make([][]int64, k)
 	nLevelPrevious := getNumberApproxCoefficients(d,-1)
 	for j := int64(0); j < k; j++ {
 		nLevel := getNumberApproxCoefficients(d, j)
-		//nLevelPrevious := getNumberApproxCoefficients(d, j-1)
 		approxCoefficients[j] = make([]int64, nLevel)
 		for i := int64(0); i < nLevel; i++ {approxCoefficients[j][i] = approxCoefficientsPacked[j*nLevelPrevious+i]}
 		nLevelPrevious = nLevel
@@ -234,7 +187,8 @@ func DecodeLogisticRegression(result []libunlynx.CipherText, privKey kyber.Scala
 
 	// compute the weights of the homomorphism-aware logistic regression
 	weights := FindMinimumWeights(approxCoefficientsFloat, initialWeights, N, lambda, step, maxIterations)
-	libunlynx.EndTimer(gradientDescent)
+	log.LLvl1("Gradient descent took", time.Since(startGradientDescent))
+	//libunlynx.EndTimer(gradientDescent)
 
 	return weights
 }

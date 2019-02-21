@@ -309,7 +309,7 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	// to the DPs
 	listDPs := generateDataCollectionRoster(s.ServerIdentity(), recq.ServerToDP)
 	//Filter the list of DPs at every server depending on the DPs over which the query is executed
-	listDPs = checkIfDPisUsedinQuery(s.ServerIdentity(), recq.DPsUsed, listDPs)
+	//listDPs = checkIfDPisUsedinQuery(s.ServerIdentity(), recq.DPsUsed, listDPs)
 
 	if listDPs != nil {
 		err := libunlynxtools.SendISMOthers(s.ServiceProcessor, listDPs, &libdrynx.SurveyQueryToDP{SQ: *recq, Root: s.ServerIdentity()})
@@ -336,7 +336,10 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 
 	// wait for all DPs to get the query
 	if listDPs != nil {
-		counter := len(*recq.ServerToDP[s.ServerIdentity().String()])
+		counter := 0
+		if _, ok := recq.ServerToDP[s.ServerIdentity().String()]; ok {
+			counter = len(*recq.ServerToDP[s.ServerIdentity().String()])
+		}
 		for counter > 0 {
 			counter = counter - (<-castToSurvey(s.Survey.Get(recq.SurveyID)).DPqueryChannel)
 		}
@@ -782,11 +785,15 @@ func convertFromKeySwitchingStruct(cv libunlynx.CipherVector, dpResponses libdry
 func generateDataCollectionRoster(root *network.ServerIdentity, serverToDP map[string]*[]network.ServerIdentity) *onet.Roster {
 	roster := make([]*network.ServerIdentity, 0)
 	roster = append(roster, root)
-	for _, srv := range *serverToDP[root.String()] {
-		tmp := srv
-		roster = append(roster, &tmp)
+	if _, ok := serverToDP[root.String()]; ok {
+		for _, srv := range *serverToDP[root.String()] {
+			tmp := srv
+			roster = append(roster, &tmp)
+		}
+		return onet.NewRoster(roster)
+	}else {
+		return nil
 	}
-	return onet.NewRoster(roster)
 }
 
 func checkIfDPisUsedinQuery(root *network.ServerIdentity, dpsUsed []*network.ServerIdentity, listDPs *onet.Roster) *onet.Roster {

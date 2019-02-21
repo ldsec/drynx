@@ -190,8 +190,6 @@ func (p *ProofCollectionProtocol) Dispatch() error {
 		var err error
 		var sb *skipchain.SkipBlock
 
-		//verifyProofstart := time.Now()
-
 		// verify which type of proof it is
 		if p.Proof.RangeProof != nil {
 
@@ -271,9 +269,6 @@ func (p *ProofCollectionProtocol) Dispatch() error {
 				p.Proof.KeySwitchProof.SB)
 
 		} else {log.Fatal("Did not recognise the type of proof")}
-
-		//elapsedVerifyProof := time.Since(verifyProofstart)
-		//log.LLvl1("Proof verification took ", elapsedVerifyProof)
 
 		if err != nil {log.Fatal("Error when verifying the proof:", err)}
 
