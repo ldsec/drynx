@@ -166,7 +166,20 @@ func RunDrynx(c *cli.Context) error {
 			queryAnswer := ""
 
 			//The number of dimensions is exactly the number of attributes - 1
-			dimensions := int64(len(strings.Split(queryAttributes, ",")) - 1)
+			nbrAttributes := len(strings.Split(queryAttributes, ",")) - 1
+			var dimensions int64
+			var errAttribute error
+			if nbrAttributes > 1 {
+				dimensions = int64(nbrAttributes)
+			} else {
+				//to get here, just include one (integer) attribute in the query, which is the total number of
+				//dimensions in the DB (e.g. -a 10) over which the linear regression should be computed
+				dimensions, errAttribute = strconv.ParseInt(queryAttributes, 10, 64)
+				if errAttribute != nil {
+					log.LLvl1("Must pass an integer in this case!")
+					panic(errAttribute)
+				}
+			}
 			operation := libdrynx.ChooseOperation(op, queryAttributes, queryMin, queryMax, dimensions, cuttingFactor, lrParameters)
 
 			// define the number of groups for groupBy (1 per default)

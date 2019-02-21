@@ -722,12 +722,6 @@ func ChooseOperation(operationName string, attributes string, queryMin, queryMax
 	operation.QueryMin = queryMin
 	operation.LRParameters = params
 
-	if d == 0 {
-		//hardcoded value for second use case
-		//to get here, just include 1 attribute in the query (e.g. -a all) with the linear regression operation
-		d = 9
-	}
-
 	switch operationName {
 	case "sum":
 		operation.NbrInput = 1
