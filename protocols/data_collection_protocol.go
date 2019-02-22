@@ -363,12 +363,15 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 	tableName := "Prescriptions"
 	//Locally
-	scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData.py"
+	//scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData.py"
 	//dbLocation := "/Users/jstephan/go/src/github.com/lca1/drynx/app/Client.db"
-	dbLocation := "/Users/jstephan/Desktop/MedicalDispensation.db"
+	//dbLocation := "/Users/jstephan/Desktop/MedicalDispensation.db"
 	//RPis
 	//scriptFetchDataDB := "/home/pi/Desktop/fetchDPData.py"
 	//dbLocation := "/home/pi/Desktop/Client.db"
+	//For Computing Nodes on IC Cluster
+	scriptFetchDataDB := "/root/fetchDPData.py"
+	dbLocation := "/root/MedicalDispensation.db"
 
 	if operation.NameOp == "lin_reg" {
 		//Send "true" as an argument if the operation in question is linear regression
@@ -386,14 +389,27 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 		values := strings.Split(strings.TrimSuffix(strings.TrimPrefix(dpData[0], "("), ")"), ", ")
 		for j := range values {tab[j] = make([]int64, len(dpData))}
 
+		wg := libunlynx.StartParallelize(len(dpData))
 		for i, row := range dpData {
+			go func(i int, row string) {
+				defer wg.Done()
+				rowValues := strings.Split(row, ", ")
+				for j, val := range rowValues {
+					val64, _ := strconv.ParseInt(val, 10, 64)
+					tab[j][i] = val64
+				}
+			}(i, row)
+		}
+		libunlynx.EndParallelize(wg)
+
+		/*for i, row := range dpData {
 			row = strings.TrimSuffix(strings.TrimPrefix(row, "("), ")")
 			rowValues := strings.Split(row, ", ")
 			for j, val := range rowValues {
 				val64, _ := strconv.ParseInt(val, 10, 64)
 				tab[j][i] = val64
 			}
-		}
+		}*/
 		return tab
 	} else {
 		//Send "false" as an argument if the operation in question is not linear regression

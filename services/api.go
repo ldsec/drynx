@@ -44,8 +44,7 @@ func NewDrynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 		private:    keys.Private,
 	}
 
-	//limit := int64(10000)
-	limit := int64(100000)
+	limit := int64(10000)
 	libdrynx.CreateDecryptionTable(limit, newClient.public, newClient.private)
 	return newClient
 }
@@ -61,9 +60,7 @@ func RepartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 	count := 0
 	for i, v := range elServers.List {
 		index := v.String()
-		if dpRepartition[i] == 0 {
-			continue
-		}
+		if dpRepartition[i] == 0 {continue}
 		value := make([]network.ServerIdentity, dpRepartition[i])
 		dpToServers[index] = &value
 		for j := range *dpToServers[index] {

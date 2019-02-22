@@ -156,7 +156,6 @@ func RunDrynx(c *cli.Context) error {
 	//diffP = common.QueryDiffP{LapMean:0.0, LapScale:30.0, NoiseListSize: 90, Quanta: 0.0, Scale:scale, Limit:60}
 
 	// create the filenames
-	//JS
 	filePathTraining := "/Users/jstephan/Desktop/dataset_training.txt"
 	filePathTesting := "/Users/jstephan/Desktop/dataset_testing.txt"
 
@@ -169,7 +168,7 @@ func RunDrynx(c *cli.Context) error {
 			nbrAttributes := len(strings.Split(queryAttributes, ",")) - 1
 			var dimensions int64
 			var errAttribute error
-			if nbrAttributes > 1 {
+			if nbrAttributes > 1 || op != "lin_reg" {
 				dimensions = int64(nbrAttributes)
 			} else {
 				//to get here, just include one (integer) attribute in the query, which is the total number of
@@ -186,8 +185,9 @@ func RunDrynx(c *cli.Context) error {
 			dpData := libdrynx.QueryDPDataGen{GroupByValues: []int64{1}, Source: 1, GenerateDataMin: queryMin, GenerateDataMax: queryMax}
 
 			// define the ranges for the input validation (1 range per data provider output)
-			u := int64(16)
+			u := int64(2)
 			l := int64(7)
+
 
 			if rangeProofs {
 				if op == "bool_AND" || op == "bool_OR" || op == "min" || op == "max" || op == "union" || op == "inter" {
@@ -237,6 +237,8 @@ func RunDrynx(c *cli.Context) error {
 			}
 			log.LLvl1("#-----------------#\n")
 			//-----------
+
+			log.LLvl1("WE're here")
 
 			idToPublic := make(map[string]kyber.Point)
 			for _, v := range elServers.List {idToPublic[v.String()] = v.Public}
@@ -373,7 +375,6 @@ func RunDrynx(c *cli.Context) error {
 						standardDeviations = nil
 					}
 
-					//JS
 					// lrParameters.FilePath = filePathTraining
 					lrParameters.FilePath = filepath
 					//lrParameters.FilePath = filepath2
@@ -425,8 +426,6 @@ func RunDrynx(c *cli.Context) error {
 					surveyID := "query_" + strconv.FormatInt(surveyNumber,10) + "-" + op
 					sq := client.GenerateSurveyQuery(elServers, elVNs, dpToServers, idToPublic, surveyID, operation,
 						ranges, ps, proofs, false, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor, dpsUsed)
-
-					//log.LLvl1("SENT QUERY", int64(trial) * kfold + partition)
 
 					if proofs == int64(1) {
 						// send query to the skipchain and 'wait' for all proofs' verification to be done
