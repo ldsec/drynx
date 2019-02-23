@@ -171,14 +171,12 @@ func (c *API) SendSurveyQuery(sq libdrynx.SurveyQuery) (*[]string, *[][]float64,
 	//send the query and get the answer
 	sr := libdrynx.ResponseDP{}
 	err := c.SendProtobuf(c.entryPoint, &sq, &sr)
-	if err != nil {
-		return nil, nil, err
-	}
+	if err != nil {return nil, nil, err}
 
 	log.Lvl2("[API] <Drynx> Client", c.clientID, "successfully executed the query with SurveyID ", sq.SurveyID)
 
 	// decrypt/decode the result
-	start := time.Now()
+	startDecode := time.Now()
 
 	log.Lvl2("[API] <Drynx> Client", c.clientID, "is decrypting the results")
 
@@ -192,9 +190,7 @@ func (c *API) SendSurveyQuery(sq libdrynx.SurveyQuery) (*[]string, *[][]float64,
 		count++
 	}
 
-	elapsed := time.Since(start)
-	log.LLvl1("Decoding took", elapsed)
-
+	log.LLvl1("Decoding took",  time.Since(startDecode))
 	log.Lvl2("[API] <Drynx> Client", c.clientID, "finished decrypting the results")
 	return &grp, &aggr, nil
 }

@@ -401,15 +401,6 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 			}(i, row)
 		}
 		libunlynx.EndParallelize(wg)
-
-		/*for i, row := range dpData {
-			row = strings.TrimSuffix(strings.TrimPrefix(row, "("), ")")
-			rowValues := strings.Split(row, ", ")
-			for j, val := range rowValues {
-				val64, _ := strconv.ParseInt(val, 10, 64)
-				tab[j][i] = val64
-			}
-		}*/
 		return tab
 	} else {
 		//Send "false" as an argument if the operation in question is not linear regression

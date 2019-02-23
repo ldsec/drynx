@@ -188,7 +188,6 @@ func RunDrynx(c *cli.Context) error {
 			u := int64(2)
 			l := int64(7)
 
-
 			if rangeProofs {
 				if op == "bool_AND" || op == "bool_OR" || op == "min" || op == "max" || op == "union" || op == "inter" {
 					u = int64(0)
@@ -237,8 +236,6 @@ func RunDrynx(c *cli.Context) error {
 			}
 			log.LLvl1("#-----------------#\n")
 			//-----------
-
-			log.LLvl1("WE're here")
 
 			idToPublic := make(map[string]kyber.Point)
 			for _, v := range elServers.List {idToPublic[v.String()] = v.Public}
@@ -305,7 +302,6 @@ func RunDrynx(c *cli.Context) error {
 			}
 		} else {
 			start := time.Now()
-
 			// ---- simulation parameters -----
 			//initSeed := int64(rand.Intn(5432109876))
 			// 0: train together, test together
