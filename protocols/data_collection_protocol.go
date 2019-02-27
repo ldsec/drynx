@@ -320,7 +320,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 				pi := p.MapPIs["range/"+p.ServerIdentity().String()]
 				pi.(*ProofCollectionProtocol).Proof = libdrynx.ProofRequest{RangeProof: libdrynx.NewRangeProofRequest(&rpl, p.Survey.SurveyID, p.ServerIdentity().String(), "", p.Survey.Query.RosterVNs, p.Private(), nil)}
 				//libunlynx.EndTimer(rangeProofCreation)
-				log.LLvl1("Range Proof Creation took ", time.Since(rangeProofCreation))
+				log.LLvl1("Range Proof Creation took", time.Since(rangeProofCreation))
 
 				go pi.Dispatch()
 				go pi.Start()
@@ -361,22 +361,20 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 // fetchDataFromDB fetches the DPs' data from their databases
 func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
-	tableName := "Prescriptions"
+	tableName1 := "Records"
+	tableName2 := "Prescriptions"
 	//Locally
-	//scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData.py"
-	//dbLocation := "/Users/jstephan/go/src/github.com/lca1/drynx/app/Client.db"
-	//dbLocation := "/Users/jstephan/Desktop/MedicalDispensation.db"
-	//RPis
-	//scriptFetchDataDB := "/home/pi/Desktop/fetchDPData.py"
-	//dbLocation := "/home/pi/Desktop/Client.db"
+	scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData.py"
+	dbLocation1 := "/Users/jstephan/go/src/github.com/lca1/drynx/app/Client.db"
+	dbLocation2 := "/Users/jstephan/Desktop/MedicalDispensation.db"
 	//For Computing Nodes on IC Cluster
-	scriptFetchDataDB := "/root/fetchDPData.py"
-	dbLocation := "/root/MedicalDispensation.db"
+	//scriptFetchDataDB := "/root/fetchDPData.py"
+	//dbLocation := "/root/MedicalDispensation.db"
 
 	if operation.NameOp == "lin_reg" {
 		//Send "true" as an argument if the operation in question is linear regression
 		//QueryMin and QueryMax are not useful in this case
-		cmd := exec.Command("python", scriptFetchDataDB, dbLocation, tableName, "true", operation.Attributes)
+		cmd := exec.Command("python3", scriptFetchDataDB, dbLocation2, tableName2, "true", operation.Attributes)
 
 		out, err := cmd.Output()
 		if err != nil {println(err.Error())}
@@ -404,7 +402,7 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 		return tab
 	} else {
 		//Send "false" as an argument if the operation in question is not linear regression
-		cmd := exec.Command("python", scriptFetchDataDB, dbLocation, tableName, "false", operation.Attributes,
+		cmd := exec.Command("python3", scriptFetchDataDB, dbLocation1, tableName1, "false", operation.Attributes,
 			strconv.FormatInt(operation.QueryMin, 10), strconv.FormatInt(operation.QueryMax, 10))
 
 		out, err := cmd.Output()

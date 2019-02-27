@@ -159,10 +159,12 @@ func RunDrynx(c *cli.Context) error {
 	filePathTraining := "/Users/jstephan/Desktop/dataset_training.txt"
 	filePathTesting := "/Users/jstephan/Desktop/dataset_testing.txt"
 
+	queryAnswer := ""
+
 	for _, op := range operationList {
 		if op != "logreg" {
 			start := time.Now()
-			queryAnswer := ""
+			queryAnswer = ""
 
 			//The number of dimensions is exactly the number of attributes - 1
 			nbrAttributes := len(strings.Split(queryAttributes, ",")) - 1
@@ -286,13 +288,6 @@ func RunDrynx(c *cli.Context) error {
 			}
 			log.LLvl1("Operation " + op + " is done successfully.")
 			log.LLvl1("Query took", time.Since(start))
-
-			//Store query answer in local database
-			log.LLvl1("Update local database.")
-			cmd := exec.Command("python", scriptPopulateDB, dbLocation, queryAnswer, strconv.Itoa(int(time.Now().Unix())),
-				operation.NameOp, queryAttributes, dpsQuery, queryMinString, queryMaxString)
-			_, err := cmd.Output()
-			if err != nil {println(err.Error())}
 
 			if proofs == int64(1) {
 				clientSkip := services.NewDrynxClient(elVNs.List[0], "close-DB")
@@ -465,7 +460,6 @@ func RunDrynx(c *cli.Context) error {
 						fileTraining.Close()
 						fileTesting.Close()
 						surveyNumber++
-
 			}
 
 			meanAccuracy /= float64(int64(numberTrials))// * kfold)
@@ -481,6 +475,8 @@ func RunDrynx(c *cli.Context) error {
 			fmt.Println("F-score:  ", meanFscore)
 			fmt.Println("AUC:      ", meanAUC)
 
+			queryAnswer = strconv.FormatFloat(meanAccuracy, 'E', -1, 64)
+
 			if proofs == int64(1) {
 				clientSkip := services.NewDrynxClient(elVNs.List[0], "closeDB")
 				for _, wg := range wgProofs {libunlynx.EndParallelize(wg)}
@@ -490,6 +486,13 @@ func RunDrynx(c *cli.Context) error {
 
 			log.LLvl1("Logistic Regression operation took", time.Since(start))
 		}
+
+		//Store query answer in local database
+		log.LLvl1("Update local database.")
+		cmd := exec.Command("python", scriptPopulateDB, dbLocation, queryAnswer, strconv.Itoa(int(time.Now().Unix())),
+			op, queryAttributes, dpsQuery, queryMinString, queryMaxString)
+		_, err := cmd.Output()
+		if err != nil {println(err.Error())}
 
 	}
 	log.LLvl1("All done.")
