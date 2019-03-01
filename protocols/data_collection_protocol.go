@@ -361,15 +361,15 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 // fetchDataFromDB fetches the DPs' data from their databases
 func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
-	tableName1 := "Records"
+	//tableName1 := "Records"
 	tableName2 := "Prescriptions"
 	//Locally
-	scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData.py"
-	dbLocation1 := "/Users/jstephan/go/src/github.com/lca1/drynx/app/Client.db"
-	dbLocation2 := "/Users/jstephan/Desktop/MedicalDispensation.db"
+	scriptFetchDataDB := "fetchDPData.py"
+	//dbLocation1 := "Client.db"
+	dbLocation2 := "MedicalDispensation.db"
 	//For Computing Nodes on IC Cluster
-	//scriptFetchDataDB := "/root/fetchDPData.py"
-	//dbLocation := "/root/MedicalDispensation.db"
+	//scriptFetchDataDB := "fetchDPData.py"
+	//dbLocation := "MedicalDispensation.db"
 
 	if operation.NameOp == "lin_reg" {
 		//Send "true" as an argument if the operation in question is linear regression
@@ -402,7 +402,7 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 		return tab
 	} else {
 		//Send "false" as an argument if the operation in question is not linear regression
-		cmd := exec.Command("python3", scriptFetchDataDB, dbLocation1, tableName1, "false", operation.Attributes,
+		cmd := exec.Command("python3", scriptFetchDataDB, dbLocation2, tableName2, "false", operation.Attributes,
 			strconv.FormatInt(operation.QueryMin, 10), strconv.FormatInt(operation.QueryMax, 10))
 
 		out, err := cmd.Output()
@@ -410,10 +410,16 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 
 		dpData := strings.Split(string(out), "\n")
 		dpValues := make([]int64, len(dpData)-1)
+
+		wg := libunlynx.StartParallelize(len(dpValues))
 		for i := range dpValues {
-			n, _ := strconv.ParseInt(dpData[i], 10, 64)
-			dpValues[i] = n
+			go func(i int) {
+				defer wg.Done()
+				n, _ := strconv.ParseInt(dpData[i], 10, 64)
+				dpValues[i] = n
+			}(i)
 		}
+		libunlynx.EndParallelize(wg)
 
 		tab := make([][]int64, operation.NbrInput)
 		tab[0] = dpValues
@@ -423,14 +429,14 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 
 // fetchDBDataLogReg fetches the DPs' data from their databases for the logistic regression operation
 func fetchDBDataLogReg(lrParameters libdrynx.LogisticRegressionParameters) [][]float64 {
-	scriptFetchDataDB := "/Users/jstephan/go/src/github.com/lca1/drynx/app/fetchDPData_LogReg.py"
-	dbLocation := "/Users/jstephan/go/src/github.com/lca1/drynx/app/LogRegRPi.db"
+	scriptFetchDataDB := "fetchDPData_LogReg.py"
+	dbLocation := "LogRegRPi.db"
 	//For RPis
-	//scriptFetchDataDB := "/home/pi/Desktop/fetchDPData_LogReg.py"
-	//dbLocation := "/home/pi/Desktop/LogRegRPi.db"
+	//scriptFetchDataDB := "fetchDPData_LogReg.py"
+	//dbLocation := "LogRegRPi.db"
 	//For Computing Nodes on IC Cluster
-	//scriptFetchDataDB := "/root/fetchDPData_LogReg.py"
-	//dbLocation := "/root/LogRegRPi.db"
+	//scriptFetchDataDB := "fetchDPData_LogReg.py"
+	//dbLocation := "LogRegRPi.db"
 
 	cmd := exec.Command("python3", scriptFetchDataDB, dbLocation)
 	out, err := cmd.Output()
@@ -443,15 +449,20 @@ func fetchDBDataLogReg(lrParameters libdrynx.LogisticRegressionParameters) [][]f
 	tab := make([][]float64, len(dpData))
 	dimension := lrParameters.NbrFeatures + 1
 
+	wg := libunlynx.StartParallelize(len(dpData))
 	for i, row := range dpData {
-		tab[i] = make([]float64, dimension)
-		row = strings.TrimSuffix(strings.TrimPrefix(row, "("), ")")
-		values := strings.Split(row, ", ")
-		for j, val := range values {
-			val64, _ := strconv.ParseFloat(val,64)
-			tab[i][j] = val64
-		}
+		go func(i int, row string) {
+			defer wg.Done()
+			tab[i] = make([]float64, dimension)
+			row = strings.TrimSuffix(strings.TrimPrefix(row, "("), ")")
+			values := strings.Split(row, ", ")
+			for j, val := range values {
+				val64, _ := strconv.ParseFloat(val,64)
+				tab[i][j] = val64
+			}
+		}(i, row)
 	}
+	libunlynx.EndParallelize(wg)
 	return tab
 }
 

@@ -156,8 +156,8 @@ func RunDrynx(c *cli.Context) error {
 	//diffP = common.QueryDiffP{LapMean:0.0, LapScale:30.0, NoiseListSize: 90, Quanta: 0.0, Scale:scale, Limit:60}
 
 	// create the filenames
-	filePathTraining := "/Users/jstephan/Desktop/dataset_training.txt"
-	filePathTesting := "/Users/jstephan/Desktop/dataset_testing.txt"
+	/*filePathTraining := "/Users/jstephan/Desktop/dataset_training.txt"
+	filePathTesting := "/Users/jstephan/Desktop/dataset_testing.txt"*/
 
 	queryAnswer := ""
 
@@ -330,16 +330,16 @@ func RunDrynx(c *cli.Context) error {
 				//seed := initSeed + int64(i)
 				seed := rand.Int63n(5432109876)
 				//seed := int64(rand.Intn(5432109876))
-				XTrain, yTrain, XTest, yTest := encoding2.PartitionDataset(X, y, ratio, true, seed)
+				XTrain, _, XTest, yTest := encoding2.PartitionDataset(X, y, ratio, true, seed)
 
 				//for partition := int64(0); partition < kfold; partition++ {
 				//	XTrain, yTrain, XTest, yTest := encoding2.PartitionDatasetCV(X, y, partition, kfold)
 
 					// write to file
-					trainingSet := encoding2.InsertColumn(XTrain, encoding2.Int64ToFloat641DArray(yTrain), 0)
-					testingSet := encoding2.InsertColumn(XTest, encoding2.Int64ToFloat641DArray(yTest), 0)
+					//trainingSet := encoding2.InsertColumn(XTrain, encoding2.Int64ToFloat641DArray(yTrain), 0)
+					//testingSet := encoding2.InsertColumn(XTest, encoding2.Int64ToFloat641DArray(yTest), 0)
 
-					fileTraining, _ := os.Create(filePathTraining)
+					/*fileTraining, _ := os.Create(filePathTraining)
 					fileTesting, _ := os.Create(filePathTesting)
 
 					for i := 0; i < len(trainingSet); i++ {
@@ -354,7 +354,7 @@ func RunDrynx(c *cli.Context) error {
 							_, _ = fileTesting.WriteString(fmt.Sprint(testingSet[i][j]) + ",")
 						}
 						_, _ = fileTesting.WriteString(fmt.Sprintln(testingSet[i][len(testingSet[i])-1]))
-					}
+					}*/
 
 					var means = make([]float64, 0)
 					var standardDeviations = make([]float64, 0)
@@ -369,7 +369,8 @@ func RunDrynx(c *cli.Context) error {
 					// lrParameters.FilePath = filePathTraining
 					lrParameters.FilePath = filepath
 					//lrParameters.FilePath = filepath2
-					lrParameters.NbrRecords = int64(len(trainingSet))
+					//lrParameters.NbrRecords = int64(len(trainingSet))
+					lrParameters.NbrRecords = int64(len(XTrain))
 					lrParameters.NbrFeatures = int64(len(XTrain[0]))
 					lrParameters.Means = means
 					lrParameters.StandardDeviations = standardDeviations
@@ -457,8 +458,8 @@ func RunDrynx(c *cli.Context) error {
 						meanAUC += aucTemp
 						}
 
-						fileTraining.Close()
-						fileTesting.Close()
+						/*fileTraining.Close()
+						fileTesting.Close()*/
 						surveyNumber++
 			}
 
