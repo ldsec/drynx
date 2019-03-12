@@ -6,12 +6,12 @@ import (
 
 	"reflect"
 
+	"github.com/lca1/drynx/protocols"
+	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
-	"github.com/lca1/drynx/protocols"
-	"github.com/lca1/unlynx/lib"
 )
 
 func TestCtks(t *testing.T) {
@@ -42,7 +42,7 @@ func TestCtks(t *testing.T) {
 	tabi := make(libunlynx.CipherVector, 0)
 	tabi = append(tabi, testCipherVect1...)
 	tabi = append(tabi, testCipherVect2...)
-	log.LLvl1(tabi)
+	log.Lvl1(tabi)
 	clientPrivate := libunlynx.SuiTe.Scalar().Pick(random.New())
 	clientPublic := libunlynx.SuiTe.Point().Mul(clientPrivate, libunlynx.SuiTe.Point().Base())
 

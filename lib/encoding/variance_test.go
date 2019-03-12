@@ -1,12 +1,12 @@
 package encoding_test
 
 import (
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/onet/v3/log"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/onet/v3/log"
 	"testing"
 )
 
@@ -16,7 +16,7 @@ func TestEncodeDecodeVariance(t *testing.T) {
 	secKey, pubKey := libunlynx.GenKey()
 
 	limit := int64(10000)
-	log.LLvl1("Preparing decryption up to:", limit)
+	log.Lvl1("Preparing decryption up to:", limit)
 
 	// Decrpytion hashtable creation
 	libdrynx.CreateDecryptionTable(limit, pubKey, secKey)
@@ -34,7 +34,7 @@ func TestEncodeDecodeVariance(t *testing.T) {
 	N := int64(len(inputValues))
 	mean := float64(sum) / float64(N)
 	expect := float64(sumSquares)/float64(N) - mean*mean
-	log.LLvl1(expect)
+	log.Lvl1(expect)
 	//function call
 	resultEncrypted, _ := encoding.EncodeVariance(inputValues, pubKey)
 	result := encoding.DecodeVariance(resultEncrypted, secKey)
@@ -51,7 +51,7 @@ func TestEncodeDecodeVarianceWithProofs(t *testing.T) {
 	secKey, pubKey := libunlynx.GenKey()
 
 	limit := int64(10000)
-	log.LLvl1("Preparing decryption up to:", limit)
+	log.Lvl1("Preparing decryption up to:", limit)
 
 	// Decrpytion hashtable creation
 	libdrynx.CreateDecryptionTable(limit, pubKey, secKey)

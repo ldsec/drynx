@@ -1,10 +1,10 @@
 package encoding
 
 import (
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/util/random"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/random"
 )
 
 //d in this case is (modulus - 2 = 2^255 - 19 - 2 = 2^255 - 21)

@@ -2,10 +2,10 @@ package libdrynx
 
 import (
 	"crypto/sha256"
+	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/onet/v3/log"
-	"github.com/lca1/unlynx/lib"
 	"golang.org/x/crypto/sha3"
 	"math"
 )

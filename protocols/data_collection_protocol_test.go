@@ -5,14 +5,14 @@ import (
 
 	"time"
 
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/onet/v3"
-	"go.dedis.ch/onet/v3/log"
-	"go.dedis.ch/onet/v3/network"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/protocols"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
 )
 
 func createTestQuery(aggregate kyber.Point, operationName string, proofs int, nbrRows int64, minGenerateData, maxGenerateData, dimensions int, cuttingFactor int) (protocols.SurveyToDP, error) {

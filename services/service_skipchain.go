@@ -7,14 +7,14 @@ import (
 	"time"
 
 	"github.com/coreos/bbolt"
-	"go.dedis.ch/cothority/v3/skipchain"
-	"go.dedis.ch/onet/v3"
-	"go.dedis.ch/onet/v3/log"
-	"go.dedis.ch/onet/v3/network"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/protocols"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/cothority/v3/skipchain"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
 	"gopkg.in/satori/go.uuid.v1"
 )
 

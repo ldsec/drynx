@@ -11,8 +11,8 @@ import (
 	"math"
 	"testing"
 
-	"go.dedis.ch/kyber/v3"
 	"github.com/lca1/drynx/lib"
+	"go.dedis.ch/kyber/v3"
 )
 
 func TestComputeApproxCoefficients(t *testing.T) {

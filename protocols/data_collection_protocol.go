@@ -10,14 +10,14 @@ import (
 
 	"sync"
 
+	"github.com/lca1/drynx/lib"
+	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
-	"github.com/lca1/drynx/lib"
-	"github.com/lca1/drynx/lib/encoding"
-	"github.com/lca1/unlynx/lib"
 )
 
 // DataCollectionProtocolName is the registered name for the data provider protocol.

@@ -3,11 +3,11 @@ package encoding_test
 import (
 	"github.com/alex-ant/gomath/gaussian-elimination"
 	"github.com/alex-ant/gomath/rational"
-	"go.dedis.ch/kyber/v3"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3"
 	"testing"
 )
 

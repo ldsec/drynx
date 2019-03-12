@@ -1,11 +1,11 @@
 package services
 
 import (
+	"github.com/lca1/drynx/lib"
+	"github.com/lca1/drynx/protocols"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
-	"github.com/lca1/drynx/lib"
-	"github.com/lca1/drynx/protocols"
 )
 
 // Query Handlers

@@ -1,9 +1,9 @@
 package encoding
 
 import (
-	"go.dedis.ch/kyber/v3"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3"
 )
 
 // EncodeModelEvaluation encodes the R-score statistic at data providers

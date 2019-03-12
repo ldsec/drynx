@@ -1,12 +1,12 @@
 package encoding_test
 
 import (
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/onet/v3/log"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/onet/v3/log"
 	"math"
 	"testing"
 )
@@ -15,7 +15,7 @@ func TestEncodeDecodeCosim(t *testing.T) {
 	secKey, pubKey := libunlynx.GenKey()
 
 	limit := int64(10000)
-	log.LLvl1("Preparing decryption up to:", limit)
+	log.Lvl1("Preparing decryption up to:", limit)
 
 	// Decrpytion hashtable creation
 	libdrynx.CreateDecryptionTable(limit, pubKey, secKey)
@@ -41,15 +41,15 @@ func TestEncodeDecodeCosim(t *testing.T) {
 
 	}
 	resultClear := []int64{rijs_sum, riks_sum, rijs_2_sum, riks_2_sum, rijs_x_rijks_sum}
-	log.LLvl1("Preliminary Results ", resultClear)
+	log.Lvl1("Preliminary Results ", resultClear)
 
 	//expected results
 	expect := float64(resultClear[4]) / (math.Sqrt(float64(resultClear[2])) * math.Sqrt(float64(resultClear[3])))
-	log.LLvl1("Expected Preliminary Results ", resultClear)
+	log.Lvl1("Expected Preliminary Results ", resultClear)
 
 	resultEncrypted, _ := encoding.EncodeCosim(rijs, riks, pubKey)
 	result := encoding.DecodeCosim(resultEncrypted, secKey)
-	log.LLvl1("Final Results ", result)
+	log.Lvl1("Final Results ", result)
 	assert.Equal(t, expect, result)
 }
 
@@ -58,7 +58,7 @@ func TestEncodeDecodeCosimWithProofs(t *testing.T) {
 	secKey, pubKey := libunlynx.GenKey()
 
 	limit := int64(10000)
-	log.LLvl1("Preparing decryption up to:", limit)
+	log.Lvl1("Preparing decryption up to:", limit)
 
 	// Decrpytion hashtable creation
 	libdrynx.CreateDecryptionTable(limit, pubKey, secKey)

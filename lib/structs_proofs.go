@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/rand"
 
+	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/cothority/v3/skipchain"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
@@ -11,7 +12,6 @@ import (
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
-	"github.com/lca1/unlynx/lib"
 )
 
 //----------------------------------------------------------------------------------------------------------------------

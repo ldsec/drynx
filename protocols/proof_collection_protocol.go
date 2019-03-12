@@ -5,12 +5,12 @@ import (
 
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/coreos/bbolt"
+	"github.com/fanliao/go-concurrentMap"
+	"github.com/lca1/drynx/lib"
 	"go.dedis.ch/cothority/v3/skipchain"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
-	"github.com/fanliao/go-concurrentMap"
-	"github.com/lca1/drynx/lib"
 )
 
 // ProofCollectionProtocolName is the registered name for the proofs collection by the skipchain protocol.

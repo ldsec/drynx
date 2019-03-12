@@ -1,9 +1,9 @@
 package encoding
 
 import (
-	"go.dedis.ch/kyber/v3"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3"
 )
 
 //Note: min and max are such that we are examining the attribute's values in the range [min, max]

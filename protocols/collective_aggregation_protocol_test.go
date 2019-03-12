@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lca1/unlynx/lib"
+	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
-	"github.com/lca1/unlynx/lib"
-	"github.com/stretchr/testify/assert"
 )
 
 var clientPrivate = bn256.NewSuiteG1().Scalar().Pick(random.New())

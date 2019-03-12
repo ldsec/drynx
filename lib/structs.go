@@ -2,6 +2,7 @@ package libdrynx
 
 import (
 	"github.com/coreos/bbolt"
+	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/cothority/v3/skipchain"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
@@ -9,7 +10,6 @@ import (
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
-	"github.com/lca1/unlynx/lib"
 	"sync"
 	"time"
 )
@@ -637,7 +637,7 @@ func CheckParameters(sq SurveyQuery, diffP bool) bool {
 	}
 
 	if message != "" {
-		log.LLvl1(message)
+		log.Lvl1(message)
 	}
 	return result
 }

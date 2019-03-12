@@ -3,12 +3,13 @@ language: go
 go:
   - 1.x
 
+env:
+  - GO111MODULE=on
+
 install:
-  - export GO111MODULE=on
   - go get -t ./...
 
 script:
-  - echo $GO111MODULE
   - make test
 
 after_success:
