@@ -1,7 +1,7 @@
 package encoding
 
 import (
-	"github.com/dedis/kyber"
+	"go.dedis.ch/kyber/v3"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/unlynx/lib"
 )

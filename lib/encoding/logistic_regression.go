@@ -1,8 +1,8 @@
 package encoding
 
 import (
-	"github.com/dedis/kyber"
-	"github.com/dedis/onet/log"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/onet/v3/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/montanaflynn/stats"
 	"gonum.org/v1/gonum/stat/combin"
@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dedis/onet/network"
+	"go.dedis.ch/onet/v3/network"
 	"github.com/lca1/drynx/lib"
 	"gonum.org/v1/gonum/integrate"
 	"gonum.org/v1/gonum/stat"

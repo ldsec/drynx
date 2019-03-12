@@ -11,7 +11,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/dedis/kyber"
+	"go.dedis.ch/kyber/v3"
 	"github.com/lca1/drynx/lib"
 )
 

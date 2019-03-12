@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"github.com/cdipaolo/goml/base"
 	"github.com/cdipaolo/goml/linear"
-	"github.com/dedis/kyber"
-	"github.com/dedis/onet/log"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/onet/v3/log"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
 )

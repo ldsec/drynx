@@ -1,8 +1,8 @@
 package libdrynx
 
 import (
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/util/random"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/random"
 	"github.com/lca1/unlynx/lib"
 )
 

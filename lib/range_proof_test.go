@@ -1,8 +1,8 @@
 package libdrynx
 
 import (
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/pairing/bn256"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"testing"

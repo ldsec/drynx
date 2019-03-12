@@ -1,7 +1,7 @@
 package libdrynx
 
 import (
-	"github.com/dedis/onet/log"
+	"go.dedis.ch/onet/v3/log"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

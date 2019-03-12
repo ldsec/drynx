@@ -3,7 +3,7 @@ package encoding
 import (
 	"github.com/alex-ant/gomath/gaussian-elimination"
 	"github.com/alex-ant/gomath/rational"
-	"github.com/dedis/kyber"
+	"go.dedis.ch/kyber/v3"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/unlynx/lib"
 	"github.com/tonestuff/quadratic"
