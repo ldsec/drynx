@@ -322,7 +322,7 @@ func TestServiceDrynxLogisticRegressionForHeartRate(t *testing.T) {
 
 	defer local.CloseAll()
 
-	op := "logreg"
+	op := "log_reg"
 
 	dpToServers := RepartitionDPs(elServers, elDPs, repartition)
 
@@ -603,7 +603,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	meanFscore := 0.0
 	meanAUC := 0.0
 
-	op := "logreg"
+	op := "log_reg"
 
 	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 	//------------------------
@@ -935,7 +935,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 		lrParameters.Means = means
 		lrParameters.StandardDeviations = standardDeviations
 
-		operation := libdrynx.Operation{NameOp: "logreg", LRParameters: lrParameters}
+		operation := libdrynx.Operation{NameOp: "log_reg", LRParameters: lrParameters}
 
 		// data providers data generation
 		// define the number of groups for groupBy (1 per default)

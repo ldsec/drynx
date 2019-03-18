@@ -751,7 +751,7 @@ func ChooseOperation(operationName string, attributes string, queryMin, queryMax
 		operation.NbrInput = d + 1
 		operation.NbrOutput = (d*d + 5*d + 4) / 2
 		break
-	case "logreg":
+	case "log_reg":
 		operation.NbrOutput = GetNbrOutputLogReg(params.NbrFeatures, params.K)
 		break
 	default:

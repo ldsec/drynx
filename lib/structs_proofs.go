@@ -3,6 +3,7 @@ package libdrynx
 import (
 	"errors"
 	"math/rand"
+	"time"
 
 	"github.com/dedis/cothority/skipchain"
 	"github.com/dedis/kyber"
@@ -123,6 +124,7 @@ func NewRangeProofRequest(proof *RangeProofList, ID, senderID, differInfo string
 func (rpr *RangeProofRequest) VerifyProof(source network.ServerIdentity, sq SurveyQuery) (int64, error) {
 	log.Lvl2("VN", source.String(), "handles range proof")
 	//time := libunlynx.StartTimer(source.String() + "_VerifyRange")
+	startVerifyRangeProofs := time.Now()
 
 	verifSign := int64(0)
 	err := error(nil)
@@ -138,6 +140,8 @@ func (rpr *RangeProofRequest) VerifyProof(source network.ServerIdentity, sq Surv
 	log.Lvl2("VN", source.String(), " verified range proof:", verif)
 	libunlynx.EndParallelize(wg)
 	//libunlynx.EndTimer(time)
+	log.LLvl1("Range proofs verification time is", time.Since(startVerifyRangeProofs))
+
 	if verifSign != 0 {
 		return verifSign, err
 	}

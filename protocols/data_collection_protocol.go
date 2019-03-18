@@ -213,19 +213,20 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		if p.Survey.Query.CuttingFactor != 0 {
 			p.Survey.Query.Operation.NbrOutput = p.Survey.Query.Operation.NbrOutput / int64(p.Survey.Query.CuttingFactor)
 		}
-		if p.Survey.Query.Operation.NameOp == "logreg" {
+		if p.Survey.Query.Operation.NameOp == "log_reg" {
 			// logistic regression
 			var datasFloat [][]float64
+			var dimension int64
 			lrParameters := p.Survey.Query.Operation.LRParameters
 			if lrParameters.FilePath != "" {
 				startDBLogReg := time.Now()
 				//datasFloat = encoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.FilePath, *p.TreeNode().ServerIdentity, lrParameters.NbrDps)
-				datasFloat = fetchDBDataLogReg(lrParameters)
+				datasFloat, dimension = fetchDBDataLogReg(lrParameters)
 				log.LLvl1("Actual DB Log Reg fetch took", time.Since(startDBLogReg))
 
 				// set the number of records to the number of records owned by this data provider
 				lrParameters.NbrRecords = int64(len(datasFloat))
-				lrParameters.NbrFeatures = int64(len(datasFloat[0])-1)
+				lrParameters.NbrFeatures = dimension - 1
 
 			} else {
 				// create dummy data
@@ -319,6 +320,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 				pi := p.MapPIs["range/"+p.ServerIdentity().String()]
 				pi.(*ProofCollectionProtocol).Proof = libdrynx.ProofRequest{RangeProof: libdrynx.NewRangeProofRequest(&rpl, p.Survey.SurveyID, p.ServerIdentity().String(), "", p.Survey.Query.RosterVNs, p.Private(), nil)}
+				log.LLvl1("Range Proof Size =", len(pi.(*ProofCollectionProtocol).Proof.RangeProof.Data) + len(pi.(*ProofCollectionProtocol).Proof.RangeProof.Signature))
 				//libunlynx.EndTimer(rangeProofCreation)
 				log.LLvl1("Range Proof Creation took", time.Since(rangeProofCreation))
 
@@ -328,7 +330,6 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 				//libunlynx.EndTimer(startAllProofs)
 				log.LLvl1("AllProofs took ", time.Since(startProofs))
-
 			}()
 		}
 	}
@@ -361,15 +362,11 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 // fetchDataFromDB fetches the DPs' data from their databases
 func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
-	//tableName1 := "Records"
-	tableName2 := "Prescriptions"
-	//Locally
 	scriptFetchDataDB := "fetchDPData.py"
+	//tableName1 := "Records"
 	//dbLocation1 := "Client.db"
+	tableName2 := "Prescriptions"
 	dbLocation2 := "MedicalDispensation.db"
-	//For Computing Nodes on IC Cluster
-	//scriptFetchDataDB := "fetchDPData.py"
-	//dbLocation := "MedicalDispensation.db"
 
 	if operation.NameOp == "lin_reg" {
 		//Send "true" as an argument if the operation in question is linear regression
@@ -428,26 +425,22 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 }
 
 // fetchDBDataLogReg fetches the DPs' data from their databases for the logistic regression operation
-func fetchDBDataLogReg(lrParameters libdrynx.LogisticRegressionParameters) [][]float64 {
+func fetchDBDataLogReg(lrParameters libdrynx.LogisticRegressionParameters) ([][]float64, int64) {
 	scriptFetchDataDB := "fetchDPData_LogReg.py"
-	dbLocation := "LogRegRPi.db"
-	//For RPis
-	//scriptFetchDataDB := "fetchDPData_LogReg.py"
-	//dbLocation := "LogRegRPi.db"
-	//For Computing Nodes on IC Cluster
-	//scriptFetchDataDB := "fetchDPData_LogReg.py"
-	//dbLocation := "LogRegRPi.db"
 
-	cmd := exec.Command("python3", scriptFetchDataDB, dbLocation)
+	cmd := exec.Command("python3", scriptFetchDataDB, lrParameters.FilePath)
 	out, err := cmd.Output()
 	if err != nil {println(err.Error())}
 
 	dpData := strings.Split(string(out), "\n")
+
 	//Last entry of dpData is an empty line
 	dpData = dpData[:len(dpData)-1]
 
 	tab := make([][]float64, len(dpData))
-	dimension := lrParameters.NbrFeatures + 1
+
+	firstRow := strings.TrimSuffix(strings.TrimPrefix(dpData[0], "("), ")")
+	dimension := len(strings.Split(firstRow, ", "))
 
 	wg := libunlynx.StartParallelize(len(dpData))
 	for i, row := range dpData {
@@ -463,7 +456,7 @@ func fetchDBDataLogReg(lrParameters libdrynx.LogisticRegressionParameters) [][]f
 		}(i, row)
 	}
 	libunlynx.EndParallelize(wg)
-	return tab
+	return tab, int64(dimension)
 }
 
 // createFakeDataForOperation creates fake data to be used

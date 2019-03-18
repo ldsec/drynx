@@ -307,9 +307,14 @@ func CreatePredicateRangeProofListForAllServers(cps []CreateProof) []RangeProof 
 			defer wg.Done()
 			rps[i] = CreatePredicateRangeProofForAllServ(v)
 		}(i, v)
-
 	}
 	libunlynx.EndParallelize(wg)
+
+
+	length := 0
+	for _, v := range rps {length += len(v.ToBytes().Commit)}
+	log.LLvl1("RANGE PROOF SIZE IS ", length)
+
 	return rps
 }
 

@@ -9,30 +9,25 @@ import (
 )
 
 const (
+	// query flags
+
 	// BinaryName is the name of the drynx app
 	BinaryName = "drynx"
 
 	// Version of the binary
 	Version = "1.00"
 
-	// DefaultGroupFile is the name of the default file to lookup for group
-	// definition
-	DefaultGroupFile = "group.toml"
-
 	optionConfig      = "config"
 	optionConfigShort = "c"
-
-	optionGroupFile      = "file"
-	optionGroupFileShort = "f"
 
 	optionOperation      = "operation"
 	optionOperationShort = "o"
 
-	optionDPs      = "d"
-	optionDPsShort = "dps"
+	optionDPs      = "dps"
+	optionDPsShort = "d"
 
-	optionAttribute      = "a"
-	optionAttributeShort = "attributes"
+	optionAttribute      = "attributes"
+	optionAttributeShort = "a"
 
 	optionQueryMin      = "min"
 	optionQueryMinShort = "m"
@@ -40,13 +35,13 @@ const (
 	optionQueryMax      = "max"
 	optionQueryMaxShort = "M"
 
-	//for Computing Nodes + Range proofs
+	//for proofs verification
 	optionProofs = "proofs"
 	optionProofsShort = "p"
 
-	// query flags
-	optionDecryptKey      = "key"
-	optionDecryptKeyShort = "k"
+	//Total Number of trials to train and evaluate the logistic regression model
+	optionNmbrTrials = "trials"
+	optionNmbrTrialsShort = "t"
 
 	// setup options
 	optionServerBinding      = "serverBinding"
@@ -73,21 +68,6 @@ func main() {
 			Name:  "debug, d",
 			Value: 0,
 			Usage: "debug-level: 1 for terse, 5 for maximal",
-		},
-	}
-
-	encryptFlags := []cli.Flag{
-		cli.StringFlag{
-			Name:  optionGroupFile + ", " + optionGroupFileShort,
-			Value: DefaultGroupFile,
-			Usage: "Drynx group definition file",
-		},
-	}
-
-	decryptFlags := []cli.Flag{
-		cli.StringFlag{
-			Name:  optionDecryptKey + ", " + optionDecryptKeyShort,
-			Usage: "Base64-encoded key to decrypt a value",
 		},
 	}
 
@@ -143,37 +123,18 @@ func main() {
 			Usage: "Maximum of data to be examined while executing query",
 		},
 
-		cli.StringFlag{
+		cli.Int64Flag{
 			Name:  optionProofs + ", " + optionProofsShort,
-			Usage: "Are (Computing Nodes + Range) Proofs enabled?",
+			Usage: "Is Proofs Verification enabled?",
+		},
+
+		cli.Int64Flag{
+			Name:  optionNmbrTrials + ", " + optionNmbrTrialsShort,
+			Usage: "Number of Trials to train (and evaluate) logistic regression model",
 		},
 	}
 
 	cliApp.Commands = []cli.Command{
-		// BEGIN CLIENT: DATA PROVIDER ----------
-
-		// CLIENT END: DATA PROVIDER ------------
-
-		// BEGIN CLIENT: DATA ENCRYPTION ----------
-		{
-			Name:    "encrypt",
-			Aliases: []string{"e"},
-			Usage:   "Encrypt an integer with the public key of the collective authority",
-			Action:  encryptIntFromApp,
-			Flags:   encryptFlags,
-		},
-		// CLIENT END: DATA ENCRYPTION ------------
-
-		// BEGIN CLIENT: DATA DECRYPTION ----------
-		{
-			Name:    "decrypt",
-			Aliases: []string{"d"},
-			Usage:   "Decrypt an integer with the provided private key",
-			Action:  decryptIntFromApp,
-			Flags:   decryptFlags,
-		},
-		// CLIENT END: DATA DECRYPTION ------------
-
 		// BEGIN CLIENT: QUERIER ----------
 		{
 			Name:    "run",

@@ -158,7 +158,7 @@ func DecodeLogisticRegression(result []libunlynx.CipherText, privKey kyber.Scala
 	log.LLvl1("Decryption Log Reg took", time.Since(startDecryptionLogReg))
 	//libunlynx.EndTimer(decryption)
 
-	log.LLvl1("Decrypted Values are", approxCoefficientsPacked)
+	//log.LLvl1("Decrypted Values are", approxCoefficientsPacked)
 
 	//gradientDescent := libunlynx.StartTimer("GradientDescent")
 	startGradientDescent := time.Now()
@@ -561,7 +561,6 @@ func FindMinimumWeights(approxCoefficients [][]float64, initialWeights []float64
 
 	if k == 1 {return ComputeMinimumWeights(approxCoefficients, lambda)}
 
-	//weights := initialWeights
 	weights := make([]float64, len(initialWeights))
 	copy(weights, initialWeights)
 
@@ -1375,6 +1374,8 @@ func PartitionDatasetCV(X [][]float64, y []int64, partition int64, kfold int64) 
 }
 
 // GetDataForDataProvider returns data records from a file for a given data provider based on its id
+// This function assumes all DPs have access to or copies of the same total training dataset, which they will divide among
+// themselves depending on the DPs' ids
 func GetDataForDataProvider(filename string, dataProviderIdentity network.ServerIdentity, NbrDps int64) [][]float64 {
 	var dataForDP [][]float64
 	data := String2DToFloat64(ReadFile(filename, ","))
@@ -1389,13 +1390,6 @@ func GetDataForDataProvider(filename string, dataProviderIdentity network.Server
 		log.LLvl1("DP", dpID, " has:", len(dataForDP), "records")
 	}
 	return dataForDP
-}
-
-// GetDataForDataProviderWithoutSplitting returns data records from a file for a given data provider
-func GetDataForDataProviderWithoutSplitting (filename string) [][]float64 {
-	dpData := String2DToFloat64(ReadFile(filename, ","))
-	log.LLvl1("DP has:", len(dpData), "records")
-	return dpData
 }
 
 // -----------------
