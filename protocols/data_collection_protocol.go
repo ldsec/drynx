@@ -220,7 +220,10 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 			lrParameters := p.Survey.Query.Operation.LRParameters
 			if lrParameters.FilePath != "" {
 				startDBLogReg := time.Now()
-				//datasFloat = encoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.FilePath, *p.TreeNode().ServerIdentity, lrParameters.NbrDps)
+				/*//Use the following (commented) ine of code in case the DPs share the total training dataset
+				//otherwise use the uncommented line (as it is now, in case of distributed training dataset)
+				datasFloat = encoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.FilePath, *p.TreeNode().ServerIdentity, lrParameters.NbrDps)*/
+
 				datasFloat, dimension = fetchDBDataLogReg(lrParameters)
 				log.LLvl1("Actual DB Log Reg fetch took", time.Since(startDBLogReg))
 
