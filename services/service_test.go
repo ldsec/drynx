@@ -222,15 +222,15 @@ func TestServiceDrynx(t *testing.T) {
 
 		idToPublic := make(map[string]kyber.Point)
 		for _, v := range elServers.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 		for _, v := range elDPs.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 
 		if proofs != 0 {
 			for _, v := range elVNs.List {
-				idToPublic[v.String()] = v.Public
+				idToPublic[v.String()] = v.ServicePublic(ServiceName)
 			}
 		}
 
@@ -550,15 +550,15 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 
 		idToPublic := make(map[string]kyber.Point)
 		for _, v := range elServers.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 		for _, v := range elDPs.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 
 		if proofs != 0 {
 			for _, v := range elVNs.List {
-				idToPublic[v.String()] = v.Public
+				idToPublic[v.String()] = v.ServicePublic(ServiceName)
 			}
 		}
 
@@ -907,13 +907,13 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 
 		idToPublic := make(map[string]kyber.Point)
 		for _, v := range el.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 		for _, v := range el1.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 		for _, v := range elVNs.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 
 		thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch

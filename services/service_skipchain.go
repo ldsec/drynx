@@ -29,7 +29,6 @@ var VerificationBitmap = []skipchain.VerifierID{VerifyBitmap, skipchain.VerifyBa
 
 // HandleSurveyQueryToVN handles the reception of the query at a VN
 func (s *ServiceDrynx) HandleSurveyQueryToVN(recq *libdrynx.SurveyQueryToVN) (network.Message, error) {
-
 	recq.SQ.Query.IVSigs.InputValidationSigs = recreateRangeSignatures(recq.SQ.Query.IVSigs)
 
 	s.Mutex.Lock()

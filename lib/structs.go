@@ -5,7 +5,6 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/cothority/v3/skipchain"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
@@ -289,8 +288,8 @@ type EndVerificationResponse struct{}
 //Data for Test Below
 //--------------------------------------------------------------------------------------------------------------------------------------------------
 //Some variables to create dataTest
-var secKey = bn256.NewSuiteG1().Scalar().Pick(random.New())
-var entityPub = bn256.NewSuiteG1().Point().Mul(secKey, bn256.NewSuiteG1().Point().Base())
+var secKey = PairingSuite.Scalar().Pick(random.New())
+var entityPub = PairingSuite.Point().Mul(secKey, PairingSuite.Point().Base())
 var tab1 = []int64{1, 2, 3, 6}
 var tab2 = []int64{2, 4, 8, 6}
 

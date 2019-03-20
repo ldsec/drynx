@@ -273,6 +273,7 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 	}
 
 	// signatures for Input Validation
+	log.Lvl1("Input validation")
 	ps := make([]*[]libdrynx.PublishSignatureBytes, sim.NbrServers)
 	if !(ranges == nil) && sim.Ranges != 0 {
 		wg := libunlynx.StartParallelize(sim.NbrServers)
@@ -306,6 +307,7 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 		log.Fatal("The total number of servers must match the number of servers per data provider")
 	}
 
+	log.Lvl1("Collect keys")
 	dpToServers := make(map[string]*[]network.ServerIdentity, 0)
 	dpIndex := 0
 	for _, v := range elServers {
@@ -329,13 +331,13 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 
 	idToPublic := make(map[string]kyber.Point)
 	for _, v := range rosterServers.List {
-		idToPublic[v.String()] = v.Public
+		idToPublic[v.String()] = v.ServicePublic(services.ServiceName)
 	}
 	for _, v := range rosterVNs.List {
-		idToPublic[v.String()] = v.Public
+		idToPublic[v.String()] = v.ServicePublic(services.ServiceName)
 	}
 	for _, v := range elDPs {
-		idToPublic[v.String()] = v.Public
+		idToPublic[v.String()] = v.ServicePublic(services.ServiceName)
 	}
 
 	// Create a client (querier) for the service)
@@ -343,6 +345,7 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 	// query generation
 	surveyID := uuid.NewV4().String()
 
+	log.Lvl1("Create Query")
 	var thresholdEntityProofsVerif []float64
 	if sim.Obfuscation == false {
 		thresholdEntityProofsVerif = []float64{sim.ThresholdGeneral, sim.ThresholdOther, 0.0, sim.ThresholdOther}
@@ -367,9 +370,11 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 	var err error
 
 	if sim.Proofs != 0 {
+		log.Lvl1("Send query to skipchain")
 		// send query to the skipchain and 'wait' for all proofs' verification to be done
 		clientSkip := services.NewDrynxClient(elVNs[0], "simul-skip-"+sim.OperationName)
 
+		log.Lvl2("Parallelizing Survey Queries")
 		wg = libunlynx.StartParallelize(1)
 		go func(elVNs *onet.Roster) {
 			defer wg.Done()
@@ -381,6 +386,7 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 		}(rosterVNs)
 		libunlynx.EndParallelize(wg)
 
+		log.Lvl2("Parallelizing Verification Queries")
 		wg = libunlynx.StartParallelize(1)
 		go func(si *network.ServerIdentity) {
 			defer wg.Done()
@@ -408,6 +414,7 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 		}
 	}
 
+	log.Lvl1("Call Drynx as Client")
 	clientSkip := services.NewDrynxClient(elVNs[0], "simul-skip")
 	if sim.Proofs != 0 {
 		libunlynx.EndParallelize(wg)
@@ -416,6 +423,7 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 	}
 
 	retrieveBlock := time.Now()
+	log.Lvl1("Verify Proof")
 	sb, err := clientSkip.SendGetLatestBlock(rosterVNs, block)
 	if err != nil || sb == nil {
 		log.Fatal("Something wrong when fetching the last block")

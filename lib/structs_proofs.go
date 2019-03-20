@@ -7,7 +7,6 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/cothority/v3/skipchain"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
@@ -134,7 +133,8 @@ func (rpr *RangeProofRequest) VerifyProof(source network.ServerIdentity, sq Surv
 			verifSign = proofFalseSign
 		}
 	}()
-	verif := verifyRangeProofList(rpr.Data, sq.Threshold, sq.Query.Ranges, sq.Query.IVSigs.InputValidationSigs, sq.RosterServers.Aggregate, sq.RangeProofThreshold)
+	// TODO: resolve this circular dependency
+	verif := verifyRangeProofList(rpr.Data, sq.Threshold, sq.Query.Ranges, sq.Query.IVSigs.InputValidationSigs, sq.RosterServers.ServiceAggregate("drynx"), sq.RangeProofThreshold)
 	log.Lvl2("VN", source.String(), " verified range proof:", verif)
 	libunlynx.EndParallelize(wg)
 	//libunlynx.EndTimer(time)
@@ -484,8 +484,7 @@ func verifyKeySwitch(data []byte, insideProofThresold, sample float64) int64 {
 
 // VerifyProofSignature verifies the signature of the proof
 func VerifyProofSignature(pubKey kyber.Point, data []byte, signature []byte) error {
-	pair := bn256.NewSuite()
-	err := schnorr.Verify(pair.G1(), pubKey, data, signature)
+	err := schnorr.Verify(PairingSuite, pubKey, data, signature)
 	if err != nil {
 		return errors.New("signature is not correct")
 	}

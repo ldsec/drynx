@@ -103,7 +103,7 @@ type MsgTypes struct {
 var msgTypes = MsgTypes{}
 
 func init() {
-	onet.RegisterNewService(ServiceName, NewService)
+	onet.RegisterNewServiceWithSuite(ServiceName, libdrynx.PairingSuite, NewService)
 
 	msgTypes.msgSurveyQuery = network.RegisterMessage(&libdrynx.SurveyQuery{})
 	msgTypes.msgSurveyQueryToDP = network.RegisterMessage(&libdrynx.SurveyQueryToDP{})
@@ -295,7 +295,11 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 
 	// prepares the precomputation for shuffling
 	lineSize := 100 // + 1 is for the possible count attribute
-	survey.ShufflePrecompute = libunlynxshuffle.PrecomputationWritingForShuffling(false, gobFile, s.ServerIdentity().String(), libunlynx.SuiTe.Scalar().Pick(random.New()), recq.RosterServers.Aggregate, lineSize)
+	aggregate := libunlynx.SuiTe.Point()
+	for _, p := range recq.RosterServers.List {
+		aggregate.Add(aggregate, p.ServicePublic(ServiceName))
+	}
+	survey.ShufflePrecompute = libunlynxshuffle.PrecomputationWritingForShuffling(false, gobFile, s.ServerIdentity().String(), libunlynx.SuiTe.Scalar().Pick(random.New()), aggregate, lineSize)
 
 	// if is the root server: send query to all other servers and its data providers
 	if recq.IntraMessage == false {
@@ -424,7 +428,7 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 
 			queryStatement := protocols.SurveyToDP{
 				SurveyID:  survey.SurveyQuery.SurveyID,
-				Aggregate: survey.SurveyQuery.RosterServers.Aggregate,
+				Aggregate: survey.SurveyQuery.RosterServers.ServiceAggregate(ServiceName),
 				Query:     survey.SurveyQuery.Query,
 			}
 			dataCollectionProtocol.Survey = queryStatement

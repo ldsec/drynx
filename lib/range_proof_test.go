@@ -4,12 +4,11 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"testing"
 )
 
 func TestRangeProofVerification(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
+	libunlynx.SuiTe = PairingSuite
 	if !CurvePairingTest() {
 		t.Skip("no pairing")
 	}
@@ -36,7 +35,7 @@ func TestRangeProofVerification(t *testing.T) {
 }
 
 func TestOptimizedRangeProofVerification(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
+	libunlynx.SuiTe = PairingSuite
 	if !CurvePairingTest() {
 		t.Skip("no pairing")
 	}

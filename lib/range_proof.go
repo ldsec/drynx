@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/onet/v3/log"
 	"golang.org/x/crypto/sha3"
 	"math"
@@ -174,23 +173,21 @@ func (prf *RangeProof) FromBytes(prpb RangeProofBytes) {
 		return
 	}
 
-	suitePair := bn256.NewSuite()
-
 	V, A, Zv := make([][]kyber.Point, len(*prpb.RP.V)), make([][]kyber.Point, len(*prpb.RP.A)), make([][]kyber.Scalar, len(*prpb.RP.Zv))
-	g2PointLen := (suitePair.G2().PointLen())
-	gtPointLen := suitePair.GT().PointLen()
+	g1PointLen := PairingSuite.G1().PointLen()
+	gtPointLen := PairingSuite.GT().PointLen()
 	wg := libunlynx.StartParallelize(len(*prpb.RP.V))
 	for i := 0; i < len(*prpb.RP.V); i++ {
 		go func(i int) {
 			defer wg.Done()
 			if i == 0 { // to include in para
-				for j := 0; j < len(*prpb.RP.Zphi); j = j + libunlynx.SuiTe.ScalarLen() {
-					tmp := libunlynx.SuiTe.Scalar().One()
-					tmp.UnmarshalBinary((*prpb.RP.Zphi)[j : j+libunlynx.SuiTe.ScalarLen()])
+				for j := 0; j < len(*prpb.RP.Zphi); j = j + PairingSuite.ScalarLen() {
+					tmp := PairingSuite.Scalar().One()
+					tmp.UnmarshalBinary((*prpb.RP.Zphi)[j : j+PairingSuite.ScalarLen()])
 					prf.RP.Zphi = append(prf.RP.Zphi, tmp)
 				}
 				prf.Commit.FromBytes(prpb.Commit)
-				tmp := libunlynx.SuiTe.Scalar().One()
+				tmp := PairingSuite.Scalar().One()
 				err := tmp.UnmarshalBinary(*prpb.RP.Challenge)
 
 				if err != nil {
@@ -200,7 +197,7 @@ func (prf *RangeProof) FromBytes(prpb RangeProofBytes) {
 
 				prf.RP.D = libunlynx.BytesToAbstractPoints(*prpb.RP.D)[0]
 
-				tmp1 := libunlynx.SuiTe.Scalar().One()
+				tmp1 := PairingSuite.Scalar().One()
 				err = tmp1.UnmarshalBinary(*prpb.RP.Zr)
 				prf.RP.Zr = tmp1
 				if err != nil {
@@ -208,25 +205,25 @@ func (prf *RangeProof) FromBytes(prpb RangeProofBytes) {
 				}
 
 			}
-			for j := 0; j < len((*prpb.RP.Zv)[i]); j = j + libunlynx.SuiTe.ScalarLen() {
-				scalarPoint := libunlynx.SuiTe.Scalar().One()
-				err := scalarPoint.UnmarshalBinary((*prpb.RP.Zv)[i][j : j+libunlynx.SuiTe.ScalarLen()])
+			for j := 0; j < len((*prpb.RP.Zv)[i]); j = j + PairingSuite.ScalarLen() {
+				scalarPoint := PairingSuite.Scalar().One()
+				err := scalarPoint.UnmarshalBinary((*prpb.RP.Zv)[i][j : j+PairingSuite.ScalarLen()])
 				if err != nil {
 					log.Fatal(err)
 				}
 				Zv[i] = append(Zv[i], scalarPoint)
 			}
 
-			for j := 0; j < len((*prpb.RP.V)[i]); j = j + g2PointLen {
-				g2Point := suitePair.G2().Point()
-				err := g2Point.UnmarshalBinary((*prpb.RP.V)[i][j : j+g2PointLen])
+			for j := 0; j < len((*prpb.RP.V)[i]); j = j + g1PointLen {
+				g1Point := PairingSuite.G1().Point()
+				err := g1Point.UnmarshalBinary((*prpb.RP.V)[i][j : j+g1PointLen])
 				if err != nil {
 					log.Fatal(err)
 				}
-				V[i] = append(V[i], g2Point)
+				V[i] = append(V[i], g1Point)
 			}
 			for j := 0; j < len((*prpb.RP.A)[i]); j = j + gtPointLen {
-				gtPoint := suitePair.GT().Point()
+				gtPoint := PairingSuite.GT().Point()
 				err := gtPoint.UnmarshalBinary((*prpb.RP.A)[i][j : j+gtPointLen])
 				if err != nil {
 					log.Fatal(err)
@@ -244,19 +241,18 @@ func (prf *RangeProof) FromBytes(prpb RangeProofBytes) {
 
 // InitRangeProofSignatureDeterministic is used for simulation puposes to create deterministic servers' signatures
 func InitRangeProofSignatureDeterministic(u int64) PublishSignatureBytes {
-	suitePair := bn256.NewSuite()
-	g2 := suitePair.G2()
+	g1 := PairingSuite.G1()
 	A := make([]byte, 0)
 
 	//pick a pair private(x)/public(y) key at each server
-	x := libunlynx.SuiTe.Scalar().SetInt64(12)
-	y := libunlynx.SuiTe.Point().Mul(x, libunlynx.SuiTe.Point().Base())
+	x := PairingSuite.Scalar().SetInt64(12)
+	y := PairingSuite.Point().Mul(x, nil)
 
 	//signature from private key done by server
 	for i := 0; int64(i) < int64(u); i++ {
-		scalar := g2.Scalar().SetInt64(int64(i))
-		invert := g2.Scalar().Add(x, scalar)
-		tmp := g2.Point().Mul(g2.Scalar().Inv(invert), g2.Point().Base())
+		scalar := g1.Scalar().SetInt64(int64(i))
+		invert := g1.Scalar().Add(x, scalar)
+		tmp := g1.Point().Mul(g1.Scalar().Inv(invert), nil)
 		tmpByte, _ := tmp.MarshalBinary()
 		A = append(A, tmpByte...)
 	}
@@ -265,8 +261,7 @@ func InitRangeProofSignatureDeterministic(u int64) PublishSignatureBytes {
 
 //InitRangeProofSignature create a public/private key pair and return new signatures in a PublishSignature structure. (done by servers)
 func InitRangeProofSignature(u int64) PublishSignatureBytes {
-	suitePair := bn256.NewSuite()
-	g2 := suitePair.G2()
+	g1 := PairingSuite.G1()
 	A := make([]byte, 0)
 
 	//pick a pair private(x)/public(y) key at each server
@@ -274,9 +269,9 @@ func InitRangeProofSignature(u int64) PublishSignatureBytes {
 
 	//signature from private key done by server
 	for i := 0; int64(i) < int64(u); i++ {
-		scalar := g2.Scalar().SetInt64(int64(i))
-		invert := g2.Scalar().Add(x, scalar)
-		tmp := g2.Point().Mul(g2.Scalar().Inv(invert), g2.Point().Base())
+		scalar := g1.Scalar().SetInt64(int64(i))
+		invert := g1.Scalar().Add(x, scalar)
+		tmp := g1.Point().Mul(g1.Scalar().Inv(invert), nil)
 		tmpByte, _ := tmp.MarshalBinary()
 		A = append(A, tmpByte...)
 	}
@@ -285,12 +280,11 @@ func InitRangeProofSignature(u int64) PublishSignatureBytes {
 
 //PublishSignatureBytesToPublishSignatures creates servers' signatures directly in bytes
 func PublishSignatureBytesToPublishSignatures(sigsBytes PublishSignatureBytes) PublishSignature {
-	suitePair := bn256.NewSuite()
-	g2 := suitePair.G2()
+	g1 := PairingSuite.G1()
 	signatures := make([]kyber.Point, 0)
-	for i := 0; i < len(sigsBytes.Signature); i = i + g2.PointLen() {
-		point := g2.Point()
-		point.UnmarshalBinary(sigsBytes.Signature[i : i+g2.PointLen()])
+	for i := 0; i < len(sigsBytes.Signature); i = i + g1.PointLen() {
+		point := g1.Point()
+		point.UnmarshalBinary(sigsBytes.Signature[i : i+g1.PointLen()])
 		signatures = append(signatures, point)
 	}
 
@@ -319,8 +313,7 @@ func CreatePredicateRangeProofForAllServ(cp CreateProof) RangeProof {
 		return RangeProof{Commit: cp.Cipher}
 	}
 	//Base
-	suitePair := bn256.NewSuite()
-	g2 := suitePair.G2()
+	g1 := PairingSuite.G1()
 	//value to pick and calculate
 	base := ToBase(int64(cp.Secret), int64(cp.U), int(cp.L))
 	//Encryption is E = (C1,C2) , C1 = rB C2 = m + Pr the commit
@@ -328,12 +321,12 @@ func CreatePredicateRangeProofForAllServ(cp CreateProof) RangeProof {
 	commit := cp.Cipher.C
 
 	a := make([][]kyber.Point, int(len(cp.Sigs)))
-	D := libunlynx.SuiTe.Point().Null()
+	D := PairingSuite.Point().Null()
 	Zphi := make([]kyber.Scalar, int(len(base)))
 	ZV := make([][]kyber.Scalar, int(len(cp.Sigs)))
 	v := make([][]kyber.Scalar, int(len(cp.Sigs)))
 	V := make([][]kyber.Point, int(len(cp.Sigs)))
-	m := libunlynx.SuiTe.Scalar()
+	m := PairingSuite.Scalar()
 
 	for i := 0; i < int(len(cp.Sigs)); i++ {
 		ZV[i] = make([]kyber.Scalar, int(len(base)))
@@ -344,7 +337,7 @@ func CreatePredicateRangeProofForAllServ(cp CreateProof) RangeProof {
 
 	//c = Hash(B,Commitment,y)
 	hash := sha3.New512()
-	Bbyte, err := libunlynx.SuiTe.Point().Base().MarshalBinary()
+	Bbyte, err := PairingSuite.Point().Base().MarshalBinary()
 	if err != nil {
 		log.Fatal("Problem in point To Bytes B ", err)
 	}
@@ -356,7 +349,7 @@ func CreatePredicateRangeProofForAllServ(cp CreateProof) RangeProof {
 	}
 	hash.Write(C1byte)
 
-	sumPub := libunlynx.SuiTe.Point().Null()
+	sumPub := PairingSuite.Point().Null()
 	for _, v := range cp.Sigs {
 		sumPub.Add(sumPub, v.Public)
 	}
@@ -367,34 +360,35 @@ func CreatePredicateRangeProofForAllServ(cp CreateProof) RangeProof {
 	}
 	hash.Write(YByte)
 
-	c := libunlynx.SuiTe.Scalar().SetBytes(hash.Sum(nil))
+	c := PairingSuite.Scalar().SetBytes(hash.Sum(nil))
 
 	for j := 0; j < len(base); j++ {
-		sj := libunlynx.SuiTe.Scalar().Pick(libunlynx.SuiTe.RandomStream())
-		tj := libunlynx.SuiTe.Scalar().Pick(libunlynx.SuiTe.RandomStream())
-		mj := libunlynx.SuiTe.Scalar().Pick(libunlynx.SuiTe.RandomStream())
+		sj := PairingSuite.Scalar().Pick(PairingSuite.RandomStream())
+		tj := PairingSuite.Scalar().Pick(PairingSuite.RandomStream())
+		mj := PairingSuite.Scalar().Pick(PairingSuite.RandomStream())
 		m.Add(m, mj)
 		//Compute D
 		//Bu^js_j
-		firstT := libunlynx.SuiTe.Point().Mul(libunlynx.SuiTe.Scalar().Mul(sj, libunlynx.SuiTe.Scalar().SetInt64(int64(math.Pow(float64(cp.U), float64(j))))), libunlynx.SuiTe.Point().Base())
+		firstT := PairingSuite.Point().Mul(PairingSuite.Scalar().Mul(sj, PairingSuite.Scalar().SetInt64(int64(math.Pow(float64(cp.U), float64(j))))), nil)
 		D.Add(D, firstT)
-		secondT := libunlynx.SuiTe.Point().Mul(mj, cp.CaPub)
+		secondT := PairingSuite.Point().Mul(mj, cp.CaPub)
 		D.Add(D, secondT)
 
-		Zphi[j] = libunlynx.SuiTe.Scalar().Sub(sj, libunlynx.SuiTe.Scalar().Mul(c, libunlynx.SuiTe.Scalar().SetInt64(int64(base[j]))))
+		Zphi[j] = PairingSuite.Scalar().Sub(sj, PairingSuite.Scalar().Mul(c, PairingSuite.Scalar().SetInt64(int64(base[j]))))
 		for i, s := range cp.Sigs {
-			v[i][j] = g2.Scalar().Pick(libunlynx.SuiTe.RandomStream())
+			v[i][j] = g1.Scalar().Pick(PairingSuite.RandomStream())
 			///V_j = B(x+phi_j)^-1(v_j)
-			V[i][j] = g2.Point().Mul(v[i][j], s.Signature[base[j]])
+			V[i][j] = g1.Point().Mul(v[i][j], s.Signature[base[j]])
 			//Compute a_j
 
-			//a[j].Add(a[j], suitePair.Pair(suitePair.Point().Mul(tj, SuiTe.Point().Base()), g2.Point().Base()))
-			a[i][j] = suitePair.Pair(libunlynx.SuiTe.Point().Mul(libunlynx.SuiTe.Scalar().Neg(sj), libunlynx.SuiTe.Point().Base()), V[i][j])
-			a[i][j].Add(a[i][j], suitePair.Pair(libunlynx.SuiTe.Point().Mul(tj, libunlynx.SuiTe.Point().Base()), g2.Point().Base()))
-			ZV[i][j] = libunlynx.SuiTe.Scalar().Sub(tj, libunlynx.SuiTe.Scalar().Mul(c, v[i][j]))
+			gp := PairingSuite.Point().Mul(PairingSuite.G2().Scalar().Neg(sj), nil)
+			a[i][j] = PairingSuite.Pair(V[i][j], gp)
+			gp = PairingSuite.Point().Mul(tj, nil)
+			a[i][j].Add(a[i][j], PairingSuite.Pair(g1.Point().Base(), gp))
+			ZV[i][j] = PairingSuite.Scalar().Sub(tj, PairingSuite.Scalar().Mul(c, v[i][j]))
 		}
 	}
-	Zr := libunlynx.SuiTe.Scalar().Sub(m, libunlynx.SuiTe.Scalar().Mul(c, cp.R))
+	Zr := PairingSuite.Scalar().Sub(m, PairingSuite.Scalar().Mul(c, cp.R))
 
 	rp := RangeProofData{D: D, A: a, Challenge: c, V: V, Zphi: Zphi, Zv: ZV, Zr: Zr}
 	rProof := RangeProof{Commit: cp.Cipher, RP: &rp}
@@ -408,24 +402,23 @@ func CreatePredicateRangeProof(sig PublishSignature, u int64, l int64, secret in
 		return RangeProof{Commit: cipher, RP: nil}
 	}
 
-	suitePair := bn256.NewSuite()
-	g2 := suitePair.G2()
+	g1 := PairingSuite.G1()
 
 	//value to pick and calculate
 	base := ToBase(int64(secret), int64(u), int(l))
 	commit := cipher.C
 
 	a := make([]kyber.Point, int(len(base)))
-	D := libunlynx.SuiTe.Point().Null()
+	D := PairingSuite.Point().Null()
 	Zphi := make([]kyber.Scalar, int(len(base)))
 	ZV := make([]kyber.Scalar, int(int(len(base))))
 	v := make([]kyber.Scalar, int(len(base)))
 	V := make([]kyber.Point, int(len(base)))
-	m := libunlynx.SuiTe.Scalar()
+	m := PairingSuite.Scalar()
 
 	//c = Hash(B,Commitment,y)
 	hash := sha3.New512()
-	Bbyte, err := libunlynx.SuiTe.Point().Base().MarshalBinary()
+	Bbyte, err := PairingSuite.Point().Base().MarshalBinary()
 	if err != nil {
 		log.Fatal("Problem in point To Bytes B ", err)
 	}
@@ -443,33 +436,33 @@ func CreatePredicateRangeProof(sig PublishSignature, u int64, l int64, secret in
 	}
 	hash.Write(YByte)
 
-	c := libunlynx.SuiTe.Scalar().SetBytes(hash.Sum(nil))
+	c := PairingSuite.Scalar().SetBytes(hash.Sum(nil))
 	for j := 0; j < len(base); j++ {
-		v[j] = g2.Scalar().Pick(libunlynx.SuiTe.RandomStream())
+		v[j] = g1.Scalar().Pick(PairingSuite.RandomStream())
 		///V_j = B(x+phi_j)^-1(v_j)
-		V[j] = g2.Point().Mul(v[j], sig.Signature[base[j]])
+		V[j] = g1.Point().Mul(v[j], sig.Signature[base[j]])
 
 		//
-		sj := libunlynx.SuiTe.Scalar().Pick(libunlynx.SuiTe.RandomStream())
-		tj := libunlynx.SuiTe.Scalar().Pick(libunlynx.SuiTe.RandomStream())
-		mj := libunlynx.SuiTe.Scalar().Pick(libunlynx.SuiTe.RandomStream())
+		sj := PairingSuite.Scalar().Pick(PairingSuite.RandomStream())
+		tj := PairingSuite.Scalar().Pick(PairingSuite.RandomStream())
+		mj := PairingSuite.Scalar().Pick(PairingSuite.RandomStream())
 		m.Add(m, mj)
 		//Compute D
 		//Bu^js_j
-		firstT := libunlynx.SuiTe.Point().Mul(libunlynx.SuiTe.Scalar().Mul(sj, libunlynx.SuiTe.Scalar().SetInt64(int64(math.Pow(float64(u), float64(j))))), libunlynx.SuiTe.Point().Base())
+		firstT := PairingSuite.Point().Mul(PairingSuite.Scalar().Mul(sj, PairingSuite.Scalar().SetInt64(int64(math.Pow(float64(u), float64(j))))), nil)
 		D.Add(D, firstT)
-		secondT := libunlynx.SuiTe.Point().Mul(mj, caPub)
+		secondT := PairingSuite.Point().Mul(mj, caPub)
 		D.Add(D, secondT)
 		//Compute a_j
-		a[j] = suitePair.Pair(libunlynx.SuiTe.Point().Mul(libunlynx.SuiTe.Scalar().Neg(sj), libunlynx.SuiTe.Point().Base()), V[j])
-		a[j].Add(a[j], suitePair.Pair(libunlynx.SuiTe.Point().Mul(tj, libunlynx.SuiTe.Point().Base()), g2.Point().Base()))
+		a[j] = PairingSuite.Pair(V[j], PairingSuite.Point().Mul(PairingSuite.Scalar().Neg(sj), nil))
+		a[j].Add(a[j], PairingSuite.Pair(g1.Point().Base(), PairingSuite.Point().Mul(tj, nil)))
 
-		Zphi[j] = libunlynx.SuiTe.Scalar().Sub(sj, libunlynx.SuiTe.Scalar().Mul(c, libunlynx.SuiTe.Scalar().SetInt64(int64(base[j]))))
-		ZV[j] = libunlynx.SuiTe.Scalar().Sub(tj, libunlynx.SuiTe.Scalar().Mul(c, v[j]))
+		Zphi[j] = PairingSuite.Scalar().Sub(sj, PairingSuite.Scalar().Mul(c, PairingSuite.Scalar().SetInt64(int64(base[j]))))
+		ZV[j] = PairingSuite.Scalar().Sub(tj, PairingSuite.Scalar().Mul(c, v[j]))
 
 	}
 
-	Zr := libunlynx.SuiTe.Scalar().Sub(m, libunlynx.SuiTe.Scalar().Mul(c, r))
+	Zr := PairingSuite.Scalar().Sub(m, PairingSuite.Scalar().Mul(c, r))
 
 	rp := RangeProofData{D: D, A: [][]kyber.Point{a}, Challenge: c, V: [][]kyber.Point{V}, Zphi: Zphi, Zv: [][]kyber.Scalar{ZV}, Zr: Zr}
 	return RangeProof{Commit: cipher, RP: &rp}
@@ -498,8 +491,7 @@ func RangeProofListVerification(rangeProofsList RangeProofList, ranges []*[]int6
 
 //RangeProofVerification is a function that is executed at the server, when he receive the value from the Data Provider to verify the input.
 func RangeProofVerification(rangeProof RangeProof, u int64, l int64, y []kyber.Point, P kyber.Point) bool {
-	suitePair := bn256.NewSuite()
-	g2 := suitePair.G2()
+	g1 := PairingSuite.G1()
 
 	if int(l) == 0 && u == int64(0) {
 		return true
@@ -513,14 +505,14 @@ func RangeProofVerification(rangeProof RangeProof, u int64, l int64, y []kyber.P
 	ap := make([][]kyber.Point, len(rangeProof.RP.A[0]))
 
 	//Dp = Cc + PZr + Sum(p)(in for)
-	Dp := libunlynx.SuiTe.Point().Add(libunlynx.SuiTe.Point().Mul(rangeProof.RP.Challenge, rangeProof.Commit.C), libunlynx.SuiTe.Point().Mul(rangeProof.RP.Zr, P))
+	Dp := PairingSuite.Point().Add(PairingSuite.Point().Mul(rangeProof.RP.Challenge, rangeProof.Commit.C), PairingSuite.Point().Mul(rangeProof.RP.Zr, P))
 	jBool := make([]bool, len(rangeProof.RP.Zphi))
 	wg := libunlynx.StartParallelize(len(rangeProof.RP.Zphi))
 
 	for j := 0; j < len(rangeProof.RP.Zphi); j++ {
 		//p = B*u^j*Zphi_j
 		//Dp = Cc + PZr + Sum(u^j*Zphi_j)
-		point := libunlynx.SuiTe.Point().Set(libunlynx.IntToPoint(int64(math.Pow(float64(u), float64(j)))))
+		point := PairingSuite.Point().Set(libunlynx.IntToPoint(int64(math.Pow(float64(u), float64(j)))))
 		point.Mul(rangeProof.RP.Zphi[j], point)
 		Dp.Add(Dp, point)
 
@@ -533,11 +525,13 @@ func RangeProofVerification(rangeProof RangeProof, u int64, l int64, y []kyber.P
 			//e(Vj,y*c)
 			ap[j] = make([]kyber.Point, len(rangeProof.RP.A))
 			for i := 0; i < len(rangeProof.RP.A); i++ {
-				ap[j][i] = suitePair.Pair(libunlynx.SuiTe.Point().Mul(rangeProof.RP.Challenge, y[i]), rangeProof.RP.V[i][j])
+				ap[j][i] = PairingSuite.Pair(rangeProof.RP.V[i][j], PairingSuite.Point().Mul(rangeProof.RP.Challenge, y[i]))
 				//e(Vj,y*c) + e(Vj,B)(Zphi_j)
-				ap[j][i].Add(ap[j][i], suitePair.Pair(libunlynx.SuiTe.Point().Mul(libunlynx.SuiTe.Scalar().Neg(rangeProof.RP.Zphi[j]), libunlynx.SuiTe.Point().Base()), rangeProof.RP.V[i][j]))
+				ap[j][i].Add(ap[j][i], PairingSuite.Pair(rangeProof.RP.V[i][j],
+					PairingSuite.Point().Mul(PairingSuite.Scalar().Neg(rangeProof.RP.Zphi[j]), nil)))
 				////e(Vj,y*c) + e(Vj,B)(Zphi_j) + e(B,B)(Zv_j)
-				ap[j][i].Add(ap[j][i], suitePair.Pair(libunlynx.SuiTe.Point().Mul(rangeProof.RP.Zv[i][j], libunlynx.SuiTe.Point().Base()), g2.Point().Base()))
+				ap[j][i].Add(ap[j][i], PairingSuite.Pair(g1.Point().Base(),
+					PairingSuite.Point().Mul(rangeProof.RP.Zv[i][j], nil)))
 
 				if !ap[j][i].Equal(rangeProof.RP.A[i][j]) {
 					//log.Lvl1("One a is not good")

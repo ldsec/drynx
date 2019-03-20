@@ -6,13 +6,12 @@ import (
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"testing"
 )
 
 //TestEncodeDecodeUnionInter tests EncodeUnion and DecodeUnion
 func TestEncodeDecodeUnionInter(t *testing.T) {
-	libunlynx.SuiTe = bn256.NewSuiteG1()
+	libunlynx.SuiTe = libdrynx.PairingSuite
 	//data
 	inputValues := []int64{1, 2, 3, 1, 5, 1, 2, 3}
 	// key

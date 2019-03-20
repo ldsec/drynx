@@ -1,23 +1,23 @@
 package protocols
 
 import (
+	"github.com/lca1/drynx/lib"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
-	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
 )
 
-var clientPrivate = bn256.NewSuiteG1().Scalar().Pick(random.New())
-var clientPublic = bn256.NewSuiteG1().Point().Mul(clientPrivate, bn256.NewSuiteG1().Point().Base())
-var grpattr1 = libunlynx.DeterministCipherText{Point: bn256.NewSuiteG1().Point().Base()}
-var grpattr2 = libunlynx.DeterministCipherText{Point: bn256.NewSuiteG1().Point().Null()}
+var clientPrivate = libdrynx.PairingSuite.Scalar().Pick(random.New())
+var clientPublic = libdrynx.PairingSuite.Point().Mul(clientPrivate, libdrynx.PairingSuite.Point().Base())
+var grpattr1 = libunlynx.DeterministCipherText{Point: libdrynx.PairingSuite.Point().Base()}
+var grpattr2 = libunlynx.DeterministCipherText{Point: libdrynx.PairingSuite.Point().Null()}
 var groupingAttrA = libunlynx.DeterministCipherVector{grpattr1, grpattr1}
 var groupingAttrAkey = libunlynx.GroupingKey("A") //groupingAttrA.Key()
 var groupingAttrB = libunlynx.DeterministCipherVector{grpattr2, grpattr2}

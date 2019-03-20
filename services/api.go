@@ -32,7 +32,8 @@ func init() {
 
 // NewDrynxClient constructor of a client.
 func NewDrynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
-	keys := key.NewKeyPair(libunlynx.SuiTe)
+	keys := key.NewKeyPair(libdrynx.PairingSuite)
+	//keys := key.NewKeyPair(libunlynx.SuiTe)
 	newClient := &API{
 		Client:     onet.NewClient(libunlynx.SuiTe, ServiceName),
 		clientID:   clientID,

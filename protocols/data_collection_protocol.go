@@ -14,7 +14,6 @@ import (
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
@@ -174,7 +173,6 @@ func (p *DataCollectionProtocol) Dispatch() error {
 
 // GenerateData is used to generate data at DPs, this is more for simulation's purposes
 func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error) {
-
 	// Prepare the generation of all possible groups with the query information.
 	numType := make([]int64, len(p.Survey.Query.DPDataGen.GroupByValues))
 	for i, v := range p.Survey.Query.DPDataGen.GroupByValues {
@@ -252,7 +250,9 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 			//p.Survey.Query.Ranges = nil
 			encryptedResponse, clearResponse, cprf = encoding.EncodeForFloat(datasFloat, lrParameters, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation.NameOp)
 		} else {
+			log.Print(p.ServerIdentity(), "encoding")
 			encryptedResponse, clearResponse, cprf = encoding.Encode(fakeData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
+			log.Print(p.ServerIdentity(), "encoding done")
 		}
 
 		log.Lvl2("Data Provider", p.Name(), "computes the query response", clearResponse, "for groups:", groupsString, "with operation:", p.Survey.Query.Operation)
@@ -285,7 +285,6 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 					rplNew := libdrynx.RangeProofList{}
 					rplNew.Data = make([]libdrynx.RangeProof, len(rpl.Data)*p.Survey.Query.CuttingFactor)
 					counter := 0
-					suitePair := bn256.NewSuite()
 					for j := 0; j < p.Survey.Query.CuttingFactor; j++ {
 						for _, v := range rpl.Data {
 
@@ -294,7 +293,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 							for k, w := range v.RP.V {
 								rplNew.Data[counter].RP.V[k] = make([]kyber.Point, len(w))
 								for l, x := range w {
-									tmp := suitePair.G2().Point().Null()
+									tmp := libdrynx.PairingSuite.G1().Point().Null()
 									tmp.Add(tmp, x)
 									rplNew.Data[counter].RP.V[k][l] = tmp
 								}
