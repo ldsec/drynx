@@ -26,12 +26,12 @@ func NewKeySwitching(targetPubKey kyber.Point, rbs []kyber.Point, secretKey kybe
 		go func(i int, v kyber.Point) {
 			defer wg.Done()
 
-			vi := libunlynx.SuiTe.Scalar().Pick(random.New())
-			(*cv)[i].K = libunlynx.SuiTe.Point().Mul(vi, libunlynx.SuiTe.Point().Base())
-			rbNeg := libunlynx.SuiTe.Point().Neg(rbs[i])
-			rbkNeg := libunlynx.SuiTe.Point().Mul(secretKey, rbNeg)
-			viNewK := libunlynx.SuiTe.Point().Mul(vi, targetPubKey)
-			(*cv)[i].C = libunlynx.SuiTe.Point().Add(rbkNeg, viNewK)
+			vi := PairingSuite.Scalar().Pick(random.New())
+			(*cv)[i].K = PairingSuite.Point().Mul(vi, PairingSuite.Point().Base())
+			rbNeg := PairingSuite.Point().Neg(rbs[i])
+			rbkNeg := PairingSuite.Point().Mul(secretKey, rbNeg)
+			viNewK := PairingSuite.Point().Mul(vi, targetPubKey)
+			(*cv)[i].C = PairingSuite.Point().Add(rbkNeg, viNewK)
 
 			//proof
 			ks2s[i] = (*cv)[i].C
@@ -46,5 +46,5 @@ func NewKeySwitching(targetPubKey kyber.Point, rbs []kyber.Point, secretKey kybe
 
 // CurvePairingTest test the type of the curve.
 func CurvePairingTest() bool {
-	return libunlynx.SuiTe.String() == PairingSuite.String()
+	return PairingSuite.String() == PairingSuite.String()
 }

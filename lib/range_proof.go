@@ -381,7 +381,7 @@ func CreatePredicateRangeProofForAllServ(cp CreateProof) RangeProof {
 			V[i][j] = g1.Point().Mul(v[i][j], s.Signature[base[j]])
 			//Compute a_j
 
-			gp := PairingSuite.Point().Mul(PairingSuite.G2().Scalar().Neg(sj), nil)
+			gp := PairingSuite.Point().Mul(PairingSuite.Scalar().Neg(sj), nil)
 			a[i][j] = PairingSuite.Pair(V[i][j], gp)
 			gp = PairingSuite.Point().Mul(tj, nil)
 			a[i][j].Add(a[i][j], PairingSuite.Pair(g1.Point().Base(), gp))

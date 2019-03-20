@@ -49,8 +49,8 @@ func ObfuscationProofCreation(c, co libunlynx.CipherText, s kyber.Scalar) Publis
 	sval := map[string]kyber.Scalar{"s": s}
 	pval := map[string]kyber.Point{"c1": c.K, "c2": c.C, "co1": co.K, "co2": co.C}
 
-	prover := predicate.Prover(libunlynx.SuiTe, sval, pval, nil) // computes: commitment, challenge, response
-	Proof, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
+	prover := predicate.Prover(PairingSuite, sval, pval, nil) // computes: commitment, challenge, response
+	Proof, err := proof.HashProve(PairingSuite, "proofTest", prover)
 	if err != nil {
 		log.Fatal("---------Prover:", err.Error())
 	}
@@ -80,9 +80,9 @@ func ObfuscationListProofCreation(c, co []libunlynx.CipherText, s []kyber.Scalar
 func ObfuscationProofVerification(pop PublishedObfuscationProof) bool {
 	predicate := createPredicateObfuscation()
 	pval := map[string]kyber.Point{"c1": pop.C.K, "c2": pop.C.C, "co1": pop.Co.K, "co2": pop.Co.C}
-	verifier := predicate.Verifier(libunlynx.SuiTe, pval)
+	verifier := predicate.Verifier(PairingSuite, pval)
 
-	if err := proof.HashVerify(libunlynx.SuiTe, "proofTest", verifier, pop.Proof); err != nil {
+	if err := proof.HashVerify(PairingSuite, "proofTest", verifier, pop.Proof); err != nil {
 		log.Error("---------Verifier:", err.Error())
 		return false
 	}

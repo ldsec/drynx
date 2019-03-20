@@ -15,7 +15,7 @@ import (
 )
 
 var clientPrivate = libdrynx.PairingSuite.Scalar().Pick(random.New())
-var clientPublic = libdrynx.PairingSuite.Point().Mul(clientPrivate, libdrynx.PairingSuite.Point().Base())
+var clientPublic = libdrynx.PairingSuite.Point().Mul(clientPrivate, nil)
 var grpattr1 = libunlynx.DeterministCipherText{Point: libdrynx.PairingSuite.Point().Base()}
 var grpattr2 = libunlynx.DeterministCipherText{Point: libdrynx.PairingSuite.Point().Null()}
 var groupingAttrA = libunlynx.DeterministCipherVector{grpattr1, grpattr1}

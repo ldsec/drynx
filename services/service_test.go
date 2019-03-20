@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"go.dedis.ch/kyber/v3/suites"
 
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
@@ -100,7 +101,7 @@ func TestServiceDrynx(t *testing.T) {
 		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
 	}
 
-	local := onet.NewLocalTest(libunlynx.SuiTe)
+	local := onet.NewLocalTest(suites.MustFind("Ed25519"))
 	elServers, elDPs, elVNs := generateNodes(local, nbrServers, nbrDPs, nbrVNs)
 
 	if proofs == 0 {
@@ -428,7 +429,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
 	}
 
-	local := onet.NewLocalTest(libunlynx.SuiTe)
+	local := onet.NewLocalTest(suites.MustFind("Ed25519"))
 	elServers, elDPs, elVNs := generateNodes(local, nbrServers, nbrDPs, nbrVNs)
 
 	if proofs == 0 {
@@ -708,9 +709,9 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 	os.Remove("pre_compute_multiplications.gob")
 
 	// these nodes act as both servers and data providers
-	local := onet.NewLocalTest(libunlynx.SuiTe)
-	local1 := onet.NewLocalTest(libunlynx.SuiTe)
-	local2 := onet.NewLocalTest(libunlynx.SuiTe)
+	local := onet.NewLocalTest(suites.MustFind("Ed25519"))
+	local1 := onet.NewLocalTest(suites.MustFind("Ed25519"))
+	local2 := onet.NewLocalTest(suites.MustFind("Ed25519"))
 
 	// create servers and data providers
 	_, el, _ := local.GenTree(10, true)

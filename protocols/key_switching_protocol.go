@@ -157,7 +157,7 @@ func (p *KeySwitchingProtocol) Start() error {
 	}
 
 	// root does its key switching
-	rootContribution := p.keySwitching(p.Public(), *p.TargetPublicKey, initialTab[1:], p.Private())
+	rootContribution := p.keySwitching(p.ServerIdentity().ServicePublic("drynx"), *p.TargetPublicKey, initialTab[1:], p.Private())
 	p.NodeContribution = &rootContribution
 
 	p.SendToChildren(&DownMessageBytes{Data: libunlynx.AbstractPointsToBytes(initialTab)})

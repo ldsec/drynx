@@ -322,7 +322,7 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 	for i := range result.ProofsObfuscation {
 		tab := []int64{1, 2}
 		e := libunlynx.EncryptIntVector(roster.Aggregate, tab)
-		obfFactor := libunlynx.SuiTe.Scalar().Pick(random.New())
+		obfFactor := PairingSuite.Scalar().Pick(random.New())
 		newE1 := libunlynx.CipherText{}
 		newE1.MulCipherTextbyScalar((*e)[0], obfFactor)
 		newE2 := libunlynx.CipherText{}
@@ -341,8 +341,8 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 		responses[1] = libunlynx.ProcessResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 		responses[2] = libunlynx.ProcessResponse{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}
 
-		responsesShuffled, pi, beta := ShuffleSequence(responses, libunlynx.SuiTe.Point().Base(), roster.Aggregate, nil)
-		prf := ShufflingProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), roster.Aggregate, beta, pi)
+		responsesShuffled, pi, beta := ShuffleSequence(responses, PairingSuite.Point().Base(), roster.Aggregate, nil)
+		prf := ShufflingProofCreation(responses, responsesShuffled, PairingSuite.Point().Base(), roster.Aggregate, beta, pi)
 		result.ProofShuffle[i] = &prf
 	}
 
@@ -504,7 +504,7 @@ func (sm *ShufflingMessage) ToBytes() (*[]byte, int, int, int) {
 // FromBytes converts a byte array to a ShufflingMessage. Note that you need to create the (empty) object beforehand.
 func (sm *ShufflingMessage) FromBytes(data *[]byte, gacbLength, aabLength, pgaebLength int) {
 	var nbrData int
-	cipherLength := libunlynx.SuiTe.PointLen() * 2
+	cipherLength := PairingSuite.PointLen() * 2
 	elementLength := (gacbLength*cipherLength + aabLength*cipherLength + pgaebLength*cipherLength) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
 	if elementLength != 0 {
 

@@ -57,7 +57,7 @@ require (
 	github.com/tonestuff/quadratic v0.0.0-20141117024252-b79de8af2377
 	go.dedis.ch/cothority/v3 v3.0.0
 	go.dedis.ch/kyber/v3 v3.0.0
-	go.dedis.ch/onet/v3 v3.0.0
+	go.dedis.ch/onet/v3 v3.0.2
 	go.etcd.io/bbolt v1.3.2 // indirect
 	go.opencensus.io v0.19.1 // indirect
 	go4.org v0.0.0-20190218023631-ce4c26f7be8e // indirect
@@ -80,5 +80,7 @@ require (
 )
 
 replace go.dedis.ch/onet/v3 => ../onet
+
+replace go.dedis.ch/kyber/v3 => ../kyber
 
 replace github.com/lca1/unlynx => ../unlynx

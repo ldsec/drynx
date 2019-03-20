@@ -108,8 +108,8 @@ func KeySwitchProofCreation(K, viB, ks2, rBNeg, Q kyber.Point, vi, k kyber.Scala
 	sval := map[string]kyber.Scalar{"vi": vi, "k": k}
 	pval := map[string]kyber.Point{"K": K, "viB": viB, "ks2": ks2, "rBNeg": rBNeg, "Q": Q}
 
-	prover := predicate.Prover(libunlynx.SuiTe, sval, pval, nil) // computes: commitment, challenge, response
-	Proof, err := proof.HashProve(libunlynx.SuiTe, "proofTest", prover)
+	prover := predicate.Prover(PairingSuite, sval, pval, nil) // computes: commitment, challenge, response
+	Proof, err := proof.HashProve(PairingSuite, "proofTest", prover)
 	if err != nil {
 		log.Fatal("---------Prover:", err.Error())
 	}
@@ -124,7 +124,7 @@ func KeySwitchListProofCreation(K, Q kyber.Point, k kyber.Scalar, length int, ks
 	for i, v := range vis {
 		go func(i int, v kyber.Scalar) {
 			defer wg.Done()
-			viBs[i] = libunlynx.SuiTe.Point().Mul(v, libunlynx.SuiTe.Point().Base())
+			viBs[i] = PairingSuite.Point().Mul(v, PairingSuite.Point().Base())
 		}(i, v)
 	}
 	libunlynx.EndParallelize(wg)
@@ -148,9 +148,9 @@ func KeySwitchListProofCreation(K, Q kyber.Point, k kyber.Scalar, length int, ks
 func KeySwitchProofVerification(pop PublishedKSProof) bool {
 	predicate := createPredicateNewKeySwitch()
 	pval := map[string]kyber.Point{"K": pop.K, "viB": pop.ViB, "ks2": pop.Ks2, "rBNeg": pop.RbNeg, "Q": pop.Q}
-	verifier := predicate.Verifier(libunlynx.SuiTe, pval)
+	verifier := predicate.Verifier(PairingSuite, pval)
 
-	if err := proof.HashVerify(libunlynx.SuiTe, "proofTest", verifier, pop.Proof); err != nil {
+	if err := proof.HashVerify(PairingSuite, "proofTest", verifier, pop.Proof); err != nil {
 		log.Error("---------Verifier:", err.Error())
 		return false
 	}

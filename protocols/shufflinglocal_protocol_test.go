@@ -1,6 +1,7 @@
 package protocols_test
 
 import (
+	"github.com/lca1/drynx/lib"
 	"testing"
 	"time"
 
@@ -15,14 +16,14 @@ import (
 var nbrNodesLoc = 5
 var privLoc = make([]kyber.Scalar, nbrNodes)
 var pubLoc = make([]kyber.Point, nbrNodes)
-var groupPubLoc = libunlynx.SuiTe.Point().Null()
-var groupSecLoc = libunlynx.SuiTe.Scalar().Zero()
+var groupPubLoc = libdrynx.PairingSuite.Point().Null()
+var groupSecLoc = libdrynx.PairingSuite.Scalar().Zero()
 
 var precomputesLoc = make([][]libunlynx.CipherVectorScalar, nbrNodes)
 
 func TestShufflingLocal(t *testing.T) {
 	defer log.AfterTest(t)
-	local := onet.NewLocalTest(libunlynx.SuiTe)
+	local := onet.NewLocalTest(libdrynx.PairingSuite)
 	log.TestOutput(testing.Verbose(), 3)
 
 	// You must register this protocol before creating the servers
@@ -69,14 +70,14 @@ func TestShufflingLocal(t *testing.T) {
 func NewShufflingLocalTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 
 	for i := 0; i < nbrNodesLoc; i++ {
-		privLoc[i] = libunlynx.SuiTe.Scalar().Pick(libunlynx.SuiTe.RandomStream())
-		pubLoc[i] = libunlynx.SuiTe.Point().Mul(privLoc[i], libunlynx.SuiTe.Point().Base())
+		privLoc[i] = libdrynx.PairingSuite.Scalar().Pick(libdrynx.PairingSuite.RandomStream())
+		pubLoc[i] = libdrynx.PairingSuite.Point().Mul(privLoc[i], libdrynx.PairingSuite.Point().Base())
 		groupPubLoc.Add(groupPubLoc, pubLoc[i])
 		groupSecLoc.Add(groupSecLoc, privLoc[i])
 	}
 	for i := 0; i < nbrNodesLoc; i++ {
 		privBytes, _ := privLoc[i].MarshalBinary()
-		precomputesLoc[i] = libunlynx.CreatePrecomputedRandomize(libunlynx.SuiTe.Point().Base(), groupPubLoc, libunlynx.SuiTe.XOF(privBytes), 4, 10)
+		precomputesLoc[i] = libunlynx.CreatePrecomputedRandomize(libdrynx.PairingSuite.Point().Base(), groupPubLoc, libdrynx.PairingSuite.XOF(privBytes), 4, 10)
 	}
 	aggregateKey := groupPubLoc
 

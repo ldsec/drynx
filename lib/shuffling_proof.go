@@ -103,7 +103,7 @@ func shuffleProofCreation(inputList, outputList []libunlynx.ProcessResponse, bet
 	libunlynx.EndParallelize(wg1)
 	betaCompressed := libunlynxshuffle.CompressBeta(beta, e)
 
-	rand := libunlynx.SuiTe.RandomStream()
+	rand := PairingSuite.RandomStream()
 	// do k-shuffle of ElGamal on the (Xhat,Yhat) and check it
 	k = len(Xhat)
 	if k != len(Yhat) {
@@ -111,12 +111,12 @@ func shuffleProofCreation(inputList, outputList []libunlynx.ProcessResponse, bet
 	}
 	ps := shuffle.PairShuffle{}
 
-	ps.Init(libunlynx.SuiTe, k)
+	ps.Init(PairingSuite, k)
 
 	prover := func(ctx proof.ProverContext) error {
 		return ps.Prove(pi, nil, h, betaCompressed, Xhat, Yhat, rand, ctx)
 	}
-	prf, err := proof.HashProve(libunlynx.SuiTe, "PairShuffle", prover)
+	prf, err := proof.HashProve(PairingSuite, "PairShuffle", prover)
 	if err != nil {
 		panic("Shuffle proof failed: " + err.Error())
 	}
@@ -131,8 +131,8 @@ func ShufflingProofCreation(originalList, shuffledList []libunlynx.ProcessRespon
 
 // checkShuffleProof verifies a shuffling proof
 func checkShuffleProof(g, h kyber.Point, Xhat, Yhat, XhatBar, YhatBar []kyber.Point, prf []byte) bool {
-	verifier := shuffle.Verifier(libunlynx.SuiTe, g, h, Xhat, Yhat, XhatBar, YhatBar)
-	err := proof.HashVerify(libunlynx.SuiTe, "PairShuffle", verifier, prf)
+	verifier := shuffle.Verifier(PairingSuite, g, h, Xhat, Yhat, XhatBar, YhatBar)
+	err := proof.HashVerify(PairingSuite, "PairShuffle", verifier, prf)
 	if err != nil {
 		log.Lvl1(err)
 		log.Lvl1("-----------verify failed (with XharBar)")
@@ -179,7 +179,7 @@ func ShuffleSequence(inputList []libunlynx.ProcessResponse, g, h kyber.Point, pr
 
 	k := len(inputList) // number of clients
 
-	rand := libunlynx.SuiTe.RandomStream()
+	rand := PairingSuite.RandomStream()
 	// Pick a fresh (or precomputed) ElGamal blinding factor for each pair
 	beta := make([][]kyber.Scalar, k)
 	precomputedPoints := make([]libunlynx.CipherVector, k)
@@ -314,7 +314,7 @@ func ComputeE(index int, cv libunlynx.ProcessResponse, seed []byte, aggrAttrLen,
 	var dataC []byte
 	var dataK []byte
 
-	randomCipher := libunlynx.SuiTe.XOF(seed)
+	randomCipher := PairingSuite.XOF(seed)
 	if index < aggrAttrLen {
 		dataC, _ = cv.AggregatingAttributes[index].C.MarshalBinary()
 		dataK, _ = cv.AggregatingAttributes[index].K.MarshalBinary()
@@ -330,7 +330,7 @@ func ComputeE(index int, cv libunlynx.ProcessResponse, seed []byte, aggrAttrLen,
 	randomCipher.Write(dataC)
 	randomCipher.Write(dataK)
 
-	return libunlynx.SuiTe.Scalar().Pick(randomCipher)
+	return PairingSuite.Scalar().Pick(randomCipher)
 }
 
 // compressCipherVector (slice of ciphertexts) into one ciphertext
@@ -425,19 +425,19 @@ func CompressBeta(beta [][]kyber.Scalar, e []kyber.Scalar) []kyber.Scalar {
 	betaCompressed := make([]kyber.Scalar, k)
 	wg := libunlynx.StartParallelize(k)
 	for i := 0; i < k; i++ {
-		betaCompressed[i] = libunlynx.SuiTe.Scalar().Zero()
+		betaCompressed[i] = PairingSuite.Scalar().Zero()
 		if libunlynx.PARALLELIZE {
 			go func(i int) {
 				defer wg.Done()
 				for j := 0; j < NQ; j++ {
-					tmp := libunlynx.SuiTe.Scalar().Mul(beta[i][j], e[j])
-					betaCompressed[i] = libunlynx.SuiTe.Scalar().Add(betaCompressed[i], tmp)
+					tmp := PairingSuite.Scalar().Mul(beta[i][j], e[j])
+					betaCompressed[i] = PairingSuite.Scalar().Add(betaCompressed[i], tmp)
 				}
 			}(i)
 		} else {
 			for j := 0; j < NQ; j++ {
-				tmp := libunlynx.SuiTe.Scalar().Mul(beta[i][j], e[j])
-				betaCompressed[i] = libunlynx.SuiTe.Scalar().Add(betaCompressed[i], tmp)
+				tmp := PairingSuite.Scalar().Mul(beta[i][j], e[j])
+				betaCompressed[i] = PairingSuite.Scalar().Add(betaCompressed[i], tmp)
 			}
 		}
 

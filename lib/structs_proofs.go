@@ -101,7 +101,7 @@ func NewRangeProofRequest(proof *RangeProofList, ID, senderID, differInfo string
 		log.Fatal("Error marshalling <RangeProofBytes> message")
 	}
 
-	sig, err := schnorr.Sign(libunlynx.SuiTe, priv, dataToSend)
+	sig, err := schnorr.Sign(PairingSuite, priv, dataToSend)
 	if err != nil {
 		log.Fatal("Error when signing range proof")
 	}
@@ -149,7 +149,7 @@ func verifyRangeProofList(data []byte, sample float64, ranges []*[]int64, psb []
 	rando := rand.Float64()
 	if rando <= sample {
 		// we check the proof
-		_, proofs, err := network.Unmarshal(data, libunlynx.SuiTe)
+		_, proofs, err := network.Unmarshal(data, PairingSuite)
 		if err != nil {
 			log.Fatal("Error unmarshalling RangeProofBytes message")
 		}
@@ -180,7 +180,7 @@ func NewAggregationProofRequest(proofs *PublishAggregationProof, ID, senderID, d
 		log.Fatal("Error marshalling <PublishAggregationProofBytes> message", err)
 	}
 
-	sig, err := schnorr.Sign(libunlynx.SuiTe, priv, dataToSend)
+	sig, err := schnorr.Sign(PairingSuite, priv, dataToSend)
 	if err != nil {
 		log.Fatal("Error when signing aggregation proof")
 	}
@@ -226,7 +226,7 @@ func (apr *AggregationProofRequest) VerifyProof(source network.ServerIdentity, s
 func verifyAggregation(data []byte, sample float64) int64 {
 	bmInt := proofReceived
 	if rand.Float64() <= sample {
-		_, proofs, err := network.Unmarshal(data, libunlynx.SuiTe)
+		_, proofs, err := network.Unmarshal(data, PairingSuite)
 		toVerify := &PublishAggregationProof{}
 		toVerify.FromBytes(*proofs.(*PublishAggregationProofBytes))
 		if err != nil {
@@ -257,7 +257,7 @@ func NewObfuscationProofRequest(proof *PublishedListObfuscationProof, ID, sender
 		log.Fatal("Error marshalling <PublishObfuscationProofBytes> message", err)
 	}
 
-	sig, err := schnorr.Sign(libunlynx.SuiTe, priv, dataToSend)
+	sig, err := schnorr.Sign(PairingSuite, priv, dataToSend)
 	if err != nil {
 		log.Fatal("Error when signing obfuscation proof")
 	}
@@ -303,7 +303,7 @@ func (apr *ObfuscationProofRequest) VerifyProof(source network.ServerIdentity, s
 func verifyObfuscation(data []byte, insideProofThresold, sample float64) int64 {
 	bmInt := proofReceived
 	if rand.Float64() <= sample {
-		_, proof, err := network.Unmarshal(data, libunlynx.SuiTe)
+		_, proof, err := network.Unmarshal(data, PairingSuite)
 		toVerify := &PublishedListObfuscationProof{}
 		toVerify.FromBytes(*proof.(*PublishedListObfuscationProofBytes))
 		if err != nil {
@@ -334,7 +334,7 @@ func NewShuffleProofRequest(proof *PublishedShufflingProof, ID, senderID, differ
 		log.Fatal("Error marshalling <PublishedShufflingProofBytes> message", err)
 
 	}
-	sig, err := schnorr.Sign(libunlynx.SuiTe, priv, dataToSend)
+	sig, err := schnorr.Sign(PairingSuite, priv, dataToSend)
 	if err != nil {
 		log.Fatal("Error when signing shuffling proof")
 	}
@@ -380,7 +380,7 @@ func (spr *ShuffleProofRequest) VerifyProof(source network.ServerIdentity, sq Su
 func verifyShuffle(data []byte, sample float64, roster onet.Roster) int64 {
 	bmInt := proofReceived
 	if rand.Float64() <= sample {
-		_, proofs, err := network.Unmarshal(data, libunlynx.SuiTe)
+		_, proofs, err := network.Unmarshal(data, PairingSuite)
 		if err != nil {
 			log.Fatal("Error unmarshalling PublishShufflingProofBytes message")
 		}
@@ -412,7 +412,7 @@ func NewKeySwitchProofRequest(proof *PublishedKSListProof, ID, senderID, differI
 		log.Fatal("Error marshalling <SwitchKeyListCVProofBytes> message")
 	}
 
-	sig, err := schnorr.Sign(libunlynx.SuiTe, priv, dataToSend)
+	sig, err := schnorr.Sign(PairingSuite, priv, dataToSend)
 	if err != nil {
 		log.Fatal("Error when signing key switch proof")
 	}
@@ -458,7 +458,7 @@ func verifyKeySwitch(data []byte, insideProofThresold, sample float64) int64 {
 	bmInt := proofReceived
 	if rand.Float64() <= sample {
 		// we check the proof
-		_, proofs, err := network.Unmarshal(data, libunlynx.SuiTe)
+		_, proofs, err := network.Unmarshal(data, PairingSuite)
 		if err != nil {
 			log.Fatal("Error unmarshalling SwitchKeyListCVProofBytes message")
 		}

@@ -113,7 +113,7 @@ func (p *ShufflingLocalProtocol) Dispatch() error {
 	startT := time.Now()
 	roundTotalComputation := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH)")
 
-	collectiveKey := p.Roster().Aggregate //shuffling is by default done with collective authority key
+	collectiveKey := p.Aggregate() //shuffling is by default done with collective authority key
 
 	if p.CollectiveKey != nil {
 		//test
@@ -149,7 +149,7 @@ func (p *ShufflingLocalProtocol) Dispatch() error {
 
 			// PROOF
 			log.Lvl2("[SHUFFLING PROTOCOL] <Drynx> Server", p.ServerIdentity(), "creates shuffling proof")
-			proof := libdrynx.ShufflingProofCreation(shufflingTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+			proof := libdrynx.ShufflingProofCreation(shufflingTarget, shuffledData, libdrynx.PairingSuite.Point().Base(), collectiveKey, beta, pi)
 			wg.Done()
 
 			pi := p.MapPIs["shuffle/"+p.ServerIdentity().String()]
