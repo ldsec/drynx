@@ -2,6 +2,7 @@ package encoding_test
 
 import (
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
@@ -14,7 +15,8 @@ func TestEncodeDecodeMinMax(t *testing.T) {
 	//data
 	inputValues := []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 3, 2, 15, 6, 17, 2, -5, 72, -20, 100, -190, 200}
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 
 	//maximum possible value taken by the attribute in question
 	globalMax := int64(200)
@@ -48,7 +50,8 @@ func TestEncodeDecodeMinMaxWithProofs(t *testing.T) {
 	//data
 	inputValues := []int64{1, 2, 10}
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 
 	//maximum possible value taken by the attribute in question
 	globalMax := int64(10)

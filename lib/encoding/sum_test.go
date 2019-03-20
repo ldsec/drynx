@@ -2,6 +2,7 @@ package encoding_test
 
 import (
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
@@ -14,7 +15,8 @@ func TestEncodeDecodeSum(t *testing.T) {
 	//data
 	inputValues := []int64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -12000}
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 	//expected results
 	expect := int64(0)
 	for _, el := range inputValues {
@@ -32,7 +34,8 @@ func TestEncodeDecodeSumWithProofs(t *testing.T) {
 	//data
 	inputValues := []int64{0, 10, 9}
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 	//expected results
 	expect := int64(0)
 	for _, el := range inputValues {

@@ -47,16 +47,11 @@ func EncodeFreqCountWithProofs(input []int64, min int64, max int64, pubKey kyber
 	createRangeProof := make([]libdrynx.CreateProof, len(freqcount))
 	wg1 := libunlynx.StartParallelize(len(freqcount))
 	for i, v := range freqcount {
-		if libunlynx.PARALLELIZE {
-			go func(i int, v int64) {
-				defer wg1.Done()
-				//input range validation proof
-				createRangeProof[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: ciphertextTuples[i]}
-			}(i, v)
-		} else {
+		go func(i int, v int64) {
+			defer wg1.Done()
 			//input range validation proof
 			createRangeProof[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: ciphertextTuples[i]}
-		}
+		}(i, v)
 	}
 	libunlynx.EndParallelize(wg1)
 	return ciphertextTuples, []int64{0}, createRangeProof

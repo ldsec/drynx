@@ -2,6 +2,7 @@ package encoding_test
 
 import (
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
@@ -17,7 +18,8 @@ func TestEncodeDecodeBit(t *testing.T) {
 	inputValues = append(inputValues, false)
 
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 	//expected results
 	expectOr := encoding.LocalResultOR(inputValues)
 	expectAnd := encoding.LocalResultAND(inputValues)
@@ -42,7 +44,8 @@ func TestEncodeDecodeBitWithProofs(t *testing.T) {
 	inputValues = append(inputValues, false)
 
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 	//expected results
 	expectOr := encoding.LocalResultOR(inputValues)
 	expectAnd := encoding.LocalResultAND(inputValues)

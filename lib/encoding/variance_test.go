@@ -2,6 +2,7 @@ package encoding_test
 
 import (
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/key"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
@@ -13,7 +14,8 @@ import (
 //TestEncodeDecodeVariance tests EncodeVariance and DecodeVariance
 func TestEncodeDecodeVariance(t *testing.T) {
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 
 	limit := int64(10000)
 	log.LLvl1("Preparing decryption up to:", limit)
@@ -48,7 +50,8 @@ func TestEncodeDecodeVarianceWithProofs(t *testing.T) {
 	inputValues := []int64{0, 10, 9, 1, 11}
 
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 
 	limit := int64(10000)
 	log.LLvl1("Preparing decryption up to:", limit)

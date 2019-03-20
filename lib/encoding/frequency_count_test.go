@@ -2,6 +2,7 @@ package encoding_test
 
 import (
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
@@ -16,7 +17,8 @@ func TestEncodeDecodeFrequencyCount(t *testing.T) {
 	min := int64(-1)
 	inputValues := []int64{-1, 0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 12, 3, 2}
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 	libdrynx.CreateDecryptionTable(10000, pubKey, secKey)
 
 	//expected results
@@ -43,7 +45,8 @@ func TestEncodeDecodeFrequencyCountWithProofs(t *testing.T) {
 	min := int64(-1)
 	inputValues := []int64{-1, 0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 12, 3, 2}
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 	libdrynx.CreateDecryptionTable(10000, pubKey, secKey)
 
 	//expected results

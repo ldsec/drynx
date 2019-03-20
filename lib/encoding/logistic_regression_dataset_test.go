@@ -1,6 +1,7 @@
 package encoding_test
 
 import (
+	"github.com/dedis/kyber/util/key"
 	"math"
 	"testing"
 
@@ -43,7 +44,8 @@ func compareFindMinimumWeights(Xtrain [][]float64, ytrain []int64, parameters Mi
 	var aggregatedApproxCoefficients [][]float64
 	if withEncryption {
 		// the clients (public key, private key) pair
-		privKey, pubKey := libunlynx.GenKey()
+		keys := key.NewKeyPair(libunlynx.SuiTe)
+		privKey, pubKey := keys.Private, keys.Public
 		weights, aggregatedApproxCoefficients = findMinimumWeightsWithEncryption(Xtrain, ytrain, k, maxIterations,
 			step, lambda, initialWeights, pubKey, privKey, precisionApproxCoefficients)
 	} else {
@@ -140,7 +142,8 @@ func predict(Xtrain [][]float64, ytrain []int64,
 	Xtrain = encoding.Augment(Xtrain)
 
 	// the client's (public key, private key) pair
-	privKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	privKey, pubKey := keys.Private, keys.Public
 
 	// data providers part + servers part + client part collapsed here for testing
 	//var approxCoefficients [][]float64

@@ -3,6 +3,7 @@ package libdrynx
 import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
+	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -15,7 +16,9 @@ func TestRangeProofVerification(t *testing.T) {
 	}
 	u := int64(2)
 	l := int64(6)
-	_, P := libunlynx.GenKey()
+
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	P := keys.Public
 
 	sig := make([]PublishSignature, 5)
 	publishArgs := make([]RangeProof, 5)
@@ -42,7 +45,9 @@ func TestOptimizedRangeProofVerification(t *testing.T) {
 	}
 	u := int64(2)
 	l := int64(1)
-	_, P := libunlynx.GenKey()
+
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	P := keys.Public
 
 	sig := make([]PublishSignature, 5)
 	//publishArgs := make([]libunlynx.RangeProof, 5)

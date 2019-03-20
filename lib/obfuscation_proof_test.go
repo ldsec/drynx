@@ -1,13 +1,16 @@
 package libdrynx
 
 import (
+	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestObfuscationProofVerification(t *testing.T) {
-	sec, pub := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	pub, sec := keys.Public, keys.Private
+
 	tab := int64(2)
 	ev := libunlynx.EncryptInt(pub, tab)
 	obfuscationFactor := sec

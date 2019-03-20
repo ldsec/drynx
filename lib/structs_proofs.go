@@ -2,10 +2,6 @@ package libdrynx
 
 import (
 	"errors"
-	"github.com/lca1/unlynx/lib/key_switch"
-	"github.com/lca1/unlynx/lib/proofs"
-	"math/rand"
-
 	"github.com/dedis/cothority/skipchain"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
@@ -14,6 +10,9 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/key_switch"
+	"github.com/lca1/unlynx/lib/shuffle"
+	"math/rand"
 )
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -329,7 +328,7 @@ func verifyObfuscation(data []byte, insideProofThresold, sample float64) int64 {
 //______________________________________________________________________________________________________________________
 
 // NewShuffleProofRequest creates a ShuffleProofRequest to be used in the ProofsCollectionProtocol
-func NewShuffleProofRequest(proof *libunlynxproofs.PublishedShufflingProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *ShuffleProofRequest {
+func NewShuffleProofRequest(proof *libunlynxshuffle.PublishedShufflingProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *ShuffleProofRequest {
 	psp := proof.ToBytes()
 	dataToSend, err := network.Marshal(&psp)
 	if err != nil {
@@ -387,9 +386,9 @@ func verifyShuffle(data []byte, sample float64, roster onet.Roster) int64 {
 			log.Fatal("Error unmarshalling PublishShufflingProofBytes message")
 		}
 
-		toVerify := &libunlynxproofs.PublishedShufflingProof{}
-		toVerify.FromBytes(*proofs.(*libunlynxproofs.PublishedShufflingProofBytes))
-		result := libunlynxproofs.ShufflingProofVerification(*toVerify, roster.Aggregate)
+		toVerify := &libunlynxshuffle.PublishedShufflingProof{}
+		toVerify.FromBytes(*proofs.(*libunlynxshuffle.PublishedShufflingProofBytes))
+		result := libunlynxshuffle.ShuffleProofVerification(*toVerify, roster.Aggregate)
 
 		if result {
 			bmInt = ProofTrue

@@ -2,26 +2,23 @@ package protocols
 
 import (
 	"github.com/coreos/bbolt"
-	"github.com/lca1/unlynx/lib/key_switch"
-	"github.com/lca1/unlynx/lib/proofs"
-	"testing"
-
-	"sync"
-
-	"os"
-
-	"strconv"
-
 	"github.com/dedis/cothority/skipchain"
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/key"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/key_switch"
+	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/satori/go.uuid.v1"
+	"os"
+	"strconv"
+	"sync"
+	"testing"
 )
 
 type nodeTools struct {
@@ -41,7 +38,7 @@ var sharedBMChannelToTerminate chan struct{}
 func TestProofCollectionProtocol(t *testing.T) {
 	network.RegisterMessage(libdrynx.GetLatestBlock{})
 	network.RegisterMessage(libdrynx.RangeProofListBytes{})
-	network.RegisterMessage(libunlynxproofs.PublishedShufflingProofBytes{})
+	network.RegisterMessage(libunlynxshuffle.PublishedShufflingProofBytes{})
 	network.RegisterMessage(libunlynxkeyswitch.PublishedKSListProofBytes{})
 	network.RegisterMessage(libdrynx.PublishAggregationProofBytes{})
 	network.RegisterMessage(libdrynx.PublishedListObfuscationProofBytes{})
@@ -66,7 +63,9 @@ func TestProofCollectionProtocol(t *testing.T) {
 	sharedBMChannel = make(chan map[string]int64, 100)
 	sharedBMChannelToTerminate = make(chan struct{}, 100)
 
-	priv, pub := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	priv, pub := keys.Private, keys.Public
+
 	idToPublic := make(map[string]kyber.Point)
 	idToPublic[senderID] = pub
 

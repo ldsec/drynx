@@ -73,7 +73,6 @@ func TestServiceDrynx(t *testing.T) {
 	obfuscation := false
 
 	diffPri := true
-	diffPriOpti := false
 	nbrRows := int64(1)
 	nbrServers := 3
 	nbrDPs := 5
@@ -175,9 +174,9 @@ func TestServiceDrynx(t *testing.T) {
 		// choosing the limit is done by drawing the curve (e.g. wolframalpha)
 		diffP := libdrynx.QueryDiffP{}
 		if diffPri {
-			diffP = libdrynx.QueryDiffP{LapMean: 0, LapScale: 15.0, NoiseListSize: 1000, Limit: 65, Scale: 1, Optimized: diffPriOpti}
+			diffP = libdrynx.QueryDiffP{LapMean: 0, LapScale: 15.0, NoiseListSize: 1000, Limit: 65, Scale: 1}
 		} else {
-			diffP = libdrynx.QueryDiffP{LapMean: 0.0, LapScale: 0.0, NoiseListSize: 0, Quanta: 0.0, Scale: 0, Optimized: diffPriOpti}
+			diffP = libdrynx.QueryDiffP{LapMean: 0.0, LapScale: 0.0, NoiseListSize: 0, Quanta: 0.0, Scale: 0}
 		}
 
 		// DPs signatures for Input Range Validation

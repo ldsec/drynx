@@ -2,6 +2,7 @@ package encoding_test
 
 import (
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/key"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
@@ -12,7 +13,8 @@ import (
 )
 
 func TestEncodeDecodeCosim(t *testing.T) {
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 
 	limit := int64(10000)
 	log.LLvl1("Preparing decryption up to:", limit)
@@ -55,7 +57,8 @@ func TestEncodeDecodeCosim(t *testing.T) {
 
 func TestEncodeDecodeCosimWithProofs(t *testing.T) {
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 
 	limit := int64(10000)
 	log.LLvl1("Preparing decryption up to:", limit)

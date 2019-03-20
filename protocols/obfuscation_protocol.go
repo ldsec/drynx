@@ -33,6 +33,11 @@ func init() {
 // Messages
 //______________________________________________________________________________________________________________________
 
+// ChildAggregatedDataMessage contains one node's aggregated data.
+type ChildAggregatedDataMessage struct {
+	ChildData []libunlynx.FilteredResponseDet
+}
+
 // ObfuscationDownMessage message sent to trigger an obfuscation protocol.
 type ObfuscationDownMessage struct {
 	Data libunlynx.CipherVector

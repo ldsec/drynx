@@ -4,6 +4,7 @@ import (
 	"github.com/alex-ant/gomath/gaussian-elimination"
 	"github.com/alex-ant/gomath/rational"
 	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
@@ -26,7 +27,8 @@ func TestEncodeDecodeLinearRegressionDims(t *testing.T) {
 	d := len(inputValuesX[0])
 
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 	//Build the augmented matrix
 	sumXj := int64(0)
 	sumY := int64(0)
@@ -136,7 +138,8 @@ func TestEncodeDecodeLinearRegressionDimsWithProofs(t *testing.T) {
 	d := len(inputValuesX[0])
 
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 	//Build the augmented matrix
 	sumXj := int64(0)
 	sumY := int64(0)

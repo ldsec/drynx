@@ -3,6 +3,7 @@ package encoding
 import (
 	"github.com/cdipaolo/goml/base"
 	"github.com/cdipaolo/goml/linear"
+	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"gonum.org/v1/gonum/stat/combin"
@@ -74,7 +75,8 @@ func TestComputeEncryptedApproxCoefficients(t *testing.T) {
 	y := int64(1)
 	k := 1
 
-	privKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	privKey, pubKey := keys.Private, keys.Public
 
 	expected := make([][]int64, k)
 	actual := make([][]int64, k)
@@ -183,7 +185,8 @@ func TestAggregateEncryptedApproxCoefficients(t *testing.T) {
 	k := 1
 	N := len(X)
 
-	privKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	privKey, pubKey := keys.Private, keys.Public
 
 	approxCoefficients := make([][][]float64, N)
 	encryptedApproxCoefficients := make([][]*libunlynx.CipherVector, N)
@@ -210,7 +213,8 @@ func TestPredictWithInt(t *testing.T) {
 
 	// integer weights
 	X := []float64{0, 1, 2, 3, 4}
-	privKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	privKey, pubKey := keys.Private, keys.Public
 	libdrynx.CreateDecryptionTable(10000, pubKey, privKey)
 	encryptedData := libunlynx.EncryptIntVector(pubKey, Float64ToInt641DArray(X))
 	precision := 1e1
@@ -223,7 +227,8 @@ func TestPredictWithInt(t *testing.T) {
 
 func TestPredictWithFloat(t *testing.T) {
 	X := []float64{0, 1, 2, 3, 4}
-	privKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	privKey, pubKey := keys.Private, keys.Public
 	encryptedData := libunlynx.EncryptIntVector(pubKey, Float64ToInt641DArray(X))
 	precision := 1e1
 
@@ -263,7 +268,8 @@ func TestPredictWithFloat(t *testing.T) {
 func TestPredictWithIntHomomorphic(t *testing.T) {
 	// integer weights
 	X := []float64{0, 1, 2, 3, 4}
-	privKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	privKey, pubKey := keys.Private, keys.Public
 	encryptedData := libunlynx.EncryptIntVector(pubKey, Float64ToInt641DArray(X))
 
 	weights := []float64{1, 2, 3, 4, 5, 6}
@@ -275,7 +281,8 @@ func TestPredictWithIntHomomorphic(t *testing.T) {
 
 func TestPredictWithFloatHomomorphic(t *testing.T) {
 	X := []float64{1, 2, 6, 5, 5}
-	privKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	privKey, pubKey := keys.Private, keys.Public
 	encryptedData := libunlynx.EncryptIntVector(pubKey, Float64ToInt641DArray(X))
 
 	// used to defined the maximal error allowed (?)
@@ -550,7 +557,8 @@ func TestCartesianProduct(t *testing.T) {
 }
 
 func TestAddSub(t *testing.T) {
-	privKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	privKey, pubKey := keys.Private, keys.Public
 	libdrynx.CreateDecryptionTable(int64(10000), pubKey, privKey)
 	ct := libunlynx.NewCipherText()
 
@@ -594,7 +602,8 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 	maxIterations := 100
 	initialWeights := []float64{0.1, 0.2, 0.3, 0.4, 0.5}
 
-	privKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	privKey, pubKey := keys.Private, keys.Public
 
 	// compute all approximation coefficients per record
 	approxCoefficients := make([][][]float64, N)
@@ -656,7 +665,8 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 	maxIterations := 100
 	initialWeights := []float64{0.1, 0.2, 0.3, 0.4, 0.5}
 
-	privKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	privKey, pubKey := keys.Private, keys.Public
 
 	// compute all approximation coefficients per record
 	approxCoefficients := make([][][]float64, N)

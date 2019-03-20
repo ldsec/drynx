@@ -66,16 +66,11 @@ func EncodeModelEvaluationWithProofs(inputY []int64, inputPreds []int64, pubKey 
 	createRangeProof := make([]libdrynx.CreateProof, len(plaintextValues))
 	wg := libunlynx.StartParallelize(len(createRangeProof))
 	for i, v := range plaintextValues {
-		if libunlynx.PARALLELIZE {
-			go func(i int, v int64) {
-				defer wg.Done()
-				//input range validation proof
-				createRangeProof[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, int(i)), U: (*ranges[i])[0], L: (*ranges[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: ciphertextTuples[i]}
-			}(i, v)
-		} else {
+		go func(i int, v int64) {
+			defer wg.Done()
 			//input range validation proof
 			createRangeProof[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, int(i)), U: (*ranges[i])[0], L: (*ranges[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: ciphertextTuples[i]}
-		}
+		}(i, v)
 	}
 	libunlynx.EndParallelize(wg)
 	return ciphertextTuples, []int64{0}, createRangeProof

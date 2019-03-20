@@ -1,6 +1,8 @@
 package protocols_test
 
 import (
+	"github.com/dedis/kyber"
+	"github.com/dedis/kyber/util/key"
 	"testing"
 	"time"
 
@@ -12,10 +14,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var priv1, pub1 = libunlynx.GenKey()
+var priv1 kyber.Scalar
+var pub1 kyber.Point
 
 //TestObfuscation tests collective obfuscation protocol
 func TestObfuscation(t *testing.T) {
+
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	priv1, pub1 = keys.Private, keys.Public
+
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// You must register this protocol before creating the servers

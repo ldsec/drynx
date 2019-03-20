@@ -3,6 +3,7 @@ package encoding_test
 import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
+	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
@@ -16,7 +17,8 @@ func TestEncodeDecodeUnionInter(t *testing.T) {
 	//data
 	inputValues := []int64{1, 2, 3, 1, 5, 1, 2, 3}
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 
 	//maximum value taken by the attribute in question
 	max := int64(10)
@@ -48,7 +50,8 @@ func TestEncodeDecodeUnionInterWithProofs(t *testing.T) {
 	//data
 	inputValues := []int64{1, 2, 3, 1, 5, 1, 2, 3}
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 
 	//maximum value taken by the attribute in question
 	max := int64(10)

@@ -91,16 +91,11 @@ func EncodeLinearRegressionDimsWithProofs(input1 [][]int64, input2 []int64, pubK
 	createProofs := make([]libdrynx.CreateProof, len(plaintextValues))
 	wg := libunlynx.StartParallelize(len(plaintextValues))
 	for i, v := range plaintextValues {
-		if libunlynx.PARALLELIZE {
-			go func(i int, v int64) {
-				defer wg.Done()
-				//input range validation proof
-				createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: CiphertextTuple[i]}
-			}(i, v)
-		} else {
+		go func(i int, v int64) {
+			defer wg.Done()
 			//input range validation proof
 			createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: r[i], CaPub: pubKey, Cipher: CiphertextTuple[i]}
-		}
+		}(i, v)
 	}
 	libunlynx.EndParallelize(wg)
 	return CiphertextTuple, []int64{0}, createProofs

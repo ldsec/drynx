@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/pairing/bn256"
+	"github.com/dedis/kyber/util/key"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"golang.org/x/crypto/sha3"
@@ -270,17 +271,18 @@ func InitRangeProofSignature(u int64) PublishSignatureBytes {
 	A := make([]byte, 0)
 
 	//pick a pair private(x)/public(y) key at each server
-	x, y := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	kPub, kPriv := keys.Public, keys.Private
 
 	//signature from private key done by server
 	for i := 0; int64(i) < int64(u); i++ {
 		scalar := g2.Scalar().SetInt64(int64(i))
-		invert := g2.Scalar().Add(x, scalar)
+		invert := g2.Scalar().Add(kPriv, scalar)
 		tmp := g2.Point().Mul(g2.Scalar().Inv(invert), g2.Point().Base())
 		tmpByte, _ := tmp.MarshalBinary()
 		A = append(A, tmpByte...)
 	}
-	return PublishSignatureBytes{Signature: A, Public: y}
+	return PublishSignatureBytes{Signature: A, Public: kPub}
 }
 
 //PublishSignatureBytesToPublishSignatures creates servers' signatures directly in bytes

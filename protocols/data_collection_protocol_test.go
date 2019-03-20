@@ -1,6 +1,7 @@
 package protocols_test
 
 import (
+	"github.com/dedis/kyber/util/key"
 	"testing"
 
 	"time"
@@ -47,7 +48,8 @@ func TestDataCollectionOperationsProtocol(t *testing.T) {
 	_, _, tree := local.GenTree(10, true)
 
 	operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg"}
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 
 	for _, op := range operationList {
 		// create query

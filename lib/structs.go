@@ -11,8 +11,8 @@ import (
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/key_switch"
-	"github.com/lca1/unlynx/lib/proofs"
 	"github.com/lca1/unlynx/lib/shuffle"
+	"github.com/lca1/unlynx/protocols"
 	"sync"
 	"time"
 )
@@ -79,7 +79,7 @@ type DataToVerify struct {
 	ProofsAggregation []*PublishAggregationProof
 	ProofsObfuscation []*PublishedListObfuscationProof
 	ProofsKeySwitch   []*libunlynxkeyswitch.PublishedKSListProof
-	ProofShuffle      []*libunlynxproofs.PublishedShufflingProof
+	ProofShuffle      []*libunlynxshuffle.PublishedShufflingProof
 }
 
 //DataBlock is the structure inserted in the Skipchain
@@ -127,11 +127,6 @@ type ResponseDPBytes struct {
 	Len  int
 }
 
-// CothorityAggregatedData is the collective aggregation result.
-type CothorityAggregatedData struct {
-	GroupedData map[libunlynx.GroupingKey]libunlynx.FilteredResponse
-}
-
 // WhereQueryAttributeClear is the name and value of a where attribute in the query
 type WhereQueryAttributeClear struct {
 	Name  string
@@ -173,7 +168,6 @@ type QueryDiffP struct {
 	Quanta        float64
 	Scale         float64
 	Limit         float64
-	Optimized     bool
 }
 
 // QueryDPDataGen contains the query information for the generation of data at DP
@@ -304,7 +298,7 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 	result.ProofsRange = make([]*RangeProofList, nbrProofs)
 	result.ProofsAggregation = make([]*PublishAggregationProof, nbrProofs)
 	result.ProofsObfuscation = make([]*PublishedListObfuscationProof, nbrProofs)
-	result.ProofShuffle = make([]*libunlynxproofs.PublishedShufflingProof, nbrProofs)
+	result.ProofShuffle = make([]*libunlynxshuffle.PublishedShufflingProof, nbrProofs)
 
 	//Fill Aggregation with good proofs
 	for i := range result.ProofsAggregation {
@@ -347,7 +341,7 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 		//responses[2] = libunlynx.CipherVector{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}
 
 		responsesShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(responses, libunlynx.SuiTe.Point().Base(), roster.Aggregate, nil)
-		prf := libunlynxproofs.ShufflingProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), roster.Aggregate, beta, pi)
+		prf := libunlynxshuffle.ShuffleProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), roster.Aggregate, beta, pi)
 		result.ProofShuffle[i] = &prf
 	}
 
@@ -451,7 +445,7 @@ func ConvertToAggregationStruct(dp ResponseAllDPs) map[libunlynx.GroupingKey]lib
 }
 
 // ConvertFromAggregationStruct transforms CothorityAggregatedData to ResponseAllDPs
-func ConvertFromAggregationStruct(cad CothorityAggregatedData) *ResponseAllDPs {
+func ConvertFromAggregationStruct(cad protocolsunlynx.CothorityAggregatedData) *ResponseAllDPs {
 	response := make([]ResponseDPOneGroup, 0)
 	for k, v := range cad.GroupedData {
 		response = append(response, ResponseDPOneGroup{Group: string(k), Data: v.AggregatingAttributes})
@@ -472,27 +466,22 @@ func (sm *ShufflingMessage) ToBytes() (*[]byte, int, int, int) {
 	wg := libunlynx.StartParallelize(len((*sm).Data))
 	var mutexD sync.Mutex
 	for i := range (*sm).Data {
-		if libunlynx.PARALLELIZE {
-			go func(i int) {
-				defer wg.Done()
+		go func(i int) {
+			defer wg.Done()
 
-				mutexD.Lock()
-				data := (*sm).Data[i]
-				mutexD.Unlock()
+			mutexD.Lock()
+			data := (*sm).Data[i]
+			mutexD.Unlock()
 
-				aux, gacbAux, aabAux, pgaebAux := data.ToBytes()
+			aux, gacbAux, aabAux, pgaebAux := data.ToBytes()
 
-				mutexD.Lock()
-				bb[i] = aux
-				gacbLength = gacbAux
-				aabLength = aabAux
-				pgaebLength = pgaebAux
-				mutexD.Unlock()
-			}(i)
-		} else {
-			bb[i], gacbLength, aabLength, pgaebLength = (*sm).Data[i].ToBytes()
-		}
-
+			mutexD.Lock()
+			bb[i] = aux
+			gacbLength = gacbAux
+			aabLength = aabAux
+			pgaebLength = pgaebAux
+			mutexD.Unlock()
+		}(i)
 	}
 	libunlynx.EndParallelize(wg)
 
@@ -507,7 +496,7 @@ func (sm *ShufflingMessage) ToBytes() (*[]byte, int, int, int) {
 func (sm *ShufflingMessage) FromBytes(data *[]byte, gacbLength, aabLength, pgaebLength int) {
 	var nbrData int
 	cipherLength := libunlynx.SuiTe.PointLen() * 2
-	elementLength := (gacbLength*cipherLength + aabLength*cipherLength + pgaebLength*cipherLength) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
+	elementLength := gacbLength*cipherLength + aabLength*cipherLength + pgaebLength*cipherLength //CAUTION: hardcoded 64 (size of el-gamal element C,K)
 	if elementLength != 0 {
 
 		nbrData = len(*data) / elementLength
@@ -516,15 +505,10 @@ func (sm *ShufflingMessage) FromBytes(data *[]byte, gacbLength, aabLength, pgaeb
 		wg := libunlynx.StartParallelize(nbrData)
 		for i := 0; i < nbrData; i++ {
 			v := (*data)[i*elementLength : i*elementLength+elementLength]
-			if libunlynx.PARALLELIZE {
-				go func(v []byte, i int) {
-					defer wg.Done()
-					(*sm).Data[i].FromBytes(v, gacbLength, aabLength, pgaebLength)
-				}(v, i)
-			} else {
+			go func(v []byte, i int) {
+				defer wg.Done()
 				(*sm).Data[i].FromBytes(v, gacbLength, aabLength, pgaebLength)
-			}
-
+			}(v, i)
 		}
 		libunlynx.EndParallelize(wg)
 	}
