@@ -4,15 +4,15 @@ In order to execute a query using the Drynx App, the following steps are taken:
 
 1) Compile the Drynx app binary. For MAC for example, use "go build -tags vartime -o drynx *.go".
 
-2) Generate the different individual and group toml files (public and private keys) for the Drynx data providers (DPs), computing nodes (CNs), and verifying nodes (VNs). This can be done by executing the script init_test.sh. Also make sure to correctly set the IPs in the script (depending on the IPs of your machine(s))
+2) Generate the different individual and group toml files (public and private keys) for the Drynx data providers (DPs), computing nodes (CNs), and verifying nodes (VNs). This can be done by executing the script init_test.sh. Also make sure to correctly set the IPs in the script (depending on the IPs of your machine(s)).
 
-3) Run the different Drynx nodes using the following command:
-.\drynx server -c $PATH_TO_TOML_FILES$/x.toml
+3) Run the different Drynx nodes (DPs, CNs, and VNs) using the following command:
+.\drynx server -c `TOML_FILE`.toml
 
-where $PATH_TO_TOML_FILES$ is the path to the toml files directory, and x is the name of the toml file corresponding to the private key of the node that you are trying to run (DP, CN, or VN)
+where `TOML_FILE` is the toml file corresponding to the private key of the node that you are trying to run (DP, CN, or VN).
 
-4) Execute the query in the system using the following command:
-./drynx run -o $operationName$ -d $ID1,ID2,...,IDn$ -a $A1,A2,...,Ak$ -m $min$ -M $max$ -p $b$ -t $nbrTrials$
+4) Execute the query in the system by running the following command:
+./drynx run -o `operationName` -d `ID1,ID2,...,IDn` -a `A1,A2,...,Ak` -m `min` -M `max` -p `b` -t `nbrTrials`
 
 where
 - operationName: name of operation to be run.
