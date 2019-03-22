@@ -113,7 +113,7 @@ func (p *ShufflingLocalProtocol) Dispatch() error {
 	startT := time.Now()
 	roundTotalComputation := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH)")
 
-	collectiveKey := p.Roster().Aggregate //shuffling is by default done with collective authority key
+	collectiveKey := p.Aggregate() //shuffling is by default done with collective authority key
 
 	if p.CollectiveKey != nil {
 		//test

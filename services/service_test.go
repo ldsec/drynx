@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"go.dedis.ch/cothority/v3"
 
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
@@ -100,7 +101,7 @@ func TestServiceDrynx(t *testing.T) {
 		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
 	}
 
-	local := onet.NewLocalTest(libunlynx.SuiTe)
+	local := onet.NewLocalTest(cothority.Suite)
 	elServers, elDPs, elVNs := generateNodes(local, nbrServers, nbrDPs, nbrVNs)
 
 	if proofs == 0 {
@@ -222,15 +223,15 @@ func TestServiceDrynx(t *testing.T) {
 
 		idToPublic := make(map[string]kyber.Point)
 		for _, v := range elServers.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 		for _, v := range elDPs.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 
 		if proofs != 0 {
 			for _, v := range elVNs.List {
-				idToPublic[v.String()] = v.Public
+				idToPublic[v.String()] = v.ServicePublic(ServiceName)
 			}
 		}
 
@@ -428,7 +429,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
 	}
 
-	local := onet.NewLocalTest(libunlynx.SuiTe)
+	local := onet.NewLocalTest(cothority.Suite)
 	elServers, elDPs, elVNs := generateNodes(local, nbrServers, nbrDPs, nbrVNs)
 
 	if proofs == 0 {
@@ -550,15 +551,15 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 
 		idToPublic := make(map[string]kyber.Point)
 		for _, v := range elServers.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 		for _, v := range elDPs.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 
 		if proofs != 0 {
 			for _, v := range elVNs.List {
-				idToPublic[v.String()] = v.Public
+				idToPublic[v.String()] = v.ServicePublic(ServiceName)
 			}
 		}
 
@@ -708,9 +709,9 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 	os.Remove("pre_compute_multiplications.gob")
 
 	// these nodes act as both servers and data providers
-	local := onet.NewLocalTest(libunlynx.SuiTe)
-	local1 := onet.NewLocalTest(libunlynx.SuiTe)
-	local2 := onet.NewLocalTest(libunlynx.SuiTe)
+	local := onet.NewLocalTest(cothority.Suite)
+	local1 := onet.NewLocalTest(cothority.Suite)
+	local2 := onet.NewLocalTest(cothority.Suite)
 
 	// create servers and data providers
 	_, el, _ := local.GenTree(10, true)
@@ -907,13 +908,13 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 
 		idToPublic := make(map[string]kyber.Point)
 		for _, v := range el.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 		for _, v := range el1.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 		for _, v := range elVNs.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 
 		thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch

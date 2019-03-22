@@ -129,12 +129,17 @@ func (rpr *RangeProofRequest) VerifyProof(source network.ServerIdentity, sq Surv
 	wg := libunlynx.StartParallelize(1)
 	go func() {
 		defer wg.Done()
+		var err error
 		err = VerifyProofSignature(sq.IDtoPublic[rpr.SenderID], rpr.Data, rpr.Signature)
 		if err != nil {
 			verifSign = proofFalseSign
 		}
 	}()
-	verif := verifyRangeProofList(rpr.Data, sq.Threshold, sq.Query.Ranges, sq.Query.IVSigs.InputValidationSigs, sq.RosterServers.Aggregate, sq.RangeProofThreshold)
+	agg, err := sq.RosterServers.ServiceAggregate("drynx")
+	if err != nil {
+		return 0, err
+	}
+	verif := verifyRangeProofList(rpr.Data, sq.Threshold, sq.Query.Ranges, sq.Query.IVSigs.InputValidationSigs, agg, sq.RangeProofThreshold)
 	log.Lvl2("VN", source.String(), " verified range proof:", verif)
 	libunlynx.EndParallelize(wg)
 	//libunlynx.EndTimer(time)
@@ -387,7 +392,11 @@ func verifyShuffle(data []byte, sample float64, roster onet.Roster) int64 {
 
 		toVerify := &PublishedShufflingProof{}
 		toVerify.FromBytes(*proofs.(*PublishedShufflingProofBytes))
-		result := ShufflingProofVerification(*toVerify, roster.Aggregate)
+		agg, err := roster.ServiceAggregate("drynx")
+		if err != nil {
+			log.Fatal("Didn't find appropriate aggregate key")
+		}
+		result := ShufflingProofVerification(*toVerify, agg)
 
 		if result {
 			bmInt = ProofTrue

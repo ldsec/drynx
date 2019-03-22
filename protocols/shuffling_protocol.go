@@ -142,7 +142,7 @@ func (p *ShufflingProtocol) Start() error {
 		shuffleTarget = append(shuffleTarget, pr)
 	}
 
-	collectiveKey := p.Roster().Aggregate
+	collectiveKey := p.Aggregate()
 	if p.CollectiveKey != nil {
 		//test
 		collectiveKey = p.CollectiveKey
@@ -209,7 +209,7 @@ func (p *ShufflingProtocol) Dispatch() error {
 	startT := time.Now()
 	roundTotalComputation := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH)")
 
-	collectiveKey := p.Roster().Aggregate //shuffling is by default done with collective authority key
+	collectiveKey := p.Aggregate() //shuffling is by default done with collective authority key
 
 	if p.CollectiveKey != nil {
 		//test
