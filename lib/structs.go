@@ -2,14 +2,14 @@ package libdrynx
 
 import (
 	"github.com/coreos/bbolt"
-	"github.com/dedis/cothority/skipchain"
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/pairing/bn256"
-	"github.com/dedis/kyber/util/random"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/cothority/v3/skipchain"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/pairing/bn256"
+	"go.dedis.ch/kyber/v3/util/random"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
 	"sync"
 	"time"
 )
@@ -637,7 +637,7 @@ func CheckParameters(sq SurveyQuery, diffP bool) bool {
 	}
 
 	if message != "" {
-		log.LLvl1(message)
+		log.Lvl1(message)
 	}
 	return result
 }

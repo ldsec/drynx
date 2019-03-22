@@ -8,14 +8,14 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/dedis/cothority/skipchain"
-	"github.com/dedis/kyber"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/network"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/services"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/cothority/v3/skipchain"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
 	"gopkg.in/satori/go.uuid.v1"
 )
 
@@ -250,13 +250,13 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 			l := int64(3)
 			/*if sim.CuttingFactor != 0 {
 				if i != 0 && i%(sim.NbrOutput/sim.CuttingFactor) == 0 {
-					log.LLvl1("[0,1]")
+					log.Lvl1("[0,1]")
 					u = int64(2)
 					l = int64(1)
 				}
 			}
 			if i == len(ranges)-1 {
-				log.LLvl1("[0,1]")
+				log.Lvl1("[0,1]")
 				u = int64(2)
 				l = int64(1)
 			}*/
@@ -288,7 +288,7 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 					}
 				}
 				ps[index] = &temp
-				log.LLvl1("Finished creating signatures for server", index)
+				log.Lvl1("Finished creating signatures for server", index)
 			}(i)
 		}
 		libunlynx.EndParallelize(wg)
@@ -404,7 +404,7 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 		log.Fatal("Results format problem")
 	} else {
 		for i, v := range *aggr {
-			log.LLvl1((*grp)[i], ": ", v)
+			log.Lvl1((*grp)[i], ": ", v)
 		}
 	}
 
@@ -420,10 +420,10 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 	if err != nil || sb == nil {
 		log.Fatal("Something wrong when fetching the last block")
 	}
-	log.LLvl1(time.Since(retrieveBlock))
+	log.Lvl1(time.Since(retrieveBlock))
 
 	libunlynx.EndTimer(startSimulation)
-	log.LLvl1(time.Since(overallTimer))
+	log.Lvl1(time.Since(overallTimer))
 
 	return nil
 }
