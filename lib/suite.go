@@ -6,6 +6,7 @@ import (
 	"go.dedis.ch/kyber/v3/pairing"
 )
 
+// PairingSuite represents the suite being used for all of the protocols.
 var PairingSuite = pairing.NewSuiteBn256()
 
 func init() {

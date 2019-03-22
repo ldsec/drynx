@@ -134,7 +134,11 @@ func (rpr *RangeProofRequest) VerifyProof(source network.ServerIdentity, sq Surv
 		}
 	}()
 	// TODO: resolve this circular dependency
-	verif := verifyRangeProofList(rpr.Data, sq.Threshold, sq.Query.Ranges, sq.Query.IVSigs.InputValidationSigs, sq.RosterServers.ServiceAggregate("drynx"), sq.RangeProofThreshold)
+	agg, err := sq.RosterServers.ServiceAggregate("drynx")
+	if err != nil {
+		return verifSign, err
+	}
+	verif := verifyRangeProofList(rpr.Data, sq.Threshold, sq.Query.Ranges, sq.Query.IVSigs.InputValidationSigs, agg, sq.RangeProofThreshold)
 	log.Lvl2("VN", source.String(), " verified range proof:", verif)
 	libunlynx.EndParallelize(wg)
 	//libunlynx.EndTimer(time)

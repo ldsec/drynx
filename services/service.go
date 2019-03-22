@@ -426,9 +426,14 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 			survey := castToSurvey(s.Survey.Get(target))
 			dataCollectionProtocol := pi.(*protocols.DataCollectionProtocol)
 
+			agg, err := survey.SurveyQuery.RosterServers.ServiceAggregate(ServiceName)
+			if err != nil {
+				return nil, err
+			}
+
 			queryStatement := protocols.SurveyToDP{
 				SurveyID:  survey.SurveyQuery.SurveyID,
-				Aggregate: survey.SurveyQuery.RosterServers.ServiceAggregate(ServiceName),
+				Aggregate: agg,
 				Query:     survey.SurveyQuery.Query,
 			}
 			dataCollectionProtocol.Survey = queryStatement
