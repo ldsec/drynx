@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/dedis/onet/log"
+	"go.dedis.ch/onet/v3/log"
 )
 
 const spacing = 50

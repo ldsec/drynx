@@ -2,13 +2,14 @@ package services
 
 import (
 	"fmt"
+	"go.dedis.ch/cothority/v3"
 
-	"github.com/dedis/kyber"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/network"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
 	"gopkg.in/satori/go.uuid.v1"
 
 	"math"
@@ -17,9 +18,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/dedis/cothority/skipchain"
 	"github.com/lca1/drynx/lib"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/cothority/v3/skipchain"
 )
 
 func generateNodes(local *onet.LocalTest, nbrServers int, nbrDPs int, nbrVNs int) (*onet.Roster, *onet.Roster, *onet.Roster) {
@@ -100,7 +101,7 @@ func TestServiceDrynx(t *testing.T) {
 		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
 	}
 
-	local := onet.NewLocalTest(libunlynx.SuiTe)
+	local := onet.NewLocalTest(cothority.Suite)
 	elServers, elDPs, elVNs := generateNodes(local, nbrServers, nbrDPs, nbrVNs)
 
 	if proofs == 0 {
@@ -203,34 +204,34 @@ func TestServiceDrynx(t *testing.T) {
 		}
 
 		// QUERY RECAP
-		log.LLvl1("\n")
-		log.LLvl1("#----- QUERY -----#")
-		log.LLvl1("Service Drynx Test with suite:", libunlynx.SuiTe.String(), "and query:")
-		log.LLvl1("SELECT ", operation, " ... FROM DP1, ..., DP", len(elDPs.List), " WHERE ... GROUP BY ", dpData.GroupByValues)
+		log.Lvl1("\n")
+		log.Lvl1("#----- QUERY -----#")
+		log.Lvl1("Service Drynx Test with suite:", libunlynx.SuiTe.String(), "and query:")
+		log.Lvl1("SELECT ", operation, " ... FROM DP1, ..., DP", len(elDPs.List), " WHERE ... GROUP BY ", dpData.GroupByValues)
 		if ranges == nil || (u == int64(0) && l == int64(0)) {
-			log.LLvl1("No input range validation")
+			log.Lvl1("No input range validation")
 		} else {
-			log.LLvl1("with input range validation (", len(ps), " x ", len(*ps[0]), ")")
+			log.Lvl1("with input range validation (", len(ps), " x ", len(*ps[0]), ")")
 		}
 		if libdrynx.AddDiffP(diffP) {
-			log.LLvl1(" with differential privacy with epsilon=", diffP.LapMean, " and delta=", diffP.LapScale)
+			log.Lvl1(" with differential privacy with epsilon=", diffP.LapMean, " and delta=", diffP.LapScale)
 		} else {
-			log.LLvl1(" no differential privacy")
+			log.Lvl1(" no differential privacy")
 		}
-		log.LLvl1("#-----------------#\n")
+		log.Lvl1("#-----------------#\n")
 		//-----------
 
 		idToPublic := make(map[string]kyber.Point)
 		for _, v := range elServers.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 		for _, v := range elDPs.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 
 		if proofs != 0 {
 			for _, v := range elVNs.List {
-				idToPublic[v.String()] = v.Public
+				idToPublic[v.String()] = v.ServicePublic(ServiceName)
 			}
 		}
 
@@ -283,7 +284,7 @@ func TestServiceDrynx(t *testing.T) {
 			t.Fatal("Results format problem")
 		} else {
 			for i, v := range *aggr {
-				log.LLvl1((*grp)[i], ": ", v)
+				log.Lvl1((*grp)[i], ": ", v)
 			}
 		}
 
@@ -428,7 +429,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
 	}
 
-	local := onet.NewLocalTest(libunlynx.SuiTe)
+	local := onet.NewLocalTest(cothority.Suite)
 	elServers, elDPs, elVNs := generateNodes(local, nbrServers, nbrDPs, nbrVNs)
 
 	if proofs == 0 {
@@ -531,34 +532,34 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		}
 
 		// QUERY RECAP
-		log.LLvl1("\n")
-		log.LLvl1("#----- QUERY -----#")
-		log.LLvl1("Service Drynx Test with suite:", libunlynx.SuiTe.String(), "and query:")
-		log.LLvl1("SELECT ", operation, " ... FROM DP1, ..., DP", len(elDPs.List), " WHERE ... GROUP BY ", dpData.GroupByValues)
+		log.Lvl1("\n")
+		log.Lvl1("#----- QUERY -----#")
+		log.Lvl1("Service Drynx Test with suite:", libunlynx.SuiTe.String(), "and query:")
+		log.Lvl1("SELECT ", operation, " ... FROM DP1, ..., DP", len(elDPs.List), " WHERE ... GROUP BY ", dpData.GroupByValues)
 		if ranges == nil || (u == int64(0) && l == int64(0)) {
-			log.LLvl1("No input range validation")
+			log.Lvl1("No input range validation")
 		} else {
-			log.LLvl1("with input range validation (", len(ps), " x ", len(*ps[0]), ")")
+			log.Lvl1("with input range validation (", len(ps), " x ", len(*ps[0]), ")")
 		}
 		if libdrynx.AddDiffP(diffP) {
-			log.LLvl1(" with differential privacy with epsilon=", diffP.LapMean, " and delta=", diffP.LapScale)
+			log.Lvl1(" with differential privacy with epsilon=", diffP.LapMean, " and delta=", diffP.LapScale)
 		} else {
-			log.LLvl1(" no differential privacy")
+			log.Lvl1(" no differential privacy")
 		}
-		log.LLvl1("#-----------------#\n")
+		log.Lvl1("#-----------------#\n")
 		//-----------
 
 		idToPublic := make(map[string]kyber.Point)
 		for _, v := range elServers.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 		for _, v := range elDPs.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 
 		if proofs != 0 {
 			for _, v := range elVNs.List {
-				idToPublic[v.String()] = v.Public
+				idToPublic[v.String()] = v.ServicePublic(ServiceName)
 			}
 		}
 
@@ -611,7 +612,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 			t.Fatal("Results format problem")
 		} else {
 			for i, v := range *aggr {
-				log.LLvl1((*grp)[i], ": ", v)
+				log.Lvl1((*grp)[i], ": ", v)
 			}
 		}
 		if len(*aggr) != 0 {
@@ -643,7 +644,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	fmt.Println("F-score:  ", meanFscore)
 	fmt.Println("AUC:      ", meanAUC)
 	fmt.Println()
-	log.LLvl1("ICI")
+	log.Lvl1("ICI")
 	//encoding.PrintForLatex(meanAccuracy, meanPrecision, meanRecall, meanFscore, meanAUC)
 
 	if proofs != 0 {
@@ -708,9 +709,9 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 	os.Remove("pre_compute_multiplications.gob")
 
 	// these nodes act as both servers and data providers
-	local := onet.NewLocalTest(libunlynx.SuiTe)
-	local1 := onet.NewLocalTest(libunlynx.SuiTe)
-	local2 := onet.NewLocalTest(libunlynx.SuiTe)
+	local := onet.NewLocalTest(cothority.Suite)
+	local1 := onet.NewLocalTest(cothority.Suite)
+	local2 := onet.NewLocalTest(cothority.Suite)
 
 	// create servers and data providers
 	_, el, _ := local.GenTree(10, true)
@@ -806,14 +807,14 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 	meanFscore := 0.0
 	meanAUC := 0.0
 
-	log.LLvl1("Simulating homomorphism-aware logistic regression for the " + dataset + " dataset")
+	log.Lvl1("Simulating homomorphism-aware logistic regression for the " + dataset + " dataset")
 	fmt.Println(filepath)
 
 	// load the dataset
 	X, y := encoding.LoadData(dataset, filepath)
 
 	for i := 0; i < numberTrials; i++ {
-		log.LLvl1("Evaluating prediction on dataset for trial:", i)
+		log.Lvl1("Evaluating prediction on dataset for trial:", i)
 
 		// split into training and testing set
 		seed := initSeed + int64(i)
@@ -894,26 +895,26 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 		}
 
 		// query parameters recap
-		log.LLvl1("Service Drynx Test with suite: ", libunlynx.SuiTe.String(), " and query:")
-		log.LLvl1("SELECT ", operation, " ... FROM DP0, ..., DP", len(el1.List), " WHERE ... GROUP BY ", dpData.GroupByValues)
+		log.Lvl1("Service Drynx Test with suite: ", libunlynx.SuiTe.String(), " and query:")
+		log.Lvl1("SELECT ", operation, " ... FROM DP0, ..., DP", len(el1.List), " WHERE ... GROUP BY ", dpData.GroupByValues)
 		if ranges == nil {
-			log.LLvl1("No input range validation")
+			log.Lvl1("No input range validation")
 		} else {
-			log.LLvl1("with input range validation (", len(ps), " x ", len(*ps[0]), ")")
+			log.Lvl1("with input range validation (", len(ps), " x ", len(*ps[0]), ")")
 		}
 		if libdrynx.AddDiffP(diffP) {
-			log.LLvl1(" with differential privacy with epsilon=", diffP.LapMean, " and delta=", diffP.LapScale)
+			log.Lvl1(" with differential privacy with epsilon=", diffP.LapMean, " and delta=", diffP.LapScale)
 		}
 
 		idToPublic := make(map[string]kyber.Point)
 		for _, v := range el.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 		for _, v := range el1.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 		for _, v := range elVNs.List {
-			idToPublic[v.String()] = v.Public
+			idToPublic[v.String()] = v.ServicePublic(ServiceName)
 		}
 
 		thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
@@ -931,7 +932,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 			t.Fatal("Results format problem")
 		} else {
 			for i, v := range *aggr {
-				log.LLvl1((*grp)[i], ": ", v)
+				log.Lvl1((*grp)[i], ": ", v)
 			}
 		}
 

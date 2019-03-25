@@ -7,12 +7,12 @@ import (
 
 	"time"
 
-	"github.com/dedis/kyber"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/network"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
 	"sync"
 )
 
@@ -113,7 +113,7 @@ func (p *ShufflingLocalProtocol) Dispatch() error {
 	startT := time.Now()
 	roundTotalComputation := libunlynx.StartTimer(p.Name() + "_Shuffling(DISPATCH)")
 
-	collectiveKey := p.Roster().Aggregate //shuffling is by default done with collective authority key
+	collectiveKey := p.Aggregate() //shuffling is by default done with collective authority key
 
 	if p.CollectiveKey != nil {
 		//test

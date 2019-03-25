@@ -2,14 +2,14 @@ package libdrynx
 
 import (
 	"github.com/coreos/bbolt"
-	"github.com/dedis/cothority/skipchain"
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/pairing/bn256"
-	"github.com/dedis/kyber/util/random"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/cothority/v3/skipchain"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/pairing/bn256"
+	"go.dedis.ch/kyber/v3/util/random"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
 	"sync"
 	"time"
 )
@@ -303,10 +303,14 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 	result.ProofsObfuscation = make([]*PublishedListObfuscationProof, nbrProofs)
 	result.ProofShuffle = make([]*PublishedShufflingProof, nbrProofs)
 
+	// here we can take the roster.Aggregate, as we're in a protocol test, which means
+	// there is no service to hold the keypair, so we use the ocnode's keypair.
+	agg := roster.Aggregate
+
 	//Fill Aggregation with good proofs
 	for i := range result.ProofsAggregation {
 		tab := []int64{1, 2, 3, 4, 5}
-		ev := libunlynx.EncryptIntVector(roster.Aggregate, tab)
+		ev := libunlynx.EncryptIntVector(agg, tab)
 
 		dpResponse1 := ResponseDPOneGroup{Group: "1", Data: *ev}
 		dpResponse2 := ResponseDPOneGroup{Group: "2", Data: *ev}
@@ -322,7 +326,7 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 
 	for i := range result.ProofsObfuscation {
 		tab := []int64{1, 2}
-		e := libunlynx.EncryptIntVector(roster.Aggregate, tab)
+		e := libunlynx.EncryptIntVector(agg, tab)
 		obfFactor := libunlynx.SuiTe.Scalar().Pick(random.New())
 		newE1 := libunlynx.CipherText{}
 		newE1.MulCipherTextbyScalar((*e)[0], obfFactor)
@@ -333,23 +337,23 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 	}
 
 	for i := range result.ProofShuffle {
-		testCipherVect1 := *libunlynx.EncryptIntVector(roster.Aggregate, tab1)
+		testCipherVect1 := *libunlynx.EncryptIntVector(agg, tab1)
 
-		testCipherVect2 := *libunlynx.EncryptIntVector(roster.Aggregate, tab2)
+		testCipherVect2 := *libunlynx.EncryptIntVector(agg, tab2)
 
 		responses := make([]libunlynx.ProcessResponse, 3)
 		responses[0] = libunlynx.ProcessResponse{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
 		responses[1] = libunlynx.ProcessResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
 		responses[2] = libunlynx.ProcessResponse{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}
 
-		responsesShuffled, pi, beta := ShuffleSequence(responses, libunlynx.SuiTe.Point().Base(), roster.Aggregate, nil)
-		prf := ShufflingProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), roster.Aggregate, beta, pi)
+		responsesShuffled, pi, beta := ShuffleSequence(responses, libunlynx.SuiTe.Point().Base(), agg, nil)
+		prf := ShufflingProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), agg, beta, pi)
 		result.ProofShuffle[i] = &prf
 	}
 
 	for i := range result.ProofsKeySwitch {
 		length := 2
-		cipher := libunlynx.EncryptIntVector(roster.Aggregate, []int64{1, 2})
+		cipher := libunlynx.EncryptIntVector(agg, []int64{1, 2})
 		initialTab := make([]kyber.Point, 2)
 		for i, v := range *cipher {
 			initialTab[i] = v.K
@@ -365,7 +369,7 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 
 	for i := range result.ProofsRange {
 
-		encryption, r := libunlynx.EncryptIntGetR(roster.Aggregate, int64(25))
+		encryption, r := libunlynx.EncryptIntGetR(agg, int64(25))
 
 		// read the signatures needed to compute the range proofs
 		signatures := make([][]PublishSignature, len(roster.List))
@@ -376,8 +380,8 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 			}
 		}
 
-		cp := CreateProof{Sigs: ReadColumn(signatures, 0), U: 16, L: 16, Secret: int64(25), R: r, CaPub: roster.Aggregate, Cipher: *encryption}
-		cp1 := CreateProof{Sigs: ReadColumn(signatures, 1), U: 16, L: 16, Secret: int64(25), R: r, CaPub: roster.Aggregate, Cipher: *encryption}
+		cp := CreateProof{Sigs: ReadColumn(signatures, 0), U: 16, L: 16, Secret: int64(25), R: r, CaPub: agg, Cipher: *encryption}
+		cp1 := CreateProof{Sigs: ReadColumn(signatures, 1), U: 16, L: 16, Secret: int64(25), R: r, CaPub: agg, Cipher: *encryption}
 		cps := []CreateProof{cp, cp1}
 		rps := RangeProofList{Data: CreatePredicateRangeProofListForAllServers(cps)}
 		result.ProofsRange[i] = &rps
@@ -637,7 +641,7 @@ func CheckParameters(sq SurveyQuery, diffP bool) bool {
 	}
 
 	if message != "" {
-		log.LLvl1(message)
+		log.Lvl1(message)
 	}
 	return result
 }
