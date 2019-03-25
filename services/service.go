@@ -1,24 +1,24 @@
 package services
 
 import (
+	"github.com/lca1/drynx/lib"
+	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/lib/tools"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
 	"time"
 
 	"sync"
 
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/coreos/bbolt"
-	"github.com/fanliao/go-concurrentMap"
-	"github.com/lca1/drynx/lib"
+	concurrent "github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/drynx/protocols"
-	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/protocols"
 	"go.dedis.ch/cothority/v3/skipchain"
 	"go.dedis.ch/kyber/v3/util/random"
-	"go.dedis.ch/onet/v3"
-	"go.dedis.ch/onet/v3/log"
-	"go.dedis.ch/onet/v3/network"
 )
 
 // ServiceName is the registered name for the drynx service.
@@ -103,7 +103,7 @@ type MsgTypes struct {
 var msgTypes = MsgTypes{}
 
 func init() {
-	onet.RegisterNewService(ServiceName, NewService)
+	onet.RegisterNewServiceWithSuite(ServiceName, libunlynx.SuiTe, NewService)
 
 	msgTypes.msgSurveyQuery = network.RegisterMessage(&libdrynx.SurveyQuery{})
 	msgTypes.msgSurveyQueryToDP = network.RegisterMessage(&libdrynx.SurveyQueryToDP{})
@@ -295,7 +295,11 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 
 	// prepares the precomputation for shuffling
 	lineSize := 100 // + 1 is for the possible count attribute
-	survey.ShufflePrecompute = libunlynxshuffle.PrecomputationWritingForShuffling(false, gobFile, s.ServerIdentity().String(), libunlynx.SuiTe.Scalar().Pick(random.New()), recq.RosterServers.Aggregate, lineSize)
+	agg, err := recq.RosterServers.ServiceAggregate("drynx")
+	if err != nil {
+		log.Fatal("Didn't find appropriate aggregate key")
+	}
+	survey.ShufflePrecompute = libunlynxshuffle.PrecomputationWritingForShuffling(false, gobFile, s.ServerIdentity().String(), libunlynx.SuiTe.Scalar().Pick(random.New()), agg, lineSize)
 
 	// if is the root server: send query to all other servers and its data providers
 	if recq.IntraMessage == false {
@@ -344,7 +348,7 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	// TODO: we can remove this waiting after the test
 	// -----------------------------------------------------------------------------------------------------------------
 	// signal other nodes that the data provider(s) already sent their data (response)
-	err := libunlynxtools.SendISMOthers(s.ServiceProcessor, &recq.RosterServers, &SyncDCP{recq.SurveyID})
+	err = libunlynxtools.SendISMOthers(s.ServiceProcessor, &recq.RosterServers, &SyncDCP{recq.SurveyID})
 	if err != nil {
 		log.Error("[SERVICE] <drynx> Server, broadcasting [syncDCPChannel] error ", err)
 	}
@@ -422,9 +426,14 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 			survey := castToSurvey(s.Survey.Get(target))
 			dataCollectionProtocol := pi.(*protocols.DataCollectionProtocol)
 
+			agg, err := survey.SurveyQuery.RosterServers.ServiceAggregate("drynx")
+			if err != nil {
+				log.Fatal("Didn't find appropriate aggregate key")
+			}
+
 			queryStatement := protocols.SurveyToDP{
 				SurveyID:  survey.SurveyQuery.SurveyID,
-				Aggregate: survey.SurveyQuery.RosterServers.Aggregate,
+				Aggregate: agg,
 				Query:     survey.SurveyQuery.Query,
 			}
 			dataCollectionProtocol.Survey = queryStatement
