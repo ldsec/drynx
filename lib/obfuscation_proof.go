@@ -1,10 +1,10 @@
 package libdrynx
 
 import (
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/proof"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/proof"
+	"go.dedis.ch/onet/v3/log"
 	"math"
 )
 

@@ -1,13 +1,13 @@
 package libdrynx
 
 import (
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/proof"
-	"github.com/dedis/kyber/shuffle"
-	"github.com/dedis/kyber/util/random"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/shuffle"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/proof"
+	"go.dedis.ch/kyber/v3/shuffle"
+	"go.dedis.ch/kyber/v3/util/random"
+	"go.dedis.ch/onet/v3/log"
 	"math/big"
 	"sync"
 )
@@ -134,8 +134,8 @@ func checkShuffleProof(g, h kyber.Point, Xhat, Yhat, XhatBar, YhatBar []kyber.Po
 	verifier := shuffle.Verifier(libunlynx.SuiTe, g, h, Xhat, Yhat, XhatBar, YhatBar)
 	err := proof.HashVerify(libunlynx.SuiTe, "PairShuffle", verifier, prf)
 	if err != nil {
-		log.LLvl1(err)
-		log.LLvl1("-----------verify failed (with XharBar)")
+		log.Lvl1(err)
+		log.Lvl1("-----------verify failed (with XharBar)")
 		return false
 	}
 

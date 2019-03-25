@@ -1,8 +1,8 @@
 package libdrynx
 
 import (
-	"github.com/dedis/onet/log"
 	"github.com/r0fls/gostats"
+	"go.dedis.ch/onet/v3/log"
 	"math"
 )
 
@@ -16,7 +16,7 @@ func GenerateNoiseValuesScale(n int64, mean, b, quanta, scale, limit float64) []
 	laplace := stats.Laplace(mean, b)
 
 	if limit != 0.0 && quanta != 0.0 {
-		log.LLvl1("Both size and limit defined --> uses quanta")
+		log.Lvl1("Both size and limit defined --> uses quanta")
 	} else if quanta == 0.0 {
 		sumToLim := 0.0
 		for i := 0.0; i < limit; i = i + 1/scale {

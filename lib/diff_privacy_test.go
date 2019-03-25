@@ -1,8 +1,8 @@
 package libdrynx
 
 import (
-	"github.com/dedis/onet/log"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/onet/v3/log"
 	"testing"
 )
 
@@ -11,8 +11,8 @@ func TestGenerateNoiseValues(t *testing.T) {
 	assert.Empty(t, aux)
 
 	aux = GenerateNoiseValues(500, 0, 1, 0.005, 0)
-	log.LLvl1(aux)
-	log.LLvl1(len(aux))
+	log.Lvl1(aux)
+	log.Lvl1(len(aux))
 	assert.Equal(t, len(aux), 500)
 
 	temp := make([]float64, 0)
@@ -31,5 +31,5 @@ func TestGenerateNoiseValues(t *testing.T) {
 	assert.Equal(t, temp, aux[100:138])
 
 	aux = GenerateNoiseValuesScale(500, 0, 1, 0.005, 100, 60)
-	log.LLvl1(aux)
+	log.Lvl1(aux)
 }
