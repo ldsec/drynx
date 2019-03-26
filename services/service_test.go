@@ -69,10 +69,10 @@ func TestServiceDrynx(t *testing.T) {
 	//------SET PARAMS--------
 
 	proofs := 1 // 0 is not proof, 1 is proofs, 2 is optimized proofs
-	rangeProofs := true
+	rangeProofs := false
 	obfuscation := false
 
-	diffPri := true
+	diffPri := false
 	nbrRows := int64(1)
 	nbrServers := 3
 	nbrDPs := 5
@@ -86,17 +86,17 @@ func TestServiceDrynx(t *testing.T) {
 	//operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "lin_reg"}
 	//operationList := []string{"bool_AND", "bool_OR", "min", "max", "union", "inter"}
 	//operationList := []string{"variance"}
-	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
+	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold aggregation, 3: threshold range, 4: obfuscation, 5: threshold key switch
 	//------------------------
 
 	if proofs == 1 {
 		if obfuscation {
-			thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 1.0}
+			thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 1.0, 1.0}
 		} else {
-			thresholdEntityProofsVerif = []float64{1.0, 1.0, 0.0, 1.0}
+			thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 0.0, 1.0}
 		}
 	} else {
-		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
+		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0, 0.0}
 	}
 
 	local := onet.NewLocalTest(libunlynx.SuiTe)
@@ -414,17 +414,17 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 
 	operationList := []string{"logistic regression"}
 
-	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
+	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold aggregation, 3: threshold range, 4: obfuscation, 5: threshold key switch
 	//------------------------
 
 	if proofs == 1 {
 		if obfuscation {
-			thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 1.0}
+			thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 1.0, 1.0}
 		} else {
-			thresholdEntityProofsVerif = []float64{1.0, 1.0, 0.0, 1.0}
+			thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 0.0, 1.0}
 		}
 	} else {
-		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
+		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0, 0.0}
 	}
 
 	local := onet.NewLocalTest(libunlynx.SuiTe)
@@ -915,7 +915,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 			idToPublic[v.String()] = v.Public
 		}
 
-		thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
+		thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 		// query sending + results receiving
 		cuttingFactor := 0
 		sq := client.GenerateSurveyQuery(el, elVNs, dpToServers, idToPublic, uuid.NewV4().String(), operation, ranges, ps, proofs, false, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor)

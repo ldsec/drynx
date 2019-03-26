@@ -10,6 +10,7 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/lib/shuffle"
 	"math/rand"
@@ -174,7 +175,7 @@ func verifyRangeProofList(data []byte, sample float64, ranges []*[]int64, psb []
 //______________________________________________________________________________________________________________________
 
 // NewAggregationProofRequest creates a AggregationProofRequest to be used in the ProofsCollectionProtocol
-func NewAggregationProofRequest(proofs *PublishAggregationProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *AggregationProofRequest {
+func NewAggregationProofRequest(proofs *libunlynxaggr.PublishedAggregationListProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *AggregationProofRequest {
 	proofBytes := proofs.ToBytes()
 	dataToSend, err := network.Marshal(&proofBytes)
 	if err != nil {
@@ -214,7 +215,7 @@ func (apr *AggregationProofRequest) VerifyProof(source network.ServerIdentity, s
 		}
 	}()
 
-	verif := verifyAggregation(apr.Data, sq.Threshold)
+	verif := verifyAggregation(apr.Data, sq.AggregationProofThreshold, sq.Threshold)
 	log.Lvl2("VN", source.String(), "verified aggregation proof:", verif)
 	libunlynx.EndParallelize(wg)
 	//libunlynx.EndTimer(time)
@@ -224,17 +225,17 @@ func (apr *AggregationProofRequest) VerifyProof(source network.ServerIdentity, s
 	return verif, err
 }
 
-func verifyAggregation(data []byte, sample float64) int64 {
+func verifyAggregation(data []byte, insideProofThresold, sample float64) int64 {
 	bmInt := proofReceived
 	if rand.Float64() <= sample {
 		_, proofs, err := network.Unmarshal(data, libunlynx.SuiTe)
-		toVerify := &PublishAggregationProof{}
-		toVerify.FromBytes(*proofs.(*PublishAggregationProofBytes))
+		toVerify := &libunlynxaggr.PublishedAggregationListProof{}
+		toVerify.FromBytes(*proofs.(*libunlynxaggr.PublishedAggregationListProofBytes))
 		if err != nil {
 			log.Fatal("Error in unmarshalling data from Aggregation request ", err)
 		}
 
-		result := ServerAggregationProofVerification(*toVerify)
+		result := libunlynxaggr.AggregationListProofVerification(*toVerify, insideProofThresold)
 		if result {
 			bmInt = ProofTrue
 		} else {

@@ -13,6 +13,7 @@ import (
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/protocols"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/lca1/unlynx/lib/differential_privacy"
 	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/lib/shuffle"
@@ -430,39 +431,13 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 
 	case protocolsunlynx.CollectiveAggregationProtocolName:
 		survey := castToSurvey(s.Survey.Get(target))
-		pi, err = protocolsunlynx.NewCollectiveAggregationProtocol(tn)
+		pi, err = s.NewCollectiveAggregationProtocol(tn, target, survey)
 		if err != nil {
 			return nil, err
 		}
 
-		// convert the result to fit the collective aggregation protocol
-		groupedData := libdrynx.ConvertToAggregationStruct(survey.QueryResponseState)
-
-		if survey.SurveyQuery.Query.Proofs != 0 {
-			go func() {
-
-				log.Lvl2("SERVICE] <drynx> Server", s.ServerIdentity(), "creates local aggregation proof")
-				resultAggrLocal := libdrynx.ResponseAllDPs{}
-				for i, v := range groupedData {
-					resultAggrLocal.Data = append(resultAggrLocal.Data, libdrynx.ResponseDPOneGroup{Group: string(i), Data: v.AggregatingAttributes})
-				}
-				aggrLocalProof := libdrynx.ServerAggregationProofCreation(survey.QueryResponseState, resultAggrLocal)
-				if survey.SurveyQuery.Query.Proofs == 2 {
-					aggrLocalProof.DPsData = libdrynx.ResponseAllDPs{}
-				}
-
-				pi := survey.MapPIs["aggregation/"+s.ServerIdentity().String()]
-				pi.(*protocols.ProofCollectionProtocol).Proof = libdrynx.ProofRequest{AggregationProof: libdrynx.NewAggregationProofRequest(&aggrLocalProof, target, s.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, tn.Private(), nil)}
-				go pi.Dispatch()
-				go pi.Start()
-				<-pi.(*protocols.ProofCollectionProtocol).FeedbackChannel
-			}()
-		}
-
-		collectiveAggregation := pi.(*protocolsunlynx.CollectiveAggregationProtocol)
-		collectiveAggregation.GroupedData = &groupedData
-
 		return pi, nil
+
 	case protocols.ObfuscationProtocolName:
 		survey := castToSurvey(s.Survey.Get(target))
 		pi, err = protocols.NewObfuscationProtocol(tn)
@@ -498,6 +473,48 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 
 	default:
 		return nil, errors.New("Service attempts to start an unknown protocol: " + tn.ProtocolName() + ".")
+	}
+
+	return pi, nil
+}
+
+// NewCollectiveAggregationProtocol defines a new collective aggregation protocol
+func (s *ServiceDrynx) NewCollectiveAggregationProtocol(tn *onet.TreeNodeInstance, target string, survey Survey) (onet.ProtocolInstance, error) {
+	pi, err := protocolsunlynx.NewCollectiveAggregationProtocol(tn)
+	if err != nil {
+		return nil, err
+	}
+
+	// convert the result to fit the collective aggregation protocol
+	groupedData := libdrynx.ConvertToAggregationStruct(survey.QueryResponseState)
+
+	collectiveAggr := pi.(*protocolsunlynx.CollectiveAggregationProtocol)
+	collectiveAggr.GroupedData = &groupedData
+	//TODO: change proofs
+	if survey.SurveyQuery.Query.Proofs == 1 {
+		collectiveAggr.Proofs = true
+	} else if survey.SurveyQuery.Query.Proofs == 0 {
+		collectiveAggr.Proofs = false
+	}
+	collectiveAggr.MapPIs = survey.MapPIs
+	collectiveAggr.ProofFunc = func(data []libunlynx.CipherVector, res libunlynx.CipherVector) *libunlynxaggr.PublishedAggregationListProof {
+		go func() {
+			//TODO: find a better way to do this (cleaner way)
+			cvMap := make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
+			survey.QueryResponseState.FormatAggregationProofs(cvMap)
+			aggrLocalProof := libunlynxaggr.PublishedAggregationListProof{}
+			aggrLocalProof.PapList = make([]libunlynxaggr.PublishedAggregationProof, 0)
+			for k, v := range cvMap {
+				aggrLocalProof.PapList = append(aggrLocalProof.PapList, libunlynxaggr.AggregationListProofCreation(v, groupedData[k].AggregatingAttributes).PapList...)
+			}
+
+			pi := survey.MapPIs["aggregation/"+s.ServerIdentity().String()]
+			pi.(*protocols.ProofCollectionProtocol).Proof = libdrynx.ProofRequest{AggregationProof: libdrynx.NewAggregationProofRequest(&aggrLocalProof, target, s.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, tn.Private(), nil)}
+			go pi.Dispatch()
+			go pi.Start()
+			<-pi.(*protocols.ProofCollectionProtocol).FeedbackChannel
+		}()
+		return nil
 	}
 
 	return pi, nil

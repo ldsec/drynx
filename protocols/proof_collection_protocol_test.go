@@ -11,6 +11,7 @@ import (
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/stretchr/testify/assert"
@@ -40,7 +41,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 	network.RegisterMessage(libdrynx.RangeProofListBytes{})
 	network.RegisterMessage(libunlynxshuffle.PublishedShufflingProofBytes{})
 	network.RegisterMessage(libunlynxkeyswitch.PublishedKSListProofBytes{})
-	network.RegisterMessage(libdrynx.PublishAggregationProofBytes{})
+	network.RegisterMessage(libunlynxaggr.PublishedAggregationListProofBytes{})
 	network.RegisterMessage(libdrynx.PublishedListObfuscationProofBytes{})
 
 	log.SetDebugVisible(1)
@@ -293,7 +294,7 @@ func generateTestSurveyQuery(surveyID string, el *onet.Roster, idToPublic map[st
 
 	iVSigs := libdrynx.QueryIVSigs{InputValidationSigs: ps, InputValidationSize1: len(el.List), InputValidationSize2: len(ranges)}
 	query := libdrynx.Query{DiffP: diffP, Operation: libdrynx.Operation{NbrInput: 1, NbrOutput: 1}, Ranges: ranges, IVSigs: iVSigs, Proofs: 1}
-	sq := libdrynx.SurveyQuery{RosterServers: *el, SurveyID: surveyID, Query: query, ClientPubKey: nil, ServerToDP: nil, IDtoPublic: idToPublic, Threshold: 1.0, RangeProofThreshold: 1.0, ObfuscationProofThreshold: 1.0, KeySwitchingProofThreshold: 1.0}
+	sq := libdrynx.SurveyQuery{RosterServers: *el, SurveyID: surveyID, Query: query, ClientPubKey: nil, ServerToDP: nil, IDtoPublic: idToPublic, Threshold: 1.0, AggregationProofThreshold: 1.0, RangeProofThreshold: 1.0, ObfuscationProofThreshold: 1.0, KeySwitchingProofThreshold: 1.0}
 
 	return sq
 }

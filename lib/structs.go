@@ -10,6 +10,7 @@ import (
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/protocols"
@@ -76,7 +77,7 @@ type GetBlock struct {
 // DataToVerify contains the proofs to be verified by the skipchain CA
 type DataToVerify struct {
 	ProofsRange       []*RangeProofList
-	ProofsAggregation []*PublishAggregationProof
+	ProofsAggregation []*libunlynxaggr.PublishedAggregationListProof
 	ProofsObfuscation []*PublishedListObfuscationProof
 	ProofsKeySwitch   []*libunlynxkeyswitch.PublishedKSListProof
 	ProofShuffle      []*libunlynxshuffle.PublishedShufflingProof
@@ -259,6 +260,7 @@ type SurveyQuery struct {
 	IDtoPublic map[string]kyber.Point
 	//Threshold for verification in skipChain service
 	Threshold                  float64
+	AggregationProofThreshold  float64
 	ObfuscationProofThreshold  float64
 	RangeProofThreshold        float64
 	KeySwitchingProofThreshold float64
@@ -296,7 +298,7 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 	result := DataToVerify{}
 	result.ProofsKeySwitch = make([]*libunlynxkeyswitch.PublishedKSListProof, nbrProofs)
 	result.ProofsRange = make([]*RangeProofList, nbrProofs)
-	result.ProofsAggregation = make([]*PublishAggregationProof, nbrProofs)
+	result.ProofsAggregation = make([]*libunlynxaggr.PublishedAggregationListProof, nbrProofs)
 	result.ProofsObfuscation = make([]*PublishedListObfuscationProof, nbrProofs)
 	result.ProofShuffle = make([]*libunlynxshuffle.PublishedShufflingProof, nbrProofs)
 
@@ -304,17 +306,9 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 	for i := range result.ProofsAggregation {
 		tab := []int64{1, 2, 3, 4, 5}
 		ev := libunlynx.EncryptIntVector(roster.Aggregate, tab)
-
-		dpResponse1 := ResponseDPOneGroup{Group: "1", Data: *ev}
-		dpResponse2 := ResponseDPOneGroup{Group: "2", Data: *ev}
-		evresult := libunlynx.NewCipherVector(len(*ev))
-		evresult.Add(*ev, *ev)
-		dpResponseResult1 := ResponseDPOneGroup{Group: "1", Data: *evresult}
-		dpResponseResult2 := ResponseDPOneGroup{Group: "2", Data: *evresult}
-		dpAggregated := ResponseAllDPs{Data: []ResponseDPOneGroup{dpResponseResult1, dpResponseResult2}}
-		dpResponses := ResponseAllDPs{Data: []ResponseDPOneGroup{dpResponse1, dpResponse1, dpResponse2, dpResponse2}}
-		proof := ServerAggregationProofCreation(dpResponses, dpAggregated)
-		result.ProofsAggregation[i] = &proof
+		evresult := ev.Acum()
+		listProofs := libunlynxaggr.AggregationListProofCreation([]libunlynx.CipherVector{*ev, *ev}, libunlynx.CipherVector{evresult, evresult})
+		result.ProofsAggregation[i] = &listProofs
 	}
 
 	for i := range result.ProofsObfuscation {
@@ -335,10 +329,6 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 
 		responses := make([]libunlynx.CipherVector, 0)
 		responses = append(responses, testCipherVect1, testCipherVect2)
-
-		//responses[0] = libunlynx.CipherVector{testCipherVect2, testCipherVect2}
-		//responses[1] = libunlynx.CipherVector{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
-		//responses[2] = libunlynx.CipherVector{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}
 
 		responsesShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(responses, libunlynx.SuiTe.Point().Base(), roster.Aggregate, nil)
 		prf := libunlynxshuffle.ShuffleProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), roster.Aggregate, beta, pi)
@@ -379,6 +369,28 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]Publ
 	}
 
 	return result
+}
+
+
+// FormatAggregationProofs converts the data providers data in a way that can be stored as proofs (a map of GroupingKeys and the collection of CipherVectors that are to be aggregated)
+func (rad *ResponseAllDPs) FormatAggregationProofs(res map[libunlynx.GroupingKey][]libunlynx.CipherVector) {
+	for _, entry := range rad.Data {
+		if _, ok := res[libunlynx.GroupingKey(entry.Group)]; ok {
+			for i, ct := range entry.Data {
+				container := res[libunlynx.GroupingKey(entry.Group)]
+				container[i] = append(container[i], ct)
+				res[libunlynx.GroupingKey(entry.Group)] = container
+			}
+		} else { // if no elements are in the map yet
+			container := make([]libunlynx.CipherVector, len(entry.Data))
+			for i, ct := range entry.Data {
+				tmp := make(libunlynx.CipherVector, 0)
+				tmp = append(tmp, ct)
+				container[i] = tmp
+				res[libunlynx.GroupingKey(entry.Group)] = container
+			}
+		}
+	}
 }
 
 // ToBytes transforms ResponseDPOneGroup to bytes

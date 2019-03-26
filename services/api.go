@@ -9,6 +9,7 @@ import (
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/lib/shuffle"
 )
@@ -28,7 +29,7 @@ func init() {
 	network.RegisterMessage(libdrynx.RangeProofListBytes{})
 	network.RegisterMessage(libunlynxshuffle.PublishedShufflingProofBytes{})
 	network.RegisterMessage(libunlynxkeyswitch.PublishedKSListProofBytes{})
-	network.RegisterMessage(libdrynx.PublishAggregationProofBytes{})
+	network.RegisterMessage(libunlynxaggr.PublishedAggregationListProofBytes{})
 	network.RegisterMessage(libdrynx.PublishedListObfuscationProofBytes{})
 }
 
@@ -74,9 +75,10 @@ func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToSer
 		ServerToDP:                 dpToServer,
 		IDtoPublic:                 idToPublic,
 		Threshold:                  thresholds[0],
-		RangeProofThreshold:        thresholds[1],
-		ObfuscationProofThreshold:  thresholds[2],
-		KeySwitchingProofThreshold: thresholds[3],
+		AggregationProofThreshold:  thresholds[1],
+		RangeProofThreshold:        thresholds[2],
+		ObfuscationProofThreshold:  thresholds[3],
+		KeySwitchingProofThreshold: thresholds[4],
 
 		// query statement
 		Query: libdrynx.Query{
