@@ -7,14 +7,14 @@ import (
 	"time"
 
 	"github.com/coreos/bbolt"
-	"github.com/dedis/cothority/skipchain"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/network"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/protocols"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/cothority/v3/skipchain"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
 	"gopkg.in/satori/go.uuid.v1"
 )
 
@@ -472,7 +472,7 @@ func OpenDB(path string) (*bbolt.DB, error) {
 // CreateProofSkipchain creates the skipchain
 func CreateProofSkipchain(sk *skipchain.Client, roster *onet.Roster, dataBytes []byte) (*skipchain.SkipBlock, error) {
 	timeGenesis := libunlynx.StartTimer("Genesis")
-	root, err := sk.CreateGenesis(roster, 1, 1, VerificationBitmap, dataBytes, nil)
+	root, err := sk.CreateGenesis(roster, 1, 1, VerificationBitmap, dataBytes)
 	if err != nil {
 		return nil, err
 	}
