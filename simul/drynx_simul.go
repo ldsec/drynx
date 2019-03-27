@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/lca1/drynx/lib/range"
 	"os"
 
 	"sync"
@@ -282,9 +283,9 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 				temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
 				for j := 0; j < len(ranges); j++ {
 					if sim.CuttingFactor != 0 {
-						temp[j] = libdrynx.InitRangeProofSignatureDeterministic((*ranges[j])[0])
+						temp[j] = libdrynxrange.InitRangeProofSignatureDeterministic((*ranges[j])[0])
 					} else {
-						temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+						temp[j] = libdrynxrange.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
 					}
 				}
 				ps[index] = &temp
@@ -345,9 +346,9 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 
 	var thresholdEntityProofsVerif []float64
 	if sim.Obfuscation == false {
-		thresholdEntityProofsVerif = []float64{sim.ThresholdGeneral, sim.ThresholdOther, 0.0, sim.ThresholdOther}
+		thresholdEntityProofsVerif = []float64{sim.ThresholdGeneral, sim.ThresholdOther, sim.ThresholdOther, 0.0, sim.ThresholdOther}
 	} else {
-		thresholdEntityProofsVerif = []float64{sim.ThresholdGeneral, sim.ThresholdOther, sim.ThresholdOther, sim.ThresholdOther}
+		thresholdEntityProofsVerif = []float64{sim.ThresholdGeneral, sim.ThresholdOther, sim.ThresholdOther, sim.ThresholdOther, sim.ThresholdOther}
 	}
 	sq := client.GenerateSurveyQuery(rosterServers, rosterVNs, dpToServers, idToPublic, surveyID, operation, ranges, ps, sim.Proofs, sim.Obfuscation, thresholdEntityProofsVerif, diffP, dpData, sim.CuttingFactor)
 	if diffP.NoiseListSize > 0 {

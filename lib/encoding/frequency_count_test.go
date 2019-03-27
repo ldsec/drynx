@@ -1,10 +1,11 @@
-package encoding_test
+package libdrynxencoding_test
 
 import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -19,7 +20,7 @@ func TestEncodeDecodeFrequencyCount(t *testing.T) {
 	// key
 	keys := key.NewKeyPair(libunlynx.SuiTe)
 	secKey, pubKey := keys.Private, keys.Public
-	libdrynx.CreateDecryptionTable(10000, pubKey, secKey)
+	libunlynx.CreateDecryptionTable(10000, pubKey, secKey)
 
 	//expected results
 	expect := make([]int64, max-min+1)
@@ -33,8 +34,8 @@ func TestEncodeDecodeFrequencyCount(t *testing.T) {
 	}
 
 	//function call
-	resultEncrypted, _ := encoding.EncodeFreqCount(inputValues, min, max, pubKey)
-	result := encoding.DecodeFreqCount(resultEncrypted, secKey)
+	resultEncrypted, _ := libdrynxencoding.EncodeFreqCount(inputValues, min, max, pubKey)
+	result := libdrynxencoding.DecodeFreqCount(resultEncrypted, secKey)
 	assert.Equal(t, expect, result)
 }
 
@@ -47,7 +48,7 @@ func TestEncodeDecodeFrequencyCountWithProofs(t *testing.T) {
 	// key
 	keys := key.NewKeyPair(libunlynx.SuiTe)
 	secKey, pubKey := keys.Private, keys.Public
-	libdrynx.CreateDecryptionTable(10000, pubKey, secKey)
+	libunlynx.CreateDecryptionTable(10000, pubKey, secKey)
 
 	//expected results
 	expect := make([]int64, max-min+1)
@@ -72,8 +73,8 @@ func TestEncodeDecodeFrequencyCountWithProofs(t *testing.T) {
 	ys[0] = make([]kyber.Point, len(expect))
 	ys[1] = make([]kyber.Point, len(expect))
 	for i := range ps[0] {
-		ps[0][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u))
-		ps[1][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u))
+		ps[0][i] = libdrynxrange.PublishSignatureBytesToPublishSignatures(libdrynxrange.InitRangeProofSignature(u))
+		ps[1][i] = libdrynxrange.PublishSignatureBytesToPublishSignatures(libdrynxrange.InitRangeProofSignature(u))
 		ys[0][i] = ps[0][i].Public
 		ys[1][i] = ps[1][i].Public
 		ranges[i] = &[]int64{u, l}
@@ -88,11 +89,11 @@ func TestEncodeDecodeFrequencyCountWithProofs(t *testing.T) {
 	}
 
 	//function call
-	resultEncrypted, _, prf := encoding.EncodeFreqCountWithProofs(inputValues, min, max, pubKey, ps, ranges)
-	result := encoding.DecodeFreqCount(resultEncrypted, secKey)
+	resultEncrypted, _, prf := libdrynxencoding.EncodeFreqCountWithProofs(inputValues, min, max, pubKey, ps, ranges)
+	result := libdrynxencoding.DecodeFreqCount(resultEncrypted, secKey)
 
 	for i := 0; int64(i) <= max-min; i++ {
-		assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[i]), (*ranges[i])[0], (*ranges[i])[1], yss[i], pubKey))
+		assert.True(t, libdrynxrange.RangeProofVerification(libdrynxrange.CreatePredicateRangeProofForAllServ(prf[i]), (*ranges[i])[0], (*ranges[i])[1], yss[i], pubKey))
 	}
 	assert.Equal(t, expect, result)
 

@@ -4,26 +4,14 @@ import (
 	"github.com/coreos/bbolt"
 	"github.com/dedis/cothority/skipchain"
 	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/pairing/bn256"
-	"github.com/dedis/kyber/util/random"
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
 	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/lib/aggregation"
-	"github.com/lca1/unlynx/lib/key_switch"
-	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/protocols"
 	"sync"
 	"time"
 )
-
-const proofFalse = int64(0)
-
-// ProofTrue is the constant used to indicate that a proof is true in the bitmap
-const ProofTrue = int64(1)
-const proofReceived = int64(2)
-const proofFalseSign = int64(4)
 
 // QueryInfo is a structure used in the service to store information about a query in the concurrent map.
 // This information helps us to know how many proofs have been received and processed.
@@ -72,15 +60,6 @@ type GetGenesis struct {
 type GetBlock struct {
 	Roster *onet.Roster
 	ID     string
-}
-
-// DataToVerify contains the proofs to be verified by the skipchain CA
-type DataToVerify struct {
-	ProofsRange       []*RangeProofList
-	ProofsAggregation []*libunlynxaggr.PublishedAggregationListProof
-	ProofsObfuscation []*PublishedListObfuscationProof
-	ProofsKeySwitch   []*libunlynxkeyswitch.PublishedKSListProof
-	ProofShuffle      []*libunlynxshuffle.PublishedShufflingProof
 }
 
 //DataBlock is the structure inserted in the Skipchain
@@ -284,93 +263,6 @@ type EndVerificationRequest struct {
 
 // EndVerificationResponse is the response to a waiting on the vend of the verification
 type EndVerificationResponse struct{}
-
-//Data for Test Below
-//--------------------------------------------------------------------------------------------------------------------------------------------------
-//Some variables to create dataTest
-var secKey = bn256.NewSuiteG1().Scalar().Pick(random.New())
-var entityPub = bn256.NewSuiteG1().Point().Mul(secKey, bn256.NewSuiteG1().Point().Base())
-var tab1 = []int64{1, 2, 3, 6}
-var tab2 = []int64{2, 4, 8, 6}
-
-//CreateRandomGoodTestData only creates valid proofs
-func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]PublishSignatureBytes, ranges []*[]int64, nbrProofs int) DataToVerify {
-	result := DataToVerify{}
-	result.ProofsKeySwitch = make([]*libunlynxkeyswitch.PublishedKSListProof, nbrProofs)
-	result.ProofsRange = make([]*RangeProofList, nbrProofs)
-	result.ProofsAggregation = make([]*libunlynxaggr.PublishedAggregationListProof, nbrProofs)
-	result.ProofsObfuscation = make([]*PublishedListObfuscationProof, nbrProofs)
-	result.ProofShuffle = make([]*libunlynxshuffle.PublishedShufflingProof, nbrProofs)
-
-	//Fill Aggregation with good proofs
-	for i := range result.ProofsAggregation {
-		tab := []int64{1, 2, 3, 4, 5}
-		ev := libunlynx.EncryptIntVector(roster.Aggregate, tab)
-		evresult := ev.Acum()
-		listProofs := libunlynxaggr.AggregationListProofCreation([]libunlynx.CipherVector{*ev, *ev}, libunlynx.CipherVector{evresult, evresult})
-		result.ProofsAggregation[i] = &listProofs
-	}
-
-	for i := range result.ProofsObfuscation {
-		tab := []int64{1, 2}
-		e := libunlynx.EncryptIntVector(roster.Aggregate, tab)
-		obfFactor := libunlynx.SuiTe.Scalar().Pick(random.New())
-		newE1 := libunlynx.CipherText{}
-		newE1.MulCipherTextbyScalar((*e)[0], obfFactor)
-		newE2 := libunlynx.CipherText{}
-		newE2.MulCipherTextbyScalar((*e)[1], obfFactor)
-		proof := ObfuscationListProofCreation(*e, libunlynx.CipherVector{newE1, newE2}, []kyber.Scalar{obfFactor, obfFactor})
-		result.ProofsObfuscation[i] = &proof
-	}
-
-	for i := range result.ProofShuffle {
-		testCipherVect1 := *libunlynx.EncryptIntVector(roster.Aggregate, tab1)
-		testCipherVect2 := *libunlynx.EncryptIntVector(roster.Aggregate, tab2)
-
-		responses := make([]libunlynx.CipherVector, 0)
-		responses = append(responses, testCipherVect1, testCipherVect2)
-
-		responsesShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(responses, libunlynx.SuiTe.Point().Base(), roster.Aggregate, nil)
-		prf := libunlynxshuffle.ShuffleProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), roster.Aggregate, beta, pi)
-		result.ProofShuffle[i] = &prf
-	}
-
-	for i := range result.ProofsKeySwitch {
-		cipher := libunlynx.EncryptIntVector(roster.Aggregate, []int64{1, 2})
-		initialTab := make([]kyber.Point, 2)
-		for i, v := range *cipher {
-			initialTab[i] = v.K
-		}
-
-		_, ks2s, rBNegs, vis := NewKeySwitching(pub, initialTab, secKey)
-		pkslp := libunlynxkeyswitch.KeySwitchListProofCreation(entityPub, pub, secKey, ks2s, rBNegs, vis)
-
-		result.ProofsKeySwitch[i] = &pkslp
-	}
-
-	for i := range result.ProofsRange {
-
-		encryption, r := libunlynx.EncryptIntGetR(roster.Aggregate, int64(25))
-
-		// read the signatures needed to compute the range proofs
-		signatures := make([][]PublishSignature, len(roster.List))
-		for i := 0; i < len(roster.List); i++ {
-			signatures[i] = make([]PublishSignature, len(ranges))
-			for j := 0; j < len(ranges); j++ {
-				signatures[i][j] = PublishSignatureBytesToPublishSignatures((*ps[i])[j])
-			}
-		}
-
-		cp := CreateProof{Sigs: ReadColumn(signatures, 0), U: 16, L: 16, Secret: int64(25), R: r, CaPub: roster.Aggregate, Cipher: *encryption}
-		cp1 := CreateProof{Sigs: ReadColumn(signatures, 1), U: 16, L: 16, Secret: int64(25), R: r, CaPub: roster.Aggregate, Cipher: *encryption}
-		cps := []CreateProof{cp, cp1}
-		rps := RangeProofList{Data: CreatePredicateRangeProofListForAllServers(cps)}
-		result.ProofsRange[i] = &rps
-	}
-
-	return result
-}
-
 
 // FormatAggregationProofs converts the data providers data in a way that can be stored as proofs (a map of GroupingKeys and the collection of CipherVectors that are to be aggregated)
 func (rad *ResponseAllDPs) FormatAggregationProofs(res map[libunlynx.GroupingKey][]libunlynx.CipherVector) {

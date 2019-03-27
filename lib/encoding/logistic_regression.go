@@ -1,8 +1,9 @@
-package encoding
+package libdrynxencoding
 
 import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet/log"
+	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
 	"github.com/montanaflynn/stats"
 	"gonum.org/v1/gonum/stat/combin"
@@ -118,7 +119,7 @@ type CipherAndRandom struct {
 }
 
 // EncodeLogisticRegressionWithProofs computes and encrypts the data provider's coefficients for logistic regression with range proofs
-func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
+func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynxrange.CreateProof) {
 
 	d := lrParameters.NbrFeatures
 	n := getTotalNumberApproxCoefficients(d, lrParameters.K)
@@ -190,13 +191,13 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.
 	log.LLvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
 	log.LLvl2("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
 
-	createRangeProof := make([]libdrynx.CreateProof, len(aggregatedApproxCoefficientsIntPacked))
+	createRangeProof := make([]libdrynxrange.CreateProof, len(aggregatedApproxCoefficientsIntPacked))
 	wg1 := libunlynx.StartParallelize(len(aggregatedApproxCoefficientsIntPacked))
 	for i, v := range aggregatedApproxCoefficientsIntPacked {
 		go func(i int, v int64) {
 			defer wg1.Done()
 			//input range validation proof
-			createRangeProof[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: encryptedAggregatedApproxCoefficients[i].r, CaPub: pubKey, Cipher: encryptedAggregatedApproxCoefficients[i].C}
+			createRangeProof[i] = libdrynxrange.CreateProof{Sigs: libdrynxrange.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: encryptedAggregatedApproxCoefficients[i].r, CaPub: pubKey, Cipher: encryptedAggregatedApproxCoefficients[i].C}
 		}(i, v)
 	}
 	libunlynx.EndParallelize(wg1)
@@ -1239,7 +1240,9 @@ func SaveToFile(array []float64, filename string) {
 	}
 	_, err = file.WriteString(fmt.Sprintln(array[len(array)-1]))
 
-	file.Close()
+	if err := file.Close(); err != nil {
+		log.Fatal("Error closing file:", err)
+	}
 }
 
 // PrintForLatex for copy-pasting in LaTex
@@ -1368,8 +1371,8 @@ func ReadFile(path string, separator string) [][]string {
 		fmt.Println(err)
 		os.Exit(2)
 	}
-
 	defer inFile.Close()
+
 	scanner := bufio.NewScanner(inFile)
 	scanner.Split(bufio.ScanLines)
 

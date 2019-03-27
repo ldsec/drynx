@@ -1,4 +1,4 @@
-package libdrynx
+package libdrynxobfuscation
 
 import (
 	"github.com/dedis/kyber"

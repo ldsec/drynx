@@ -8,6 +8,8 @@ import (
 	"github.com/dedis/onet/network"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/drynx/lib/obfuscation"
+	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/lca1/unlynx/lib/key_switch"
@@ -26,11 +28,11 @@ type API struct {
 //init of the network messages
 func init() {
 	network.RegisterMessage(libdrynx.GetLatestBlock{})
-	network.RegisterMessage(libdrynx.RangeProofListBytes{})
+	network.RegisterMessage(libdrynxrange.RangeProofListBytes{})
 	network.RegisterMessage(libunlynxshuffle.PublishedShufflingProofBytes{})
 	network.RegisterMessage(libunlynxkeyswitch.PublishedKSListProofBytes{})
 	network.RegisterMessage(libunlynxaggr.PublishedAggregationListProofBytes{})
-	network.RegisterMessage(libdrynx.PublishedListObfuscationProofBytes{})
+	network.RegisterMessage(libdrynxobfuscation.PublishedListObfuscationProofBytes{})
 }
 
 // NewDrynxClient constructor of a client.
@@ -45,7 +47,7 @@ func NewDrynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 	}
 
 	limit := int64(10000)
-	libdrynx.CreateDecryptionTable(limit, newClient.public, newClient.private)
+	libunlynx.CreateDecryptionTable(limit, newClient.public, newClient.private)
 	return newClient
 }
 
@@ -121,7 +123,7 @@ func (c *API) SendSurveyQuery(sq libdrynx.SurveyQuery) (*[]string, *[][]float64,
 	count := 0
 	for i, res := range sr.Data {
 		grp[count] = i
-		aggr[count] = encoding.Decode(res, c.private, sq.Query.Operation)
+		aggr[count] = libdrynxencoding.Decode(res, c.private, sq.Query.Operation)
 		count++
 	}
 	libunlynx.EndTimer(clientDecode)

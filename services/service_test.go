@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"github.com/lca1/drynx/lib/range"
 
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet"
@@ -190,9 +191,9 @@ func TestServiceDrynx(t *testing.T) {
 				temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
 				for j := 0; j < len(ranges); j++ {
 					if cuttingFactor != 0 {
-						temp[j] = libdrynx.InitRangeProofSignatureDeterministic((*ranges[j])[0])
+						temp[j] = libdrynxrange.InitRangeProofSignatureDeterministic((*ranges[j])[0])
 					} else {
-						temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+						temp[j] = libdrynxrange.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
 					}
 				}
 				ps[i] = &temp
@@ -387,14 +388,14 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	filePathTraining := "../data/SPECTF_heart_dataset_training.txt"
 	filePathTesting := "../data/SPECTF_heart_dataset_testing.txt"
 
-	XTrain, _ := encoding.LoadData("SPECTF", filePathTraining)
-	XTest, yTest := encoding.LoadData("SPECTF", filePathTesting)
+	XTrain, _ := libdrynxencoding.LoadData("SPECTF", filePathTraining)
+	XTest, yTest := libdrynxencoding.LoadData("SPECTF", filePathTesting)
 
 	var means = make([]float64, 0)
 	var standardDeviations = make([]float64, 0)
 	if standardisationMode == 0 || standardisationMode == 1 {
-		means = encoding.ComputeMeans(XTrain)
-		standardDeviations = encoding.ComputeStandardDeviations(XTrain)
+		means = libdrynxencoding.ComputeMeans(XTrain)
+		standardDeviations = libdrynxencoding.ComputeStandardDeviations(XTrain)
 	} else {
 		means = nil
 		standardDeviations = nil
@@ -518,9 +519,9 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 				temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
 				for j := 0; j < len(ranges); j++ {
 					if cuttingFactor != 0 {
-						temp[j] = libdrynx.InitRangeProofSignatureDeterministic((*ranges[j])[0])
+						temp[j] = libdrynxrange.InitRangeProofSignatureDeterministic((*ranges[j])[0])
 					} else {
-						temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+						temp[j] = libdrynxrange.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
 					}
 				}
 				ps[i] = &temp
@@ -809,18 +810,18 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 	fmt.Println(filepath)
 
 	// load the dataset
-	X, y := encoding.LoadData(dataset, filepath)
+	X, y := libdrynxencoding.LoadData(dataset, filepath)
 
 	for i := 0; i < numberTrials; i++ {
 		log.LLvl1("Evaluating prediction on dataset for trial:", i)
 
 		// split into training and testing set
 		seed := initSeed + int64(i)
-		XTrain, yTrain, XTest, yTest := encoding.PartitionDataset(X, y, ratio, true, seed)
+		XTrain, yTrain, XTest, yTest := libdrynxencoding.PartitionDataset(X, y, ratio, true, seed)
 
 		// write to file
-		trainingSet := encoding.InsertColumn(XTrain, encoding.Int64ToFloat641DArray(yTrain), 0)
-		testingSet := encoding.InsertColumn(XTest, encoding.Int64ToFloat641DArray(yTest), 0)
+		trainingSet := libdrynxencoding.InsertColumn(XTrain, libdrynxencoding.Int64ToFloat641DArray(yTrain), 0)
+		testingSet := libdrynxencoding.InsertColumn(XTest, libdrynxencoding.Int64ToFloat641DArray(yTest), 0)
 
 		fileTraining, err := os.Create(filePathTraining)
 		fileTesting, err := os.Create(filePathTesting)
@@ -842,8 +843,8 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 		var means = make([]float64, 0)
 		var standardDeviations = make([]float64, 0)
 		if standardisationMode == 0 || standardisationMode == 1 {
-			means = encoding.ComputeMeans(XTrain)
-			standardDeviations = encoding.ComputeStandardDeviations(XTrain)
+			means = libdrynxencoding.ComputeMeans(XTrain)
+			standardDeviations = libdrynxencoding.ComputeStandardDeviations(XTrain)
 		} else {
 			means = nil
 			standardDeviations = nil
@@ -884,7 +885,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 			for i := range el.List {
 				temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
 				for j := 0; j < len(ranges); j++ {
-					temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+					temp[j] = libdrynxrange.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
 				}
 				ps[i] = &temp
 			}
@@ -967,7 +968,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 	fmt.Println("AUC:      ", meanAUC)
 	fmt.Println()
 
-	encoding.PrintForLatex(meanAccuracy, meanPrecision, meanRecall, meanFscore, meanAUC)
+	libdrynxencoding.PrintForLatex(meanAccuracy, meanPrecision, meanRecall, meanFscore, meanAUC)
 }
 
 func performanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, means []float64,
@@ -979,26 +980,26 @@ func performanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, 
 		len(means) > 0 && len(standardDeviations) > 0 {
 		// using global means and standard deviations, if given
 		log.Lvl1("Standardising the testing set with global means and standard deviations...")
-		XTest = encoding.StandardiseWith(XTest, means, standardDeviations)
+		XTest = libdrynxencoding.StandardiseWith(XTest, means, standardDeviations)
 	} else {
 		// using local means and standard deviations, if not given
 		log.Lvl1("Standardising the testing set with local means and standard deviations...")
-		XTest = encoding.Standardise(XTest)
+		XTest = libdrynxencoding.Standardise(XTest)
 	}
 
 	predictions := make([]int64, len(XTest))
 	predictionsFloat := make([]float64, len(XTest))
 	for i := range XTest {
-		predictionsFloat[i] = encoding.PredictInClear(XTest[i], weights)
+		predictionsFloat[i] = libdrynxencoding.PredictInClear(XTest[i], weights)
 		predictions[i] = int64(math.Round(predictionsFloat[i]))
 		fmt.Printf("%12.8e %1d %2d\n", predictionsFloat[i], predictions[i], yTest[i])
 	}
 
-	accuracy := encoding.Accuracy(predictions, yTest)
-	precision := encoding.Precision(predictions, yTest)
-	recall := encoding.Recall(predictions, yTest)
-	fscore := encoding.Fscore(predictions, yTest)
-	auc := encoding.AreaUnderCurve(predictionsFloat, yTest)
+	accuracy := libdrynxencoding.Accuracy(predictions, yTest)
+	precision := libdrynxencoding.Precision(predictions, yTest)
+	recall := libdrynxencoding.Recall(predictions, yTest)
+	fscore := libdrynxencoding.Fscore(predictions, yTest)
+	auc := libdrynxencoding.AreaUnderCurve(predictionsFloat, yTest)
 
 	fmt.Println("accuracy: ", accuracy)
 	fmt.Println("precision:", precision)

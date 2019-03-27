@@ -1,4 +1,4 @@
-package libdrynx
+package libdrynxrange
 
 import (
 	"crypto/sha256"
@@ -6,6 +6,8 @@ import (
 	"github.com/dedis/kyber/pairing/bn256"
 	"github.com/dedis/kyber/util/key"
 	"github.com/dedis/onet/log"
+	"github.com/lca1/drynx/lib"
+
 	"github.com/lca1/unlynx/lib"
 	"golang.org/x/crypto/sha3"
 	"math"
@@ -58,7 +60,7 @@ type RangeProofDataBytes struct {
 
 //CreateProof contains all the elements used to create a range proof
 type CreateProof struct {
-	Sigs   []PublishSignature
+	Sigs   []libdrynx.PublishSignature
 	U      int64
 	L      int64
 	Secret int64
@@ -244,7 +246,7 @@ func (prf *RangeProof) FromBytes(prpb RangeProofBytes) {
 }
 
 // InitRangeProofSignatureDeterministic is used for simulation puposes to create deterministic servers' signatures
-func InitRangeProofSignatureDeterministic(u int64) PublishSignatureBytes {
+func InitRangeProofSignatureDeterministic(u int64) libdrynx.PublishSignatureBytes {
 	suitePair := bn256.NewSuite()
 	g2 := suitePair.G2()
 	A := make([]byte, 0)
@@ -261,11 +263,11 @@ func InitRangeProofSignatureDeterministic(u int64) PublishSignatureBytes {
 		tmpByte, _ := tmp.MarshalBinary()
 		A = append(A, tmpByte...)
 	}
-	return PublishSignatureBytes{Signature: A, Public: y}
+	return libdrynx.PublishSignatureBytes{Signature: A, Public: y}
 }
 
 //InitRangeProofSignature create a public/private key pair and return new signatures in a PublishSignature structure. (done by servers)
-func InitRangeProofSignature(u int64) PublishSignatureBytes {
+func InitRangeProofSignature(u int64) libdrynx.PublishSignatureBytes {
 	suitePair := bn256.NewSuite()
 	g2 := suitePair.G2()
 	A := make([]byte, 0)
@@ -282,11 +284,11 @@ func InitRangeProofSignature(u int64) PublishSignatureBytes {
 		tmpByte, _ := tmp.MarshalBinary()
 		A = append(A, tmpByte...)
 	}
-	return PublishSignatureBytes{Signature: A, Public: kPub}
+	return libdrynx.PublishSignatureBytes{Signature: A, Public: kPub}
 }
 
 //PublishSignatureBytesToPublishSignatures creates servers' signatures directly in bytes
-func PublishSignatureBytesToPublishSignatures(sigsBytes PublishSignatureBytes) PublishSignature {
+func PublishSignatureBytesToPublishSignatures(sigsBytes libdrynx.PublishSignatureBytes) libdrynx.PublishSignature {
 	suitePair := bn256.NewSuite()
 	g2 := suitePair.G2()
 	signatures := make([]kyber.Point, 0)
@@ -296,7 +298,7 @@ func PublishSignatureBytesToPublishSignatures(sigsBytes PublishSignatureBytes) P
 		signatures = append(signatures, point)
 	}
 
-	return PublishSignature{Signature: signatures, Public: sigsBytes.Public}
+	return libdrynx.PublishSignature{Signature: signatures, Public: sigsBytes.Public}
 }
 
 //CreatePredicateRangeProofListForAllServers creates range proofs for a list of servers and values
@@ -405,7 +407,7 @@ func CreatePredicateRangeProofForAllServ(cp CreateProof) RangeProof {
 }
 
 //CreatePredicateRangeProof creates predicate for secret range validation by the data provider
-func CreatePredicateRangeProof(sig PublishSignature, u int64, l int64, secret int64, r kyber.Scalar, caPub kyber.Point, cipher libunlynx.CipherText) RangeProof {
+func CreatePredicateRangeProof(sig libdrynx.PublishSignature, u int64, l int64, secret int64, r kyber.Scalar, caPub kyber.Point, cipher libunlynx.CipherText) RangeProof {
 	if u == 0 && l == 0 {
 		return RangeProof{Commit: cipher, RP: nil}
 	}
@@ -479,7 +481,7 @@ func CreatePredicateRangeProof(sig PublishSignature, u int64, l int64, secret in
 }
 
 //RangeProofListVerification verifies a list of range proofs
-func RangeProofListVerification(rangeProofsList RangeProofList, ranges []*[]int64, psb []*[]PublishSignatureBytes, P kyber.Point, verifThresold float64) bool {
+func RangeProofListVerification(rangeProofsList RangeProofList, ranges []*[]int64, psb []*[]libdrynx.PublishSignatureBytes, P kyber.Point, verifThresold float64) bool {
 	result := true
 	nbrVerifs := int(math.Ceil(verifThresold * float64(len(rangeProofsList.Data))))
 	wg := libunlynx.StartParallelize(nbrVerifs)
@@ -593,14 +595,14 @@ func ToBase(n int64, b int64, l int) []int64 {
 }
 
 //ReadColumn reads a column from a 2-D signatures object
-func ReadColumn(sigs [][]PublishSignature, column int) []PublishSignature {
+func ReadColumn(sigs [][]libdrynx.PublishSignature, column int) []libdrynx.PublishSignature {
 	sigi, _ := ReadColumnWithYs(sigs, column)
 	return sigi
 }
 
 //ReadColumnWithYs reads signatures and Y parts of a column of signatures
-func ReadColumnWithYs(sigs [][]PublishSignature, column int) ([]PublishSignature, []kyber.Point) {
-	sigi := make([]PublishSignature, len(sigs))
+func ReadColumnWithYs(sigs [][]libdrynx.PublishSignature, column int) ([]libdrynx.PublishSignature, []kyber.Point) {
+	sigi := make([]libdrynx.PublishSignature, len(sigs))
 	sigiY := make([]kyber.Point, len(sigs))
 	for j := range sigs {
 		sigi[j] = sigs[j][column]
@@ -610,7 +612,7 @@ func ReadColumnWithYs(sigs [][]PublishSignature, column int) ([]PublishSignature
 }
 
 //ReadColumnYs reads Y parts of a column of signatures
-func ReadColumnYs(sigs []*[]PublishSignatureBytes, column int) []kyber.Point {
+func ReadColumnYs(sigs []*[]libdrynx.PublishSignatureBytes, column int) []kyber.Point {
 	sigiY := make([]kyber.Point, len(sigs))
 	for j := range sigs {
 		sigiY[j] = (*sigs[j])[column].Public

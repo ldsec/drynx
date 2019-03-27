@@ -155,7 +155,7 @@ func (p *ShufflingLocalProtocol) Dispatch() error {
 			wg.Done()
 
 			pi := p.MapPIs["shuffle/"+p.ServerIdentity().String()]
-			pi.(*ProofCollectionProtocol).Proof = libdrynx.ProofRequest{ShuffleProof: libdrynx.NewShuffleProofRequest(&proof, p.Query.SurveyID, p.ServerIdentity().String(), "", p.Query.Query.RosterVNs, p.Private(), nil)}
+			pi.(*ProofCollectionProtocol).Proof = drynxproof.ProofRequest{ShuffleProof: libdrynx.NewShuffleProofRequest(&proof, p.Query.SurveyID, p.ServerIdentity().String(), "", p.Query.Query.RosterVNs, p.Private(), nil)}
 			go pi.Dispatch()
 			go pi.Start()
 			<-pi.(*ProofCollectionProtocol).FeedbackChannel

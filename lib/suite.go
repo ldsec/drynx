@@ -10,3 +10,8 @@ func init() {
 	cothority.Suite = bn256.NewSuiteG1()
 	libunlynx.SuiTe = bn256.NewSuiteG1()
 }
+
+// CurvePairingTest test the type of the curve.
+func CurvePairingTest() bool {
+	return libunlynx.SuiTe.String() == "bn256.G1"
+}

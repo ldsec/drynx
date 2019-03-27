@@ -11,6 +11,7 @@ import (
 	"github.com/dedis/onet/network"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/drynx/lib/proof"
 	"github.com/lca1/drynx/protocols"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/aggregation"
@@ -509,7 +510,7 @@ func (s *ServiceDrynx) NewCollectiveAggregationProtocol(tn *onet.TreeNodeInstanc
 			}
 
 			pi := survey.MapPIs["aggregation/"+s.ServerIdentity().String()]
-			pi.(*protocols.ProofCollectionProtocol).Proof = libdrynx.ProofRequest{AggregationProof: libdrynx.NewAggregationProofRequest(&aggrLocalProof, target, s.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, tn.Private(), nil)}
+			pi.(*protocols.ProofCollectionProtocol).Proof = drynxproof.ProofRequest{AggregationProof: drynxproof.NewAggregationProofRequest(&aggrLocalProof, target, s.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, tn.Private(), nil)}
 			go pi.Dispatch()
 			go pi.Start()
 			<-pi.(*protocols.ProofCollectionProtocol).FeedbackChannel
@@ -538,7 +539,7 @@ func (s *ServiceDrynx) NewKeySwitchingProtocol(tn *onet.TreeNodeInstance, target
 		go func() {
 			proof := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, ks2s, rBNegs, vis)
 			pcp := keySwitch.MapPIs["keyswitch/"+keySwitch.ServerIdentity().String()]
-			pcp.(*protocols.ProofCollectionProtocol).Proof = libdrynx.ProofRequest{KeySwitchProof: libdrynx.NewKeySwitchProofRequest(&proof, survey.SurveyQuery.SurveyID, keySwitch.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, keySwitch.Private(), nil)}
+			pcp.(*protocols.ProofCollectionProtocol).Proof = drynxproof.ProofRequest{KeySwitchProof: drynxproof.NewKeySwitchProofRequest(&proof, survey.SurveyQuery.SurveyID, keySwitch.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, keySwitch.Private(), nil)}
 			go pcp.Dispatch()
 			go pcp.Start()
 			<-pcp.(*protocols.ProofCollectionProtocol).FeedbackChannel
@@ -580,7 +581,7 @@ func (s *ServiceDrynx) NewShufflingProtocol(tn *onet.TreeNodeInstance, survey Su
 		go func() {
 			proof := libunlynxshuffle.ShuffleProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
 			pcp := shuffle.MapPIs["shuffle/"+shuffle.ServerIdentity().String()]
-			pcp.(*protocols.ProofCollectionProtocol).Proof = libdrynx.ProofRequest{ShuffleProof: libdrynx.NewShuffleProofRequest(&proof, survey.SurveyQuery.SurveyID, shuffle.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, shuffle.Private(), nil)}
+			pcp.(*protocols.ProofCollectionProtocol).Proof = drynxproof.ProofRequest{ShuffleProof: drynxproof.NewShuffleProofRequest(&proof, survey.SurveyQuery.SurveyID, shuffle.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, shuffle.Private(), nil)}
 			go pcp.Dispatch()
 			go pcp.Start()
 			<-pcp.(*protocols.ProofCollectionProtocol).FeedbackChannel

@@ -8,6 +8,8 @@ package protocols
 
 import (
 	"errors"
+	"github.com/lca1/drynx/lib/obfuscation"
+	"github.com/lca1/drynx/lib/proof"
 
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/random"
@@ -238,9 +240,9 @@ func (p *ObfuscationProtocol) ascendingObfuscationPhase() libunlynx.CipherVector
 
 	if p.Proofs == 1 {
 		go func() {
-			proof := libdrynx.ObfuscationListProofCreation(proofsCs, proofsCos, proofsSs)
+			proof := libdrynxobfuscation.ObfuscationListProofCreation(proofsCs, proofsCos, proofsSs)
 			pi := p.MapPIs["obfuscation/"+p.ServerIdentity().String()]
-			pi.(*ProofCollectionProtocol).Proof = libdrynx.ProofRequest{ObfuscationProof: libdrynx.NewObfuscationProofRequest(&proof, p.Query.SurveyID, p.ServerIdentity().String(), "", p.Query.Query.RosterVNs, p.Private(), nil)}
+			pi.(*ProofCollectionProtocol).Proof = drynxproof.ProofRequest{ObfuscationProof: drynxproof.NewObfuscationProofRequest(&proof, p.Query.SurveyID, p.ServerIdentity().String(), "", p.Query.Query.RosterVNs, p.Private(), nil)}
 
 			go pi.Dispatch()
 			go pi.Start()

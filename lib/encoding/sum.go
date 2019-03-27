@@ -1,8 +1,9 @@
-package encoding
+package libdrynxencoding
 
 import (
 	"github.com/dedis/kyber"
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
 )
 
@@ -13,7 +14,7 @@ func EncodeSum(input []int64, pubKey kyber.Point) (*libunlynx.CipherText, []int6
 }
 
 // EncodeSumWithProofs computes the sum of query results with the proof of range
-func EncodeSumWithProofs(input []int64, pubKey kyber.Point, sigs []libdrynx.PublishSignature, l int64, u int64) (*libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
+func EncodeSumWithProofs(input []int64, pubKey kyber.Point, sigs []libdrynx.PublishSignature, l int64, u int64) (*libunlynx.CipherText, []int64, []libdrynxrange.CreateProof) {
 	//sum the local DP's query results
 	sum := int64(0)
 	for _, el := range input {
@@ -26,9 +27,9 @@ func EncodeSumWithProofs(input []int64, pubKey kyber.Point, sigs []libdrynx.Publ
 		return sumEncrypted, []int64{sum}, nil
 	}
 	//input range validation proof
-	cp := libdrynx.CreateProof{Sigs: sigs, U: u, L: l, Secret: sum, R: r, CaPub: pubKey, Cipher: *sumEncrypted}
+	cp := libdrynxrange.CreateProof{Sigs: sigs, U: u, L: l, Secret: sum, R: r, CaPub: pubKey, Cipher: *sumEncrypted}
 
-	return sumEncrypted, []int64{sum}, []libdrynx.CreateProof{cp}
+	return sumEncrypted, []int64{sum}, []libdrynxrange.CreateProof{cp}
 }
 
 // DecodeSum computes the sum of local DP's query results

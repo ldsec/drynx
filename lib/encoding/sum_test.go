@@ -1,10 +1,11 @@
-package encoding_test
+package libdrynxencoding_test
 
 import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/key"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -23,8 +24,8 @@ func TestEncodeDecodeSum(t *testing.T) {
 		expect += el
 	}
 	//function call
-	resultEncrypted, _ := encoding.EncodeSum(inputValues, pubKey)
-	result := encoding.DecodeSum(*resultEncrypted, secKey)
+	resultEncrypted, _ := libdrynxencoding.EncodeSum(inputValues, pubKey)
+	result := libdrynxencoding.DecodeSum(*resultEncrypted, secKey)
 
 	assert.Equal(t, expect, result)
 }
@@ -45,12 +46,12 @@ func TestEncodeDecodeSumWithProofs(t *testing.T) {
 	//signatures needed to check the proof
 	u := int64(2)
 	l := int64(6)
-	ps := []libdrynx.PublishSignature{libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u))}
+	ps := []libdrynx.PublishSignature{libdrynxrange.PublishSignatureBytesToPublishSignatures(libdrynxrange.InitRangeProofSignature(u))}
 
 	//function call
-	resultEncrypted, _, prf := encoding.EncodeSumWithProofs(inputValues, pubKey, ps, l, u)
-	result := encoding.DecodeSum(*resultEncrypted, secKey)
+	resultEncrypted, _, prf := libdrynxencoding.EncodeSumWithProofs(inputValues, pubKey, ps, l, u)
+	result := libdrynxencoding.DecodeSum(*resultEncrypted, secKey)
 
-	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[0]), u, l, []kyber.Point{ps[0].Public}, pubKey))
+	assert.True(t, libdrynxrange.RangeProofVerification(libdrynxrange.CreatePredicateRangeProofForAllServ(prf[0]), u, l, []kyber.Point{ps[0].Public}, pubKey))
 	assert.Equal(t, expect, result)
 }

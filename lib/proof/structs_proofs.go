@@ -1,4 +1,4 @@
-package libdrynx
+package drynxproof
 
 import (
 	"errors"
@@ -9,12 +9,22 @@ import (
 	"github.com/dedis/onet"
 	"github.com/dedis/onet/log"
 	"github.com/dedis/onet/network"
+	"github.com/lca1/drynx/lib"
+	"github.com/lca1/drynx/lib/obfuscation"
+	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
 	"github.com/lca1/unlynx/lib/aggregation"
 	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/lib/shuffle"
 	"math/rand"
 )
+
+const proofFalse = int64(0)
+
+// ProofTrue is the constant used to indicate that a proof is true in the bitmap
+const ProofTrue = int64(1)
+const proofReceived = int64(2)
+const proofFalseSign = int64(4)
 
 //----------------------------------------------------------------------------------------------------------------------
 // PROOFs' Structs
@@ -97,7 +107,7 @@ type KeySwitchProofRequest struct {
 //______________________________________________________________________________________________________________________
 
 // NewRangeProofRequest creates a RangeProofRequest to be used in the ProofsCollectionProtocol
-func NewRangeProofRequest(proof *RangeProofList, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *RangeProofRequest {
+func NewRangeProofRequest(proof *libdrynxrange.RangeProofList, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *RangeProofRequest {
 	proofBytes := proof.ToBytes()
 	dataToSend, err := network.Marshal(&proofBytes)
 	if err != nil {
@@ -122,7 +132,7 @@ func NewRangeProofRequest(proof *RangeProofList, ID, senderID, differInfo string
 }
 
 // VerifyProof (RangeProofRequest) checks the correctness of the signature and verifies a list of range proofs
-func (rpr *RangeProofRequest) VerifyProof(source network.ServerIdentity, sq SurveyQuery) (int64, error) {
+func (rpr *RangeProofRequest) VerifyProof(source network.ServerIdentity, sq libdrynx.SurveyQuery) (int64, error) {
 	log.Lvl2("VN", source.String(), "handles range proof")
 	//time := libunlynx.StartTimer(source.String() + "_VerifyRange")
 
@@ -146,7 +156,7 @@ func (rpr *RangeProofRequest) VerifyProof(source network.ServerIdentity, sq Surv
 	return verif, err
 }
 
-func verifyRangeProofList(data []byte, sample float64, ranges []*[]int64, psb []*[]PublishSignatureBytes, p kyber.Point, verifThresold float64) int64 {
+func verifyRangeProofList(data []byte, sample float64, ranges []*[]int64, psb []*[]libdrynx.PublishSignatureBytes, p kyber.Point, verifThresold float64) int64 {
 	bmInt := proofReceived
 	rando := rand.Float64()
 	if rando <= sample {
@@ -156,9 +166,9 @@ func verifyRangeProofList(data []byte, sample float64, ranges []*[]int64, psb []
 			log.Fatal("Error unmarshalling RangeProofBytes message")
 		}
 
-		toVerify := &RangeProofList{}
-		toVerify.FromBytes(*proofs.(*RangeProofListBytes))
-		result := RangeProofListVerification(*toVerify, ranges, psb, p, verifThresold)
+		toVerify := &libdrynxrange.RangeProofList{}
+		toVerify.FromBytes(*proofs.(*libdrynxrange.RangeProofListBytes))
+		result := libdrynxrange.RangeProofListVerification(*toVerify, ranges, psb, p, verifThresold)
 		if result {
 			bmInt = ProofTrue
 		} else {
@@ -200,7 +210,7 @@ func NewAggregationProofRequest(proofs *libunlynxaggr.PublishedAggregationListPr
 }
 
 // VerifyProof (AggregationProofRequest) checks the correctness of the signature and verifies an aggregation proof
-func (apr *AggregationProofRequest) VerifyProof(source network.ServerIdentity, sq SurveyQuery) (int64, error) {
+func (apr *AggregationProofRequest) VerifyProof(source network.ServerIdentity, sq libdrynx.SurveyQuery) (int64, error) {
 	log.Lvl2("VN", source.String(), "handles aggregation proof")
 	//time := libunlynx.StartTimer(source.String() + "_VerifyAggregation")
 
@@ -252,7 +262,7 @@ func verifyAggregation(data []byte, insideProofThresold, sample float64) int64 {
 //______________________________________________________________________________________________________________________
 
 // NewObfuscationProofRequest creates a AggregationProofRequest to be used in the ProofsCollectionProtocol
-func NewObfuscationProofRequest(proof *PublishedListObfuscationProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *ObfuscationProofRequest {
+func NewObfuscationProofRequest(proof *libdrynxobfuscation.PublishedListObfuscationProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *ObfuscationProofRequest {
 	proofBytes := proof.ToBytes()
 	dataToSend, err := network.Marshal(&proofBytes)
 	if err != nil {
@@ -277,7 +287,7 @@ func NewObfuscationProofRequest(proof *PublishedListObfuscationProof, ID, sender
 }
 
 // VerifyProof (ObfuscationProofRequest) checks the correctness of the signature and verifies an aggregation proof
-func (apr *ObfuscationProofRequest) VerifyProof(source network.ServerIdentity, sq SurveyQuery) (int64, error) {
+func (apr *ObfuscationProofRequest) VerifyProof(source network.ServerIdentity, sq libdrynx.SurveyQuery) (int64, error) {
 	log.Lvl2("VN", source.String(), "handles obfuscation proof")
 	//time := libunlynx.StartTimer(source.String() + "_VerifyObfuscation")
 
@@ -306,13 +316,13 @@ func verifyObfuscation(data []byte, insideProofThresold, sample float64) int64 {
 	bmInt := proofReceived
 	if rand.Float64() <= sample {
 		_, proof, err := network.Unmarshal(data, libunlynx.SuiTe)
-		toVerify := &PublishedListObfuscationProof{}
-		toVerify.FromBytes(*proof.(*PublishedListObfuscationProofBytes))
+		toVerify := &libdrynxobfuscation.PublishedListObfuscationProof{}
+		toVerify.FromBytes(*proof.(*libdrynxobfuscation.PublishedListObfuscationProofBytes))
 		if err != nil {
 			log.Fatal("Error in unmarshalling data from Obfuscation request ", err)
 		}
 
-		result := ObfuscationListProofVerification(*toVerify, insideProofThresold)
+		result := libdrynxobfuscation.ObfuscationListProofVerification(*toVerify, insideProofThresold)
 		if result {
 			bmInt = ProofTrue
 		} else {
@@ -353,7 +363,7 @@ func NewShuffleProofRequest(proof *libunlynxshuffle.PublishedShufflingProof, ID,
 }
 
 // VerifyProof (ShuffleProofRequest) checks the correctness of the signature and verifies a shuffle proof
-func (spr *ShuffleProofRequest) VerifyProof(source network.ServerIdentity, sq SurveyQuery) (int64, error) {
+func (spr *ShuffleProofRequest) VerifyProof(source network.ServerIdentity, sq libdrynx.SurveyQuery) (int64, error) {
 	log.Lvl2("VN", source.String(), "handles shuffle proof")
 	//time := libunlynx.StartTimer(source.String() + "_VerifyShuffle")
 
@@ -431,7 +441,7 @@ func NewKeySwitchProofRequest(proof *libunlynxkeyswitch.PublishedKSListProof, ID
 }
 
 // VerifyProof (KeySwitchProofRequest) checks the correctness of the signature and verifies a key switch proof
-func (kpr *KeySwitchProofRequest) VerifyProof(source network.ServerIdentity, sq SurveyQuery) (int64, error) {
+func (kpr *KeySwitchProofRequest) VerifyProof(source network.ServerIdentity, sq libdrynx.SurveyQuery) (int64, error) {
 	log.Lvl2("VN", source.String(), "handles key switch proof")
 	//timeRange := libunlynx.StartTimer(source.String() + "_VerifyKeySwitch")
 

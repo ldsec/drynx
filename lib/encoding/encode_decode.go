@@ -1,24 +1,25 @@
-package encoding
+package libdrynxencoding
 
 import (
 	"github.com/dedis/kyber"
 	"github.com/dedis/onet/log"
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
 )
 
 // Encode takes care of computing the query result and encode it for all possible operations.
-func Encode(datas [][]int64, pubKey kyber.Point, signatures [][]libdrynx.PublishSignature, ranges []*[]int64, operation libdrynx.Operation) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
+func Encode(datas [][]int64, pubKey kyber.Point, signatures [][]libdrynx.PublishSignature, ranges []*[]int64, operation libdrynx.Operation) ([]libunlynx.CipherText, []int64, []libdrynxrange.CreateProof) {
 
-	clearResponse := []int64{}
-	encryptedResponse := []libunlynx.CipherText{}
-	createPrf := []libdrynx.CreateProof{}
+	clearResponse := make([]int64, 0)
+	encryptedResponse := make([]libunlynx.CipherText, 0)
+	createPrf := make([]libdrynxrange.CreateProof, 0)
 	withProofs := len(ranges) > 0 && len(signatures) > 0
 
 	switch operation.NameOp {
 	case "sum":
 		tmpEncryptedResponse := &libunlynx.CipherText{}
-		tmpPrfs := []libdrynx.CreateProof{}
+		tmpPrfs := make([]libdrynxrange.CreateProof, 0)
 		if withProofs {
 			tmpEncryptedResponse, clearResponse, tmpPrfs = EncodeSumWithProofs(datas[0], pubKey, signatures[0], (*ranges[0])[1], (*ranges[0])[0])
 		} else {
@@ -87,9 +88,9 @@ func Encode(datas [][]int64, pubKey kyber.Point, signatures [][]libdrynx.Publish
 		clear := int64(0)
 
 		if withProofs {
-			prf := libdrynx.CreateProof{}
+			prf := libdrynxrange.CreateProof{}
 			cipher, clear, prf = EncodeBitANDWithProof(booleanBit, pubKey, signatures[0], (*ranges[0])[1], (*ranges[0])[0])
-			createPrf = []libdrynx.CreateProof{prf}
+			createPrf = []libdrynxrange.CreateProof{prf}
 		} else {
 			cipher, clear = EncodeBitAND(booleanBit, pubKey)
 		}
@@ -106,9 +107,9 @@ func Encode(datas [][]int64, pubKey kyber.Point, signatures [][]libdrynx.Publish
 		clear := int64(0)
 
 		if withProofs {
-			prf := libdrynx.CreateProof{}
+			prf := libdrynxrange.CreateProof{}
 			cipher, clear, prf = EncodeBitOrWithProof(booleanBit, pubKey, signatures[0], (*ranges[0])[1], (*ranges[0])[0])
-			createPrf = []libdrynx.CreateProof{prf}
+			createPrf = []libdrynxrange.CreateProof{prf}
 		} else {
 			cipher, clear = EncodeBitOr(booleanBit, pubKey)
 		}
@@ -229,11 +230,11 @@ func Decode(ciphers []libunlynx.CipherText, secKey kyber.Scalar, operation libdr
 
 // EncodeForFloat encodes floating points
 func EncodeForFloat(datas [][]float64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point,
-	signatures [][]libdrynx.PublishSignature, ranges []*[]int64, operation string) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
+	signatures [][]libdrynx.PublishSignature, ranges []*[]int64, operation string) ([]libunlynx.CipherText, []int64, []libdrynxrange.CreateProof) {
 
 	clearResponse := make([]int64, 0)
 	encryptedResponse := make([]libunlynx.CipherText, 0)
-	prf := make([]libdrynx.CreateProof, 0)
+	prf := make([]libdrynxrange.CreateProof, 0)
 	withProofs := len(ranges) > 0
 
 	switch operation {

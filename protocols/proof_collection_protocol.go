@@ -1,6 +1,7 @@
 package protocols
 
 import (
+	"github.com/lca1/drynx/lib/proof"
 	"sync"
 
 	"github.com/btcsuite/goleveldb/leveldb/errors"
@@ -29,7 +30,7 @@ func init() {
 
 // AnnouncementPCMessage message sent (with the query) to trigger a proof collection protocol.
 type AnnouncementPCMessage struct {
-	Proof libdrynx.ProofRequest
+	Proof drynxproof.ProofRequest
 }
 
 // ProofCollectionMessage message is used to signal root node that the proof was processed by all verifying nodes
@@ -105,7 +106,7 @@ type ProofCollectionProtocol struct {
 	SharedBMChannelToTerminate chan struct{}
 
 	// proof statement
-	Proof libdrynx.ProofRequest // the proof must be sent to each node before the protocol can start
+	Proof drynxproof.ProofRequest // the proof must be sent to each node before the protocol can start
 
 	// query statement
 	SQ libdrynx.SurveyQuery
