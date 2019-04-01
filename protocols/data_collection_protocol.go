@@ -2,24 +2,20 @@ package protocols
 
 import (
 	"errors"
-	"github.com/lca1/drynx/lib/proof"
-	"github.com/lca1/drynx/lib/range"
-	"github.com/lca1/unlynx/services/default/data"
-
 	"fmt"
-
-	"math/rand"
-
-	"sync"
-
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/pairing/bn256"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/network"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/drynx/lib/proof"
+	"github.com/lca1/drynx/lib/range"
+	"github.com/lca1/unlynx/data"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/pairing/bn256"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
+	"math/rand"
+	"sync"
 )
 
 // DataCollectionProtocolName is the registered name for the data provider protocol.

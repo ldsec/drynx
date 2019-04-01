@@ -1,13 +1,19 @@
 language: go
+
 go:
-- 1.x
+  - 1.x
+
+env:
+  - GO111MODULE=on
+
 install:
-- go get -t ./...
-- go get golang.org/x/tools/cmd/cover
-- go get github.com/mattn/goveralls
+  - go get -t ./...
+
 script:
-- make test
+  - make test
+
 after_success:
-- $GOPATH/bin/goveralls -coverprofile=profile.cov -service=travis-ci
+  - $GOPATH/bin/goveralls -coverprofile=profile.cov -service=travis-ci
+
 notifications:
   email: false

@@ -1,10 +1,10 @@
 package drynxdata
 
 import (
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/pairing/bn256"
-	"github.com/dedis/kyber/util/random"
-	"github.com/dedis/onet"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/pairing/bn256"
+	"go.dedis.ch/kyber/v3/util/random"
+	"go.dedis.ch/onet/v3"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/obfuscation"
 	"github.com/lca1/drynx/lib/range"

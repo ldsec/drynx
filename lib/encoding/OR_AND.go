@@ -1,11 +1,11 @@
 package libdrynxencoding
 
 import (
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/util/random"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/random"
 )
 
 //d in this case is (modulus - 2 = 2^255 - 19 - 2 = 2^255 - 21)

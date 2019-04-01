@@ -4,12 +4,12 @@ package protocols_test
 	"testing"
 	"time"
 
-	"github.com/dedis/kyber"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/network"
 	"github.com/lca1/drynx/protocols"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
 )
 
 var nbrNodesLoc = 5
@@ -111,7 +111,7 @@ func NewShufflingLocalTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, e
 	log.Lvl2("Data before shuffling ", mapi)
 
 	pi, err := protocols.NewShufflingLocalProtocol(tni)
-	log.LLvl2(err)
+	log.Lvl2(err)
 	protocol := pi.(*protocols.ShufflingLocalProtocol)
 	protocol.CollectiveKey = groupPubLoc
 	protocol.Precomputed = precomputesLoc[tni.Index()]

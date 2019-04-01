@@ -3,12 +3,6 @@ package services
 import (
 	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/coreos/bbolt"
-	"github.com/dedis/cothority/skipchain"
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/util/random"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/network"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/proof"
@@ -20,6 +14,12 @@ import (
 	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols"
+	"go.dedis.ch/cothority/v3/skipchain"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/random"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
 	"sync"
 	"time"
 )
@@ -34,7 +34,7 @@ type Survey struct {
 	SurveyQuery        libdrynx.SurveyQuery
 	QueryResponseState libdrynx.ResponseAllDPs // QueryResponse keeps track of the response from the data providers, the aggregated data, and the final results
 	Noises             libunlynx.CipherVector
-	ShufflePrecompute  []libunlynx.CipherVectorScalar
+	ShufflePrecompute  []libunlynxshuffle.CipherVectorScalar
 	MapPIs             map[string]onet.ProtocolInstance
 
 	// channels

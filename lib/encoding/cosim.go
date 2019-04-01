@@ -1,10 +1,10 @@
 package libdrynxencoding
 
 import (
-	"github.com/dedis/kyber"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3"
 	"math"
 )
 

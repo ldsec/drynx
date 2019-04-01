@@ -2,11 +2,11 @@
 # Drynx
 Drynx is a library for simulating a privacy-preserving and verifiable data sharing/querying tool. It offers a series of independent protocols that when combined offer a verifiably-secure and safe way to compute statistics and train basic machine learning models on distributed sensitive data (e.g., medical data).
 
-Drynx is developed by lca1 (Laboratory for Communications and Applications in EPFL) in collaboration with DeDiS (Laboratory for Decentralized and Distributed Systems). It is build on the [UnLynx library](https://github.com/lca1/unlynx) and does an intensive use of [Overlay-network (ONet) library](https://github.com/dedis/onet) and of the [Advanced Crypto (kyber) library](https://github.com/dedis/kyber).
+Drynx is developed by lca1 (Laboratory for Communications and Applications in EPFL) in collaboration with DeDiS (Laboratory for Decentralized and Distributed Systems). It is build on the [UnLynx library](https://github.com/lca1/unlynx) and does an intensive use of [Overlay-network (ONet) library](https://go.dedis.ch/onet/v3) and of the [Advanced Crypto (kyber) library](https://go.dedis.ch/kyber/v3).
 
 ## Documentation
 
-* For more information regarding the underlying architecture please refer to the stable version of ONet `github.com/dedis/onet`
+* For more information regarding the underlying architecture please refer to the stable version of ONet `go.dedis.ch/onet/v3`
 * To check the code organisation, have a look at [Layout](https://github.com/lca1/drynx/wiki/Layout)
 * For more information on how to run our protocols, services, simulations and apps, go to [Running Drynx](https://github.com/lca1/drynx/wiki/Running-Drynx)
 
@@ -24,7 +24,7 @@ To use the code of this repository you need to:
 
 ## Version
 
-The version in the `master`-branch is stable for simulation and test purposes and has no incompatible changes.
+We only have a development version. The `master`-branch in `github.com/lca1/drynx` is the development version that works but can have incompatible changes.
 
 ## License
 

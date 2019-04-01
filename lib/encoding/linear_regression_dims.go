@@ -3,11 +3,11 @@ package libdrynxencoding
 import (
 	"github.com/alex-ant/gomath/gaussian-elimination"
 	"github.com/alex-ant/gomath/rational"
-	"github.com/dedis/kyber"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
 	"github.com/tonestuff/quadratic"
+	"go.dedis.ch/kyber/v3"
 )
 
 //EncodeLinearRegressionDims implements a d-dimensional linear regression algorithm on the query results

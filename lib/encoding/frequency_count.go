@@ -1,10 +1,10 @@
 package libdrynxencoding
 
 import (
-	"github.com/dedis/kyber"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3"
 )
 
 //EncodeFreqCount computes the frequency count of query results
@@ -42,7 +42,7 @@ func EncodeFreqCountWithProofs(input []int64, min int64, max int64, pubKey kyber
 	libunlynx.EndParallelize(wg)
 
 	if sigs == nil {
-		return ciphertextTuples, []int64{0}, nil
+		return ciphertextTuples, freqcount, nil
 	}
 
 	createRangeProof := make([]libdrynxrange.CreateProof, len(freqcount))
@@ -55,7 +55,7 @@ func EncodeFreqCountWithProofs(input []int64, min int64, max int64, pubKey kyber
 		}(i, v)
 	}
 	libunlynx.EndParallelize(wg1)
-	return ciphertextTuples, []int64{0}, createRangeProof
+	return ciphertextTuples, freqcount, createRangeProof
 }
 
 //DecodeFreqCount computes the frequency count of local DP's query results
