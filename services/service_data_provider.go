@@ -13,7 +13,6 @@ import (
 
 // HandleSurveyQueryToDP handles the reception of a query at a DP
 func (s *ServiceDrynx) HandleSurveyQueryToDP(recq *libdrynx.SurveyQueryToDP) (network.Message, error) {
-
 	recq.SQ.Query.IVSigs.InputValidationSigs = recreateRangeSignatures(recq.SQ.Query.IVSigs)
 	// only generate ProofCollection protocol instances if proofs is enabled
 	var mapPIs map[string]onet.ProtocolInstance

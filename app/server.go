@@ -2,16 +2,24 @@ package main
 
 import (
 	"github.com/dedis/onet/app"
+	"github.com/dedis/onet/log"
 	"gopkg.in/urfave/cli.v1"
-	// Empty imports to have the init-functions called which should
-	// register the protocol
-	_ "github.com/lca1/unlynx/protocols"
-	_ "github.com/lca1/unlynx/services/default"
+	"os"
 )
 
-func runServer(ctx *cli.Context) error {
+func runServer(ctx *cli.Context) {
 	// first check the options
-	config := ctx.String("config")
-	app.RunServer(config)
-	return nil
+	configFilename := ctx.String("config")
+	dbPath := ctx.String("database")
+	tableName := ctx.String("table")
+
+	if _, err := os.Stat(configFilename); os.IsNotExist(err) {
+		log.Fatalf("[-] Configuration file does not exist. %s", configFilename)
+	}
+	// Let's read the config
+	_, server, err := app.ParseCothority(configFilename)
+	if err != nil {log.Fatal("Couldn't parse config:", err)}
+	server.ServerIdentity.Description= dbPath + "," + tableName
+	server.Start()
+	return
 }

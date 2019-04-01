@@ -84,6 +84,10 @@ type DataCollectionProtocol struct {
 
 	// Protocol proof data
 	MapPIs map[string]onet.ProtocolInstance
+
+	//Path of the DP's database along with the table name
+	DBPath string
+	TableName string
 }
 
 // NewDataCollectionProtocol constructs a DataCollection protocol instance.
@@ -254,7 +258,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 			} else if p.Survey.Query.DPDataGen.Source == 1 {
 				startDB := time.Now()
 				// fetch data from db
-				dpData = fetchDataFromDB(p.Survey.Query.Operation)
+				dpData = fetchDataFromDB(p.Survey.Query.Operation, p.DBPath, p.TableName)
 				log.LLvl1("Actual DB fetch took", time.Since(startDB))
 			}
 
@@ -364,17 +368,19 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 }
 
 // fetchDataFromDB fetches the DPs' data from their databases
-func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
+func fetchDataFromDB(operation libdrynx.Operation, dbLocation string, tableName string) [][]int64 {
 	scriptFetchDataDB := "fetchDPData.py"
 	//tableName1 := "Records"
 	//dbLocation1 := "Client.db"
-	tableName2 := "Prescriptions"
-	dbLocation2 := "MedicalDispensation.db"
+	//tableName2 := "Prescriptions"
+	//dbLocation2 := "MedicalDispensation.db"
+
+	log.LLvl1(dbLocation)
 
 	if operation.NameOp == "lin_reg" {
 		//Send "true" as an argument if the operation in question is linear regression
 		//QueryMin and QueryMax are not useful in this case
-		cmd := exec.Command("python3", scriptFetchDataDB, dbLocation2, tableName2, "true", operation.Attributes)
+		cmd := exec.Command("python3", scriptFetchDataDB, dbLocation, tableName, "true", operation.Attributes)
 
 		out, err := cmd.Output()
 		if err != nil {println(err.Error())}
@@ -402,7 +408,7 @@ func fetchDataFromDB(operation libdrynx.Operation) [][]int64 {
 		return tab
 	} else {
 		//Send "false" as an argument if the operation in question is not linear regression
-		cmd := exec.Command("python3", scriptFetchDataDB, dbLocation2, tableName2, "false", operation.Attributes,
+		cmd := exec.Command("python3", scriptFetchDataDB, dbLocation, tableName, "false", operation.Attributes,
 			strconv.FormatInt(operation.QueryMin, 10), strconv.FormatInt(operation.QueryMax, 10))
 
 		out, err := cmd.Output()

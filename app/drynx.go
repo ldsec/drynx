@@ -20,6 +20,14 @@ const (
 	optionConfig      = "config"
 	optionConfigShort = "c"
 
+	//Path of the database where the data is stored at DPs
+	optionDatabasePath = "database"
+	optionDatabasePathShort = "db"
+
+	//Name of the specific table in the DPs' databases where data is stored
+	optionTableName = "table"
+	optionTableNameShort = "tb"
+
 	optionOperation      = "operation"
 	optionOperationShort = "o"
 
@@ -94,6 +102,16 @@ func main() {
 		cli.StringFlag{
 			Name:  optionConfig + ", " + optionConfigShort,
 			Usage: "Configuration file of the server",
+		},
+
+		cli.StringFlag{
+			Name:  optionDatabasePath + ", " + optionDatabasePathShort,
+			Usage: "Path of the database where the data is stored at DPs",
+		},
+
+		cli.StringFlag{
+			Name:  optionTableName + ", " + optionTableNameShort,
+			Usage: "name of specific table in database",
 		},
 	}
 

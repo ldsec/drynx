@@ -15,6 +15,7 @@ import (
 	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/lib/tools"
 	"github.com/lca1/unlynx/protocols"
+	"strings"
 	"sync"
 	"time"
 )
@@ -54,6 +55,10 @@ type DPqueryReceived struct {
 	SurveyID string
 }
 
+type DPDBPath struct {
+	DBPath string
+}
+
 // SyncDCP used to synchronize the computing nodes
 type SyncDCP struct {
 	SurveyID string
@@ -79,6 +84,7 @@ type ServiceDrynx struct {
 	Request *concurrent.ConcurrentMap
 	//the name of DB and the DB in itself is dedicated to the server.
 	DBPath string
+	DBPathDP DPDBPath
 	DB     *bbolt.DB
 	//To make everything thread safe (database access and updating parameters)
 	Mutex *sync.Mutex
@@ -96,6 +102,7 @@ type MsgTypes struct {
 	msgDPqueryReceived network.MessageTypeID
 	msgSyncDCP         network.MessageTypeID
 	msgDPdataFinished  network.MessageTypeID
+	msgDBPathDP 	   network.MessageTypeID
 }
 
 var msgTypes = MsgTypes{}
@@ -130,6 +137,7 @@ func NewService(c *onet.Context) (onet.Service, error) {
 		Mutex:            &sync.Mutex{},
 	}
 	var cerr error
+
 	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleSurveyQuery); cerr != nil {
 		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
 	}
@@ -438,6 +446,10 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 			}
 			dataCollectionProtocol.Survey = queryStatement
 			dataCollectionProtocol.MapPIs = survey.MapPIs
+			databaseCharacteristics := strings.Split(s.ServerIdentity().Description, ",")
+			dbPath, tableName := databaseCharacteristics[0], databaseCharacteristics[1]
+			dataCollectionProtocol.DBPath = dbPath
+			dataCollectionProtocol.TableName = tableName
 		}
 		return pi, nil
 

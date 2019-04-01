@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"github.com/dedis/kyber"
 	"github.com/dedis/kyber/util/key"
 	"github.com/dedis/onet"
@@ -49,7 +48,6 @@ func NewDrynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 	return newClient
 }
 
-
 // how to repartition the DPs: each server as a list of data providers
 func RepartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []int64) map[string]*[]network.ServerIdentity {
 	if len(dpRepartition) > len(elServers.List) {
@@ -76,7 +74,7 @@ func RepartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 func PerformanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, means []float64,
 	standardDeviations []float64) (float64,
 	float64, float64, float64, float64) {
-	fmt.Println("weights:", weights)
+	log.LLvl1("weights:", weights)
 
 	if means != nil && standardDeviations != nil &&
 		len(means) > 0 && len(standardDeviations) > 0 {
@@ -102,11 +100,11 @@ func PerformanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, 
 	fscore := encoding.Fscore(predictions, yTest)
 	auc := encoding.AreaUnderCurve(predictionsFloat, yTest)
 
-	fmt.Println("accuracy: ", accuracy)
-	fmt.Println("precision:", precision)
-	fmt.Println("recall:   ", recall)
-	fmt.Println("F-score:  ", fscore)
-	fmt.Println("AUC:      ", auc)
+	log.LLvl1("accuracy: ", accuracy)
+	log.LLvl1("precision:", precision)
+	log.LLvl1("recall:   ", recall)
+	log.LLvl1("F-score:  ", fscore)
+	log.LLvl1("AUC:      ", auc)
 	return accuracy, precision, recall, fscore, auc
 }
 
