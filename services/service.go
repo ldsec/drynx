@@ -504,9 +504,9 @@ func (s *ServiceDrynx) NewCollectiveAggregationProtocol(tn *onet.TreeNodeInstanc
 			cvMap := make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
 			survey.QueryResponseState.FormatAggregationProofs(cvMap)
 			aggrLocalProof := libunlynxaggr.PublishedAggregationListProof{}
-			aggrLocalProof.PapList = make([]libunlynxaggr.PublishedAggregationProof, 0)
+			aggrLocalProof.List = make([]libunlynxaggr.PublishedAggregationProof, 0)
 			for k, v := range cvMap {
-				aggrLocalProof.PapList = append(aggrLocalProof.PapList, libunlynxaggr.AggregationListProofCreation(v, groupedData[k].AggregatingAttributes).PapList...)
+				aggrLocalProof.List = append(aggrLocalProof.List, libunlynxaggr.AggregationListProofCreation(v, groupedData[k].AggregatingAttributes).List...)
 			}
 
 			pi := survey.MapPIs["aggregation/"+s.ServerIdentity().String()]
