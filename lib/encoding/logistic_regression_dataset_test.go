@@ -1,8 +1,6 @@
 package libdrynxencoding_test
 
 import (
-	"math"
-	"testing"
 	"fmt"
 	"github.com/cdipaolo/goml/base"
 	"github.com/cdipaolo/goml/linear"
@@ -11,6 +9,8 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/key"
 	"go.dedis.ch/onet/v3/log"
+	"math"
+	"testing"
 )
 
 type MinimisationParameters struct {

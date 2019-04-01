@@ -1,10 +1,10 @@
 package libdrynxobfuscation_test
 
 import (
-	"go.dedis.ch/kyber/v3/util/key"
 	"github.com/lca1/drynx/lib/obfuscation"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v3/util/key"
 	"testing"
 )
 

@@ -2,7 +2,6 @@ package drynxproof
 
 import (
 	"errors"
-	"math/rand"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/obfuscation"
 	"github.com/lca1/drynx/lib/range"
@@ -17,6 +16,7 @@ import (
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
+	"math/rand"
 )
 
 const proofFalse = int64(0)
