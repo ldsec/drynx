@@ -69,8 +69,8 @@ func TestServiceDrynx(t *testing.T) {
 
 	//------SET PARAMS--------
 
-	proofs := 1 // 0 is not proof, 1 is proofs, 2 is optimized proofs
-	rangeProofs := false
+	proofs := 1 // 0 is not proof, 1 is proofs
+	rangeProofs := true
 	obfuscation := false
 
 	diffPri := false
@@ -83,10 +83,8 @@ func TestServiceDrynx(t *testing.T) {
 	//simulation
 	cuttingFactor := 0
 
-	operationList := []string{"frequencyCount"} //, "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
-	//operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "lin_reg"}
-	//operationList := []string{"bool_AND", "bool_OR", "min", "max", "union", "inter"}
-	//operationList := []string{"variance"}
+	//operationList := []string{"sum", "frequencyCount", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
+	operationList := []string{"sum", "frequencyCount"}
 	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold aggregation, 3: threshold range, 4: obfuscation, 5: threshold key switch
 	//------------------------
 

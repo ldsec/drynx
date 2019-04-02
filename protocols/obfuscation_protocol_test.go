@@ -26,7 +26,9 @@ func TestObfuscation(t *testing.T) {
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// You must register this protocol before creating the servers
-	onet.GlobalProtocolRegister("ObfuscationTest", NewObfuscationTest)
+	if _, err := onet.GlobalProtocolRegister("ObfuscationTest", NewObfuscationTest); err != nil {
+		log.Fatal("Failed to register the <ObfuscationTest> protocol:", err)
+	}
 
 	_, _, tree := local.GenTree(10, true)
 	defer local.CloseAll()
@@ -45,7 +47,11 @@ func TestObfuscation(t *testing.T) {
 	mu.Unlock()*/
 
 	//run protocol
-	go protocol.Start()
+	go func() {
+		if err := protocol.Start(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
 
 	feedback := protocol.FeedbackChannel
