@@ -9,7 +9,7 @@ require (
 	github.com/cdipaolo/goml v0.0.0-20161030204843-e2d8def04c9a
 	github.com/coreos/bbolt v1.3.2
 	github.com/fanliao/go-concurrentMap v0.0.0-20141114143905-7d2d7a5ea67b
-	github.com/lca1/unlynx v0.0.0-20190401115626-b2e96ea71460
+	github.com/lca1/unlynx v0.0.0-20190402125443-57e853b33711
 	github.com/montanaflynn/stats v0.5.0
 	github.com/r0fls/gostats v0.0.0-20180711082619-e793b1fda35c
 	github.com/satori/go.uuid v1.2.0

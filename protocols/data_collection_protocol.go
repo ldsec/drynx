@@ -182,15 +182,14 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	}
 	mutexGroups.Lock()
 
-	dataunlynx.Groups = make([][]int64, 0)
+	groups := make([][]int64, 0)
 	group := make([]int64, 0)
-	dataunlynx.AllPossibleGroups(numType[:], group, 0)
-	groupsString := make([]string, len(dataunlynx.Groups))
+	dataunlynx.AllPossibleGroups(numType[:], group, 0, &groups)
+	groupsString := make([]string, len(groups))
 
-	for i, v := range dataunlynx.Groups {
+	for i, v := range groups {
 		groupsString[i] = fmt.Sprint(v)
 	}
-	dataunlynx.Groups = make([][]int64, 0)
 	mutexGroups.Unlock()
 	// read the signatures needed to compute the range proofs
 	signatures := make([][]libdrynx.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize1)

@@ -413,7 +413,9 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 	if sim.Proofs != 0 {
 		libunlynx.EndParallelize(wg)
 		// close DB
-		clientSkip.SendCloseDB(rosterVNs, &libdrynx.CloseDB{Close: 1})
+		if err := clientSkip.SendCloseDB(rosterVNs, &libdrynx.CloseDB{Close: 1}); err != nil {
+			log.Fatal("Error closing the DB:", err)
+		}
 	}
 
 	retrieveBlock := time.Now()
