@@ -106,7 +106,8 @@ type MsgTypes struct {
 var msgTypes = MsgTypes{}
 
 func init() {
-	onet.RegisterNewService(ServiceName, NewService)
+	_, err := onet.RegisterNewService(ServiceName, NewService)
+	log.ErrFatal(err)
 
 	msgTypes.msgSurveyQuery = network.RegisterMessage(&libdrynx.SurveyQuery{})
 	msgTypes.msgSurveyQueryToDP = network.RegisterMessage(&libdrynx.SurveyQueryToDP{})
@@ -190,19 +191,24 @@ func NewService(c *onet.Context) (onet.Service, error) {
 func (s *ServiceDrynx) Process(msg *network.Envelope) {
 	if msg.MsgType.Equal(msgTypes.msgSurveyQuery) {
 		tmp := (msg.Msg).(*libdrynx.SurveyQuery)
-		s.HandleSurveyQuery(tmp)
+		_, err := s.HandleSurveyQuery(tmp)
+		log.ErrFatal(err)
 	} else if msg.MsgType.Equal(msgTypes.msgSurveyQueryToDP) {
 		tmp := (msg.Msg).(*libdrynx.SurveyQueryToDP)
-		s.HandleSurveyQueryToDP(tmp)
+		_, err := s.HandleSurveyQueryToDP(tmp)
+		log.ErrFatal(err)
 	} else if msg.MsgType.Equal(msgTypes.msgDPqueryReceived) {
 		tmp := (msg.Msg).(*DPqueryReceived)
-		s.HandleDPqueryReceived(tmp)
+		_, err := s.HandleDPqueryReceived(tmp)
+		log.ErrFatal(err)
 	} else if msg.MsgType.Equal(msgTypes.msgSyncDCP) {
 		tmp := (msg.Msg).(*SyncDCP)
-		s.HandleSyncDCP(tmp)
+		_, err := s.HandleSyncDCP(tmp)
+		log.ErrFatal(err)
 	} else if msg.MsgType.Equal(msgTypes.msgDPdataFinished) {
 		tmp := (msg.Msg).(*DPdataFinished)
-		s.HandleDPdataFinished(tmp)
+		_, err := s.HandleDPdataFinished(tmp)
+		log.ErrFatal(err)
 	}
 }
 
@@ -281,11 +287,15 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	// only generate ProofCollection protocol instances if proofs is enabled
 	var mapPIs map[string]onet.ProtocolInstance
 	if recq.Query.Proofs != 0 {
-		mapPIs = s.generateMapPIs(recq)
+		var err error
+		mapPIs, err = s.generateMapPIs(recq)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// survey instantiation
-	s.Survey.Put(recq.SurveyID, Survey{
+	_, err := s.Survey.Put(recq.SurveyID, Survey{
 		SurveyQuery:    *recq,
 		DPqueryChannel: make(chan int, nbrDPs),
 		SyncDCPChannel: make(chan int, nbrDPs),
@@ -293,6 +303,9 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 		DiffPChannel:   make(chan int, nbrDPs),
 		MapPIs:         mapPIs,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	survey := castToSurvey(s.Survey.Get(recq.SurveyID))
 
@@ -325,7 +338,9 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 		go func() {
 			//diffPTimer := libDrynx.StartTimer(s.ServerIdentity().String() + "_DiffPPhase")
 			if libdrynx.AddDiffP(castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.Query.DiffP) {
-				s.DROPhase(castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.SurveyID)
+				if err := s.DROPhase(castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.SurveyID); err != nil {
+					log.Fatal(err)
+				}
 			}
 			//libDrynx.EndTimer(diffPTimer)
 		}()
@@ -342,7 +357,7 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	// TODO: we can remove this waiting after the test
 	// -----------------------------------------------------------------------------------------------------------------
 	// signal other nodes that the data provider(s) already sent their data (response)
-	err := libunlynxtools.SendISMOthers(s.ServiceProcessor, &recq.RosterServers, &SyncDCP{recq.SurveyID})
+	err = libunlynxtools.SendISMOthers(s.ServiceProcessor, &recq.RosterServers, &SyncDCP{recq.SurveyID})
 	if err != nil {
 		log.Error("[SERVICE] <drynx> Server, broadcasting [syncDCPChannel] error ", err)
 	}
@@ -382,7 +397,9 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	// ready to start the collective aggregation & key switching protocol
 	if recq.IntraMessage == false {
 		startJustExecution := libunlynx.StartTimer("JustExecution")
-		s.StartService(recq.SurveyID)
+		if err := s.StartService(recq.SurveyID); err != nil {
+			return nil, err
+		}
 
 		log.Lvl2("[SERVICE] <drynx> Server", s.ServerIdentity(), " completed the query processing...")
 
@@ -400,10 +417,12 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 
 // NewProtocol creates a protocol instance executed by all nodes
 func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfig) (onet.ProtocolInstance, error) {
-	tn.SetConfig(conf)
+	err := tn.SetConfig(conf)
+	if err != nil {
+		return nil, err
+	}
 
 	var pi onet.ProtocolInstance
-	var err error
 
 	target := string(conf.Data)
 
@@ -511,8 +530,17 @@ func (s *ServiceDrynx) NewCollectiveAggregationProtocol(tn *onet.TreeNodeInstanc
 
 			pi := survey.MapPIs["aggregation/"+s.ServerIdentity().String()]
 			pi.(*protocols.ProofCollectionProtocol).Proof = drynxproof.ProofRequest{AggregationProof: drynxproof.NewAggregationProofRequest(&aggrLocalProof, target, s.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, tn.Private(), nil)}
-			go pi.Dispatch()
-			go pi.Start()
+
+			go func(){
+				if err := pi.Dispatch(); err != nil {
+					log.Fatal(err)
+				}
+			}()
+			go func(){
+				if err := pi.Start(); err != nil {
+					log.Fatal(err)
+				}
+			}()
 			<-pi.(*protocols.ProofCollectionProtocol).FeedbackChannel
 		}()
 		return nil
@@ -540,8 +568,16 @@ func (s *ServiceDrynx) NewKeySwitchingProtocol(tn *onet.TreeNodeInstance, target
 			proof := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, ks2s, rBNegs, vis)
 			pcp := keySwitch.MapPIs["keyswitch/"+keySwitch.ServerIdentity().String()]
 			pcp.(*protocols.ProofCollectionProtocol).Proof = drynxproof.ProofRequest{KeySwitchProof: drynxproof.NewKeySwitchProofRequest(&proof, survey.SurveyQuery.SurveyID, keySwitch.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, keySwitch.Private(), nil)}
-			go pcp.Dispatch()
-			go pcp.Start()
+			go func(){
+				if err := pcp.Dispatch(); err != nil {
+					log.Fatal(err)
+				}
+			}()
+			go func(){
+				if err := pcp.Start(); err != nil {
+					log.Fatal(err)
+				}
+			}()
 			<-pcp.(*protocols.ProofCollectionProtocol).FeedbackChannel
 		}()
 		return nil
@@ -557,7 +593,10 @@ func (s *ServiceDrynx) NewKeySwitchingProtocol(tn *onet.TreeNodeInstance, target
 		tmp := survey.SurveyQuery.ClientPubKey
 		keySwitch.TargetPublicKey = &tmp
 
-		s.Survey.Put(string(target), survey)
+		_, err = s.Survey.Put(string(target), survey)
+		if err != nil {
+			return nil, err
+		}
 
 	}
 	return pi, err
@@ -582,8 +621,16 @@ func (s *ServiceDrynx) NewShufflingProtocol(tn *onet.TreeNodeInstance, survey Su
 			proof := libunlynxshuffle.ShuffleProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
 			pcp := shuffle.MapPIs["shuffle/"+shuffle.ServerIdentity().String()]
 			pcp.(*protocols.ProofCollectionProtocol).Proof = drynxproof.ProofRequest{ShuffleProof: drynxproof.NewShuffleProofRequest(&proof, survey.SurveyQuery.SurveyID, shuffle.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, shuffle.Private(), nil)}
-			go pcp.Dispatch()
-			go pcp.Start()
+			go func(){
+				if err := pcp.Dispatch(); err != nil {
+					log.Fatal(err)
+				}
+			}()
+			go func(){
+				if err := pcp.Start(); err != nil {
+					log.Fatal(err)
+				}
+			}()
 			<-pcp.(*protocols.ProofCollectionProtocol).FeedbackChannel
 		}()
 		return nil
@@ -626,9 +673,20 @@ func (s *ServiceDrynx) StartProtocol(name string, targetSurvey string) (onet.Pro
 		log.Fatal("Error running" + name)
 	}
 
-	s.RegisterProtocolInstance(pi)
-	go pi.Dispatch()
-	go pi.Start()
+	err = s.RegisterProtocolInstance(pi)
+	if err != nil {
+		return nil, err
+	}
+	go func(){
+		if err := pi.Dispatch(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+	go func(){
+		if err := pi.Start(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	return pi, err
 }
@@ -693,7 +751,10 @@ func (s *ServiceDrynx) DataCollectionPhase(targetSurvey string) error {
 
 		}
 	}
-	s.Survey.Put(string(targetSurvey), survey)
+	_, err = s.Survey.Put(string(targetSurvey), survey)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -708,7 +769,10 @@ func (s *ServiceDrynx) AggregationPhase(targetSurvey string) error {
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 
 	survey.QueryResponseState = *libdrynx.ConvertFromAggregationStruct(cothorityAggregatedData)
-	s.Survey.Put(string(targetSurvey), survey)
+	_, err = s.Survey.Put(string(targetSurvey), survey)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -722,7 +786,10 @@ func (s *ServiceDrynx) ObfuscationPhase(targetSurvey string) error {
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 	survey.QueryResponseState = *convertFromKeySwitchingStruct(obfuscationData, survey.QueryResponseState)
-	s.Survey.Put(string(targetSurvey), survey)
+	_, err = s.Survey.Put(string(targetSurvey), survey)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -742,7 +809,10 @@ func (s *ServiceDrynx) DROPhase(targetSurvey string) error {
 	}
 	survey.Noises = noises
 	survey.DiffPChannel <- 1
-	s.Survey.Put(string(targetSurvey), survey)
+	_, err = s.Survey.Put(string(targetSurvey), survey)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -760,7 +830,10 @@ func (s *ServiceDrynx) DROLocalPhase(targetSurvey string) error {
 	}
 	survey.Noises = noises
 	survey.DiffPChannel <- 1
-	s.Survey.Put(string(targetSurvey), survey)
+	_, err = s.Survey.Put(string(targetSurvey), survey)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -774,7 +847,10 @@ func (s *ServiceDrynx) KeySwitchingPhase(targetSurvey string) error {
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 	survey.QueryResponseState = *convertFromKeySwitchingStruct(keySwitchedAggregatedResponses, survey.QueryResponseState)
-	s.Survey.Put(targetSurvey, survey)
+	_, err = s.Survey.Put(targetSurvey, survey)
+	if err != nil {
+		return err
+	}
 	return err
 }
 

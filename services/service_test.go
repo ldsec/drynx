@@ -226,7 +226,7 @@ func TestServiceDrynx(t *testing.T) {
 			idToPublic[v.String()] = v.Public
 		}
 
-		if proofs != 0 {
+		if proofs != 0 && elVNs != nil {
 			for _, v := range elVNs.List {
 				idToPublic[v.String()] = v.Public
 			}
@@ -242,7 +242,7 @@ func TestServiceDrynx(t *testing.T) {
 		}
 
 		var wg *sync.WaitGroup
-		if proofs != 0 {
+		if proofs != 0 && elVNs != nil {
 			// send query to the skipchain and 'wait' for all proofs' verification to be done
 			clientSkip := NewDrynxClient(elVNs.List[0], "test-skip-"+op)
 
@@ -287,7 +287,7 @@ func TestServiceDrynx(t *testing.T) {
 
 	}
 
-	if proofs != 0 {
+	if proofs != 0 && elVNs != nil {
 		clientSkip := NewDrynxClient(elVNs.List[0], "test-skip")
 		for _, wg := range wgProofs {
 			libunlynx.EndParallelize(wg)
@@ -340,7 +340,9 @@ func TestServiceDrynx(t *testing.T) {
 		}
 
 		// close DB
-		clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1})
+		if err := clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1}); err != nil {
+			t.Fatal("Error closing the DB:", err)
+		}
 	}
 }
 
@@ -554,7 +556,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 			idToPublic[v.String()] = v.Public
 		}
 
-		if proofs != 0 {
+		if proofs != 0 && elVNs != nil {
 			for _, v := range elVNs.List {
 				idToPublic[v.String()] = v.Public
 			}
@@ -570,7 +572,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		}
 
 		var wg *sync.WaitGroup
-		if proofs != 0 {
+		if proofs != 0 && elVNs != nil {
 			// send query to the skipchain and 'wait' for all proofs' verification to be done
 			clientSkip := NewDrynxClient(elVNs.List[0], "test-skip-"+op)
 
@@ -644,7 +646,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	log.Lvl1("ICI")
 	//encoding.PrintForLatex(meanAccuracy, meanPrecision, meanRecall, meanFscore, meanAUC)
 
-	if proofs != 0 {
+	if proofs != 0 && elVNs != nil {
 		clientSkip := NewDrynxClient(elVNs.List[0], "test-skip")
 		for _, wg := range wgProofs {
 			libunlynx.EndParallelize(wg)
@@ -697,7 +699,9 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		}
 
 		// close DB
-		clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1})
+		if err := clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1}); err != nil {
+			t.Fatal("Error closing the DB:", err)
+		}
 	}
 }
 
@@ -948,8 +952,12 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 			meanAUC += auc
 		}
 
-		fileTraining.Close()
-		fileTesting.Close()
+		if err := fileTraining.Close(); err != nil {
+			t.Fatal(err)
+		}
+		if err := fileTesting.Close(); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	meanAccuracy /= float64(numberTrials)
