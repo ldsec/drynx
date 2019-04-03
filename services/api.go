@@ -4,6 +4,7 @@ import (
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/cothority/v3"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/key"
 	"go.dedis.ch/onet/v3"
@@ -34,7 +35,7 @@ func init() {
 func NewDrynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 	keys := key.NewKeyPair(libunlynx.SuiTe)
 	newClient := &API{
-		Client:     onet.NewClient(libunlynx.SuiTe, ServiceName),
+		Client:     onet.NewClient(cothority.Suite, ServiceName),
 		clientID:   clientID,
 		entryPoint: entryPoint,
 		public:     keys.Public,
