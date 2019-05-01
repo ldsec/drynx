@@ -531,12 +531,12 @@ func (s *ServiceDrynx) NewCollectiveAggregationProtocol(tn *onet.TreeNodeInstanc
 			pi := survey.MapPIs["aggregation/"+s.ServerIdentity().String()]
 			pi.(*protocols.ProofCollectionProtocol).Proof = drynxproof.ProofRequest{AggregationProof: drynxproof.NewAggregationProofRequest(&aggrLocalProof, target, s.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, tn.Private(), nil)}
 
-			go func(){
+			go func() {
 				if err := pi.Dispatch(); err != nil {
 					log.Fatal(err)
 				}
 			}()
-			go func(){
+			go func() {
 				if err := pi.Start(); err != nil {
 					log.Fatal(err)
 				}
@@ -568,12 +568,12 @@ func (s *ServiceDrynx) NewKeySwitchingProtocol(tn *onet.TreeNodeInstance, target
 			proof := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, ks2s, rBNegs, vis)
 			pcp := keySwitch.MapPIs["keyswitch/"+keySwitch.ServerIdentity().String()]
 			pcp.(*protocols.ProofCollectionProtocol).Proof = drynxproof.ProofRequest{KeySwitchProof: drynxproof.NewKeySwitchProofRequest(&proof, survey.SurveyQuery.SurveyID, keySwitch.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, keySwitch.Private(), nil)}
-			go func(){
+			go func() {
 				if err := pcp.Dispatch(); err != nil {
 					log.Fatal(err)
 				}
 			}()
-			go func(){
+			go func() {
 				if err := pcp.Start(); err != nil {
 					log.Fatal(err)
 				}
@@ -621,12 +621,12 @@ func (s *ServiceDrynx) NewShufflingProtocol(tn *onet.TreeNodeInstance, survey Su
 			proof := libunlynxshuffle.ShuffleProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
 			pcp := shuffle.MapPIs["shuffle/"+shuffle.ServerIdentity().String()]
 			pcp.(*protocols.ProofCollectionProtocol).Proof = drynxproof.ProofRequest{ShuffleProof: drynxproof.NewShuffleProofRequest(&proof, survey.SurveyQuery.SurveyID, shuffle.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, shuffle.Private(), nil)}
-			go func(){
+			go func() {
 				if err := pcp.Dispatch(); err != nil {
 					log.Fatal(err)
 				}
 			}()
-			go func(){
+			go func() {
 				if err := pcp.Start(); err != nil {
 					log.Fatal(err)
 				}
@@ -677,12 +677,12 @@ func (s *ServiceDrynx) StartProtocol(name string, targetSurvey string) (onet.Pro
 	if err != nil {
 		return nil, err
 	}
-	go func(){
+	go func() {
 		if err := pi.Dispatch(); err != nil {
 			log.Fatal(err)
 		}
 	}()
-	go func(){
+	go func() {
 		if err := pi.Start(); err != nil {
 			log.Fatal(err)
 		}

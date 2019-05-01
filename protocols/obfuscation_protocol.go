@@ -170,8 +170,12 @@ func (p *ObfuscationProtocol) Start() error {
 	bytesMessage, length := p.ToObfuscateData.ToBytes()
 	p.MutexObf.Unlock()
 
-	if err := p.SendToChildren(&ObfuscationLengthMessage{Length: length}); err != nil {return err}
-	if err := p.SendToChildren(&ObfuscationDownBytesMessage{bytesMessage}); err != nil {return err}
+	if err := p.SendToChildren(&ObfuscationLengthMessage{Length: length}); err != nil {
+		return err
+	}
+	if err := p.SendToChildren(&ObfuscationDownBytesMessage{bytesMessage}); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -200,7 +204,7 @@ func (p *ObfuscationProtocol) Dispatch() error {
 }
 
 // Announce forwarding down the tree.
-func (p *ObfuscationProtocol) obfuscationAnnouncementPhase() error{
+func (p *ObfuscationProtocol) obfuscationAnnouncementPhase() error {
 	lengthMessage := <-p.LengthNodeChannel
 	dataReferenceMessage := <-p.DataReferenceChannel
 
@@ -210,8 +214,12 @@ func (p *ObfuscationProtocol) obfuscationAnnouncementPhase() error{
 	p.ToObfuscateData = cv
 	p.MutexObf.Unlock()
 	if !p.IsLeaf() {
-		if err := p.SendToChildren(&ObfuscationLengthMessage{Length: lengthMessage[0].Length}); err != nil {return err}
-		if err := p.SendToChildren(&ObfuscationDownBytesMessage{Data: dataReferenceMessage.Data}); err != nil {return err}
+		if err := p.SendToChildren(&ObfuscationLengthMessage{Length: lengthMessage[0].Length}); err != nil {
+			return err
+		}
+		if err := p.SendToChildren(&ObfuscationDownBytesMessage{Data: dataReferenceMessage.Data}); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -291,11 +299,15 @@ func (p *ObfuscationProtocol) ascendingObfuscationPhase() (libunlynx.CipherVecto
 	//libunlynx.EndTimer(roundTotComput)
 
 	if !p.IsRoot() {
-		if err := p.SendToParent(&ObfuscationLengthMessage{len(p.ToObfuscateData)}); err != nil {return libunlynx.CipherVector{}, err}
+		if err := p.SendToParent(&ObfuscationLengthMessage{len(p.ToObfuscateData)}); err != nil {
+			return libunlynx.CipherVector{}, err
+		}
 		p.MutexObf.Lock()
 		message, _ := (p.ToObfuscateData).ToBytes()
 		p.MutexObf.Unlock()
-		if err := p.SendToParent(&ObfuscationUpBytesMessage{Data: message}); err != nil {return libunlynx.CipherVector{}, err}
+		if err := p.SendToParent(&ObfuscationUpBytesMessage{Data: message}); err != nil {
+			return libunlynx.CipherVector{}, err
+		}
 	}
 
 	return p.ToObfuscateData, nil

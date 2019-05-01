@@ -136,7 +136,9 @@ func (p *DataCollectionProtocol) Dispatch() error {
 		dcm := DataCollectionMessage{DCMdata: response}
 
 		// 2. Send data to root
-		if err := p.SendTo(p.Root(), &dcm); err != nil {return err}
+		if err := p.SendTo(p.Root(), &dcm); err != nil {
+			return err
+		}
 	} else {
 		// 3. If root wait for all other nodes to send their data
 		dcmAggregate := make(map[string]libunlynx.CipherVector, 0)
@@ -318,12 +320,12 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 				pi.(*ProofCollectionProtocol).Proof = drynxproof.ProofRequest{RangeProof: drynxproof.NewRangeProofRequest(&rpl, p.Survey.SurveyID, p.ServerIdentity().String(), "", p.Survey.Query.RosterVNs, p.Private(), nil)}
 				//libunlynx.EndTimer(rangeProofCreation)
 
-				go func(){
+				go func() {
 					if err := pi.Dispatch(); err != nil {
 						log.Fatal(err)
 					}
 				}()
-				go func(){
+				go func() {
 					if err := pi.Start(); err != nil {
 						log.Fatal(err)
 					}

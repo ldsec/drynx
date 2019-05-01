@@ -332,7 +332,7 @@ func (p *ProofCollectionProtocol) storeProof(index int, typeProof, surveyID, sen
 
 		//Decrease size of proof expected for this type by 1
 		qi.TotalNbrProofs[index]--
-		if _, err :=  p.Request.Replace(surveyID, qi); err != nil {
+		if _, err := p.Request.Replace(surveyID, qi); err != nil {
 			return nil, err
 		}
 
