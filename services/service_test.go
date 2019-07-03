@@ -353,16 +353,16 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	//------SET PARAMS--------
 
 	proofs := 0 // 0 is not proof, 1 is proofs, 2 is optimized proofs
-	rangeProofs := true
+	rangeProofs := false
 	obfuscation := false
 
 	diffPri := false
 
 	nbrRows := int64(1)
 	nbrServers := 3
-	nbrDPs := 5
+	nbrDPs := 3
 	nbrVNs := 3
-	repartition := []int64{2, 1, 2} //repartition: server1: 1 DPs, server2: 1 DPs, server3: 1 DPs
+	repartition := []int64{1, 1, 1} //repartition: server1: 1 DPs, server2: 1 DPs, server3: 1 DPs
 
 	//simulation
 	cuttingFactor := 0
