@@ -39,7 +39,7 @@ var NumDps = 10
 // -------------------------
 
 // EncodeLogisticRegression computes and encrypts the data provider's coefficients for logistic regression
-func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point) ([]libunlynx.CipherText, []int64) {
+func EncodeLogisticRegression(xData [][]float64, yData []int64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point) ([]libunlynx.CipherText, []int64) {
 
 	d := lrParameters.NbrFeatures
 	n := getTotalNumberApproxCoefficients(d, lrParameters.K)
@@ -47,11 +47,11 @@ func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRe
 	aggregatedApproxCoefficientsIntPacked := make([]int64, n)
 	encryptedAggregatedApproxCoefficients := make([]libunlynx.CipherText, n)
 
-	if data != nil && len(data) > 0 {
+	if xData != nil && len(xData) > 0 {
 		// unpack the data into features and labels
-		labelColumn := 0
+		/*labelColumn := 0
 		X := RemoveColumn(data, labelColumn)
-		y := Float64ToInt641DArray(GetColumn(data, labelColumn))
+		y := Float64ToInt641DArray(GetColumn(data, labelColumn))*/
 
 		// standardise the data
 		var XStandardised [][]float64
@@ -59,22 +59,21 @@ func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRe
 			len(lrParameters.Means) > 0 && len(lrParameters.StandardDeviations) > 0 {
 			// using global means and standard deviations, if given
 			log.Lvl2("Standardising the training set with global means and standard deviations...")
-			XStandardised = StandardiseWith(X, lrParameters.Means, lrParameters.StandardDeviations)
+			XStandardised = StandardiseWith(xData, lrParameters.Means, lrParameters.StandardDeviations)
 		} else {
 			// using local means and standard deviations, if not given
 			log.Lvl2("Standardising the training set with local means and standard deviations...")
-			XStandardised = Standardise(X)
+			XStandardised = Standardise(xData)
 		}
 
 		// add an all 1s column to the data (offset term)
 		XStandardised = Augment(XStandardised)
 
 		N := lrParameters.NbrRecords
-
 		// compute all approximation coefficients per record
 		approxCoefficients := make([][][]float64, N)
 		for i := 0; i < len(XStandardised); i++ {
-			approxCoefficients[i] = ComputeAllApproxCoefficients(XStandardised[i], y[i], lrParameters.K)
+			approxCoefficients[i] = ComputeAllApproxCoefficients(XStandardised[i], yData[i], lrParameters.K)
 		}
 
 		// aggregate the approximation coefficients locally
@@ -118,7 +117,7 @@ type CipherAndRandom struct {
 }
 
 // EncodeLogisticRegressionWithProofs computes and encrypts the data provider's coefficients for logistic regression with range proofs
-func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
+func EncodeLogisticRegressionWithProofs(xData [][]float64, yData []int64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
 
 	d := lrParameters.NbrFeatures
 	n := getTotalNumberApproxCoefficients(d, lrParameters.K)
@@ -127,11 +126,11 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.
 	encryptedAggregatedApproxCoefficients := make([]CipherAndRandom, n)
 	encryptedAggregatedApproxCoefficientsOnlyCipher := make([]libunlynx.CipherText, n)
 
-	if data != nil && len(data) > 0 {
+	if xData != nil && len(xData) > 0 {
 		// unpack the data into features and labels
-		labelColumn := 0
+		/*labelColumn := 0
 		X := RemoveColumn(data, labelColumn)
-		y := Float64ToInt641DArray(GetColumn(data, labelColumn))
+		y := Float64ToInt641DArray(GetColumn(data, labelColumn))*/
 
 		// standardise the data
 		var XStandardised [][]float64
@@ -139,11 +138,11 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.
 			len(lrParameters.Means) > 0 && len(lrParameters.StandardDeviations) > 0 {
 			// using global means and standard deviations, if given
 			log.Lvl2("Standardising the training set with global means and standard deviations...")
-			XStandardised = StandardiseWith(X, lrParameters.Means, lrParameters.StandardDeviations)
+			XStandardised = StandardiseWith(xData, lrParameters.Means, lrParameters.StandardDeviations)
 		} else {
 			// using local means and standard deviations, if not given
 			log.Lvl2("Standardising the training set with local means and standard deviations...")
-			XStandardised = Standardise(X)
+			XStandardised = Standardise(xData)
 		}
 
 		// add an all 1s column to the data (offset term)
@@ -154,7 +153,7 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.
 		// compute all approximation coefficients per record
 		approxCoefficients := make([][][]float64, N)
 		for i := 0; i < len(XStandardised); i++ {
-			approxCoefficients[i] = ComputeAllApproxCoefficients(XStandardised[i], y[i], lrParameters.K)
+			approxCoefficients[i] = ComputeAllApproxCoefficients(XStandardised[i], yData[i], lrParameters.K)
 		}
 
 		// aggregate the approximation coefficients locally
@@ -1517,23 +1516,24 @@ func PartitionDataset(X [][]float64, y []int64, ratio float64, shuffle bool, see
 }
 
 // GetDataForDataProvider returns data records from a file for a given data provider based on its id
-func GetDataForDataProvider(filename string, dataProviderIdentity network.ServerIdentity) [][]float64 {
-	var dataForDP [][]float64
-	data := String2DToFloat64(ReadFile(filename, ","))
-
+func GetDataForDataProvider(datasetName, filename string, dataProviderIdentity network.ServerIdentity) ([][]float64, []int64) {
+	var xForDP [][]float64
+	var yForDP []int64
+	X, y := LoadData(datasetName, filename)
 	dataProviderID := dataProviderIdentity.String()
 	dpID, err := strconv.Atoi(dataProviderID[len(dataProviderID)-2 : len(dataProviderID)-1])
 
 	if err == nil {
-		for i := 0; i < len(data); i++ {
+		for i := 0; i < len(X); i++ {
 			if i%NumDps == dpID {
-				dataForDP = append(dataForDP, data[i])
+				xForDP = append(xForDP, X[i])
+				yForDP = append(yForDP, y[i])
 			}
 		}
-		fmt.Println("DP", dataProviderIdentity.String(), " has:", len(dataForDP), "records")
+		fmt.Println("DP", dataProviderIdentity.String(), " has:", len(xForDP), "records")
 	}
 
-	return dataForDP
+	return xForDP, yForDP
 }
 
 // -----------------

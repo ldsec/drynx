@@ -402,6 +402,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		standardDeviations = nil
 	}
 
+	lrParameters.DatasetName = "SPECTF"
 	lrParameters.FilePath = filePathTraining
 	lrParameters.NbrRecords = int64(len(XTrain))
 	lrParameters.NbrFeatures = int64(len(XTrain[0]))
