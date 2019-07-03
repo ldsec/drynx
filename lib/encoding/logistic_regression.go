@@ -1,10 +1,10 @@
 package encoding
 
 import (
-	"github.com/dedis/kyber"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/unlynx/lib"
 	"github.com/montanaflynn/stats"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/onet/v3/log"
 	"gonum.org/v1/gonum/stat/combin"
 
 	"bufio"
@@ -16,8 +16,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dedis/onet/network"
 	"github.com/lca1/drynx/lib"
+	"go.dedis.ch/onet/v3/network"
 	"gonum.org/v1/gonum/integrate"
 	"gonum.org/v1/gonum/stat"
 )
@@ -105,8 +105,8 @@ func EncodeLogisticRegression(data [][]float64, lrParameters libdrynx.LogisticRe
 		}
 	}
 
-	log.LLvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
-	log.LLvl2("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
+	log.Lvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
+	log.Lvl2("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
 
 	return encryptedAggregatedApproxCoefficients, aggregatedApproxCoefficientsIntPacked
 }
@@ -187,8 +187,8 @@ func EncodeLogisticRegressionWithProofs(data [][]float64, lrParameters libdrynx.
 		}
 	}
 
-	log.LLvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
-	log.LLvl2("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
+	log.Lvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
+	log.Lvl2("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
 
 	createRangeProof := make([]libdrynx.CreateProof, len(aggregatedApproxCoefficientsIntPacked))
 	wg1 := libunlynx.StartParallelize(len(aggregatedApproxCoefficientsIntPacked))
@@ -248,8 +248,8 @@ func DecodeLogisticRegression(result []libunlynx.CipherText, privKey kyber.Scala
 		}
 	}
 
-	log.LLvl2("Number of approximation coefficients:", len(approxCoefficientsPacked))
-	log.LLvl2("Decrypted approximation coefficients:", approxCoefficientsPacked)
+	log.Lvl2("Number of approximation coefficients:", len(approxCoefficientsPacked))
+	log.Lvl2("Decrypted approximation coefficients:", approxCoefficientsPacked)
 
 	// convert the (aggregated) approximation coefficients to float
 	approxCoefficientsFloat := Int64ToFloat642DArray(approxCoefficients)
@@ -401,7 +401,7 @@ func ComputeAllApproxCoefficients(X []float64, y int64, k int) [][]float64 {
 // ComputeEncryptedApproxCoefficients computes the ElGamal encryption of the coefficients of the approximated logistic regression cost function
 func ComputeEncryptedApproxCoefficients(approxCoefficients [][]int64, pubKey kyber.Point) ([]*libunlynx.CipherVector, [][]kyber.Scalar) {
 	k := len(approxCoefficients) // the logarithm function approximation degree
-	// log.LLvl1(approxCoefficients[1][11])
+	// log.Lvl1(approxCoefficients[1][11])
 	encryptedApproxCoefficients := make([]*libunlynx.CipherVector, k)
 	encryptedApproxCoefficientsRs := make([][]kyber.Scalar, k)
 	wg := libunlynx.StartParallelize(k)
@@ -1276,8 +1276,8 @@ func String2DToFloat64(dataString [][]string) [][]float64 {
 			}
 
 			if err != nil {
-				log.LLvl1("Incorrect record formatting: record", idx, "will be ignored")
-				log.LLvl1("Cause:", err)
+				log.Lvl1("Incorrect record formatting: record", idx, "will be ignored")
+				log.Lvl1("Cause:", err)
 				nbRecordsIgnored++
 				break
 			}
@@ -1294,7 +1294,7 @@ func String2DToFloat64(dataString [][]string) [][]float64 {
 		}
 	}
 
-	log.LLvl2("Total number of records ignored:", nbRecordsIgnored)
+	log.Lvl2("Total number of records ignored:", nbRecordsIgnored)
 
 	return data
 }
@@ -1402,12 +1402,12 @@ func ReadFile(path string, separator string) [][]string {
 		if len(row) == nbrFeatures {
 			result = append(result, row)
 		} else {
-			log.LLvl1("Incorrect record formatting: record", row, "will be ignored")
+			log.Lvl1("Incorrect record formatting: record", row, "will be ignored")
 			nbrRecordsIgnored++
 		}
 	}
 
-	log.LLvl2("Total number of records ignored:", nbrRecordsIgnored)
+	log.Lvl2("Total number of records ignored:", nbrRecordsIgnored)
 
 	return result
 }

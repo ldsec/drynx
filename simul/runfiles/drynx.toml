@@ -1,7 +1,7 @@
 Simulation = "ServiceDrynx"
 Servers = 6
 Bf = 2
-Suite = "bn256.G1"
+Suite = "Ed25519"
 Rounds = 1
 Bandwidth = 100
 Delay = 20

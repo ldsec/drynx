@@ -1,10 +1,10 @@
 package encoding
 
 import (
-	"github.com/dedis/kyber"
-	"github.com/dedis/onet/log"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/onet/v3/log"
 )
 
 // Encode takes care of computing the query result and encode it for all possible operations.
@@ -242,7 +242,7 @@ func EncodeForFloat(datas [][]float64, lrParameters libdrynx.LogisticRegressionP
 			encryptedResponse, clearResponse, prf = EncodeLogisticRegressionWithProofs(datas, lrParameters, pubKey, signatures, ranges)
 		} else {
 			encryptedResponse, clearResponse = EncodeLogisticRegression(datas, lrParameters, pubKey)
-			log.LLvl1(clearResponse)
+			log.Lvl1(clearResponse)
 		}
 	}
 	return encryptedResponse, clearResponse, prf

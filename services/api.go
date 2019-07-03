@@ -1,14 +1,15 @@
 package services
 
 import (
-	"github.com/dedis/kyber"
-	"github.com/dedis/kyber/util/key"
-	"github.com/dedis/onet"
-	"github.com/dedis/onet/log"
-	"github.com/dedis/onet/network"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
 	"github.com/lca1/unlynx/lib"
+	"go.dedis.ch/cothority/v3"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/key"
+	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
 )
 
 // API represents a client with the server to which he is connected and its public/private key pair.
@@ -34,7 +35,7 @@ func init() {
 func NewDrynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 	keys := key.NewKeyPair(libunlynx.SuiTe)
 	newClient := &API{
-		Client:     onet.NewClient(libunlynx.SuiTe, ServiceName),
+		Client:     onet.NewClient(cothority.Suite, ServiceName),
 		clientID:   clientID,
 		entryPoint: entryPoint,
 		public:     keys.Public,
