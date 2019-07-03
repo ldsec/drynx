@@ -1,4 +1,4 @@
-package services
+package services_test
 
 import (
 	"fmt"
@@ -763,20 +763,20 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 
 	// ---- PCS dataset parameters ----
 	/*
-	dataset := "PCS"
-	ratio := 0.8
-	lrParameters := libdrynx.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: scale, Lambda: 1.0, Step: 0.1, MaxIterations: 25,
-		InitialWeights: []float64{0, 0, 0, 0, 0, 0, 0, 0, 0}}
-	//diffP = common.QueryDiffP{LapMean:0.0, LapScale:30.0, NoiseListSize: 90, Quanta: 0.0, Scale:scale, Limit:60}
+		dataset := "PCS"
+		ratio := 0.8
+		lrParameters := libdrynx.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: scale, Lambda: 1.0, Step: 0.1, MaxIterations: 25,
+			InitialWeights: []float64{0, 0, 0, 0, 0, 0, 0, 0, 0}}
+		//diffP = common.QueryDiffP{LapMean:0.0, LapScale:30.0, NoiseListSize: 90, Quanta: 0.0, Scale:scale, Limit:60}
 	*/
 	// ---- Pima dataset parameters ----
 	//*
-		dataset := "Pima"
-		ratio := 0.75
-		lrParameters := libdrynx.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: scale, Lambda: 1.0,
+	dataset := "Pima"
+	ratio := 0.75
+	lrParameters := libdrynx.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: scale, Lambda: 1.0,
 		Step: 0.1, MaxIterations: 200, InitialWeights: []float64{0.334781, -0.633628, 0.225721, -0.648192, 0.406207,
-		0.044424, -0.426648, 0.877499, -0.426819}}
-		diffP = libdrynx.QueryDiffP{LapMean:0.0, LapScale:30.0, NoiseListSize: 90, Quanta: 0.0, Scale:scale, Limit:60}
+			0.044424, -0.426648, 0.877499, -0.426819}}
+	diffP = libdrynx.QueryDiffP{LapMean: 0.0, LapScale: 30.0, NoiseListSize: 90, Quanta: 0.0, Scale: scale, Limit: 60}
 	//*/
 
 	// ---- SPECTF dataset parameters ----
@@ -1061,20 +1061,20 @@ func TestServiceDrynxLogisticRegressionV2(t *testing.T) {
 
 	// ---- PCS dataset parameters ----
 	/*
-	dataset := "PCS"
-	lrParameters := libdrynx.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: scale, Lambda: 1.0, Step: 0.1, MaxIterations: 25,
-		InitialWeights: []float64{0, 0, 0, 0, 0, 0, 0, 0, 0}}
-	lrParameters.DatasetName = "PCS"
-	//diffP = common.QueryDiffP{LapMean:0.0, LapScale:30.0, NoiseListSize: 90, Quanta: 0.0, Scale:scale, Limit:60}
+		dataset := "PCS"
+		lrParameters := libdrynx.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: scale, Lambda: 1.0, Step: 0.1, MaxIterations: 25,
+			InitialWeights: []float64{0, 0, 0, 0, 0, 0, 0, 0, 0}}
+		lrParameters.DatasetName = "PCS"
+		//diffP = common.QueryDiffP{LapMean:0.0, LapScale:30.0, NoiseListSize: 90, Quanta: 0.0, Scale:scale, Limit:60}
 	*/
 	// ---- Pima dataset parameters ----
 	//*
-		dataset := "Pima"
-		lrParameters := libdrynx.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: scale, Lambda: 1.0,
+	dataset := "Pima"
+	lrParameters := libdrynx.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: scale, Lambda: 1.0,
 		Step: 0.1, MaxIterations: 200, InitialWeights: []float64{0.334781, -0.633628, 0.225721, -0.648192, 0.406207,
-		0.044424, -0.426648, 0.877499, -0.426819}}
-		lrParameters.DatasetName = "Pima"
-		//diffP = libdrynx.QueryDiffP{LapMean:0.0, LapScale:30.0, NoiseListSize: 90, Quanta: 0.0, Scale:scale, Limit:60}
+			0.044424, -0.426648, 0.877499, -0.426819}}
+	lrParameters.DatasetName = "Pima"
+	//diffP = libdrynx.QueryDiffP{LapMean:0.0, LapScale:30.0, NoiseListSize: 90, Quanta: 0.0, Scale:scale, Limit:60}
 	//*/
 
 	// ---- SPECTF dataset parameters ----
@@ -1101,14 +1101,14 @@ func TestServiceDrynxLogisticRegressionV2(t *testing.T) {
 
 	// ---- SPECTF dataset parameters ----
 	/*
-	dataset := "SPECTF_heart"
-	lrParameters := libdrynx.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: scale, Lambda: 1.0, Step: 0.012, MaxIterations: 450,
-		InitialWeights: []float64{
-			0.921455, -0.377080, -0.313317, 0.796285, 0.992807, -0.650099, 0.865773, 0.484040, 0.021763, 0.809766,
-			0.222401, 0.309993, 0.375320, 0.674654, -0.961690, -0.950472, -0.753475, -0.353844, 0.717381, -0.319103,
-			-0.664294, -0.573008, -0.401116, 0.216010, -0.810675, 0.961971, -0.412459, -0.507446, 0.585540, -0.273261,
-			0.899775, -0.611130, -0.223748, 0.008219, -0.758307, 0.907636, -0.547704, -0.464145, 0.677729, 0.426712,
-			-0.862759, 0.090766, -0.421597, -0.429986, 0.410418}}
+		dataset := "SPECTF_heart"
+		lrParameters := libdrynx.LogisticRegressionParameters{K: 2, PrecisionApproxCoefficients: scale, Lambda: 1.0, Step: 0.012, MaxIterations: 450,
+			InitialWeights: []float64{
+				0.921455, -0.377080, -0.313317, 0.796285, 0.992807, -0.650099, 0.865773, 0.484040, 0.021763, 0.809766,
+				0.222401, 0.309993, 0.375320, 0.674654, -0.961690, -0.950472, -0.753475, -0.353844, 0.717381, -0.319103,
+				-0.664294, -0.573008, -0.401116, 0.216010, -0.810675, 0.961971, -0.412459, -0.507446, 0.585540, -0.273261,
+				0.899775, -0.611130, -0.223748, 0.008219, -0.758307, 0.907636, -0.547704, -0.464145, 0.677729, 0.426712,
+				-0.862759, 0.090766, -0.421597, -0.429986, 0.410418}}
 	*/
 
 	//load the data

@@ -21,10 +21,12 @@ require (
 	go.dedis.ch/onet/v3 v3.0.4
 	go.dedis.ch/protobuf v1.0.6
 	go.etcd.io/bbolt v1.3.2 // indirect
-	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c
-	golang.org/x/lint v0.0.0-20190313153728-d0100b6bd8b3 // indirect
-	golang.org/x/net v0.0.0-20190324223953-e3b2ff56ed87 // indirect
-	golang.org/x/tools v0.0.0-20190325223049-1d95b17f1b04 // indirect
+	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
+	golang.org/x/lint v0.0.0-20190409202823-959b441ac422 // indirect
+	golang.org/x/net v0.0.0-20190628185345-da137c7871d7 // indirect
+	golang.org/x/sys v0.0.0-20190626221950-04f50cda93cb // indirect
+	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/tools v0.0.0-20190702201734-44aeb8b7c377 // indirect
 	gonum.org/v1/gonum v0.0.0-20190321072728-ca4d35bc590a
 	gopkg.in/satori/go.uuid.v1 v1.2.0
 )
