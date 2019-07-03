@@ -228,21 +228,20 @@ func Decode(ciphers []libunlynx.CipherText, secKey kyber.Scalar, operation libdr
 }
 
 // EncodeForFloat encodes floating points
-func EncodeForFloat(datas [][]float64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point,
+func EncodeForFloat(xData [][]float64, yData []int64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point,
 	signatures [][]libdrynx.PublishSignature, ranges []*[]int64, operation string) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
 
 	clearResponse := make([]int64, 0)
 	encryptedResponse := make([]libunlynx.CipherText, 0)
 	prf := make([]libdrynx.CreateProof, 0)
 	withProofs := len(ranges) > 0
-
 	switch operation {
 	case "logistic regression":
 		if withProofs {
-			encryptedResponse, clearResponse, prf = EncodeLogisticRegressionWithProofs(datas, lrParameters, pubKey, signatures, ranges)
+			encryptedResponse, clearResponse, prf = EncodeLogisticRegressionWithProofs(xData, yData, lrParameters, pubKey, signatures, ranges)
 		} else {
-			encryptedResponse, clearResponse = EncodeLogisticRegression(datas, lrParameters, pubKey)
-			log.Lvl1(clearResponse)
+			encryptedResponse, clearResponse = EncodeLogisticRegression(xData, yData, lrParameters, pubKey)
+			log.LLvl1(clearResponse)
 		}
 	}
 	return encryptedResponse, clearResponse, prf
