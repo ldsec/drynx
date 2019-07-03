@@ -232,7 +232,7 @@ type Operation struct {
 // LogisticRegressionParameters are the parameters specific to logistic regression
 type LogisticRegressionParameters struct {
 	// logistic regression specific
-	DatasetName			string
+	DatasetName        string
 	FilePath           string
 	NbrRecords         int64
 	NbrFeatures        int64

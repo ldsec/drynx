@@ -1320,7 +1320,7 @@ func LoadData(dataset string, filename string) ([][]float64, []int64) {
 		dataString := ReadFile(filename, ",")
 		data = String2DToFloat64(dataString)
 
-		labelColumn = 8
+		labelColumn = 0 // /!\ 8 for Pima_dataset but 0 for Pima_dataset_training/testing
 		X = RemoveColumn(data, labelColumn)
 		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
 	case "PCS":
