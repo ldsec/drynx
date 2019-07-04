@@ -1323,6 +1323,16 @@ func LoadData(dataset string, filename string) ([][]float64, []int64) {
 		labelColumn = 0 // /!\ 8 for Pima_dataset but 0 for Pima_dataset_training/testing
 		X = RemoveColumn(data, labelColumn)
 		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
+	case "BC":
+		fmt.Println("ReadFile starts...")
+		//dataString:= ReadFile("../data/BC_dataset_training.txt", ",")
+		dataString := ReadFile(filename, ",")
+		fmt.Println("ReadFile succeed")
+		data = String2DToFloat64(dataString)
+		labelColumn = 0
+
+		X = RemoveColumn(data, labelColumn)
+		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
 	case "PCS":
 		dataString := ReadFile(filename, ",")
 
@@ -1367,8 +1377,8 @@ func LoadData(dataset string, filename string) ([][]float64, []int64) {
 // ReadFile reads a dataset from file into a string matrix
 // removes incorrectly formatted records
 func ReadFile(path string, separator string) [][]string {
-	inFile, err := os.Open(path)
-
+	//inFile, err := os.Open(path)
+	inFile, err := os.Open("../tmpdata/BC_dataset_training.txt")
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(2)
@@ -1383,6 +1393,7 @@ func ReadFile(path string, separator string) [][]string {
 
 	for scanner.Scan() {
 		line := strings.Split(scanner.Text(), separator)
+
 		var array []string
 		for _, e := range line {
 			i := strings.TrimSpace(e)
@@ -1395,8 +1406,13 @@ func ReadFile(path string, separator string) [][]string {
 
 	// remove incorrectly formatted records
 	// todo: take max of len of all rows
+	fmt.Println("matrix:")
+	fmt.Println(matrix)
+
 	nbrFeatures := len(matrix[0])
 	var result [][]string
+
+
 	for _, row := range matrix {
 		if len(row) == nbrFeatures {
 			result = append(result, row)
