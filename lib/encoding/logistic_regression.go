@@ -1,14 +1,13 @@
 package encoding
 
 import (
+	"bufio"
+	"fmt"
 	"github.com/lca1/unlynx/lib"
 	"github.com/montanaflynn/stats"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/onet/v3/log"
 	"gonum.org/v1/gonum/stat/combin"
-
-	"bufio"
-	"fmt"
 	"math"
 	"math/rand"
 	"os"
@@ -1377,6 +1376,8 @@ func LoadData(dataset string, filename string) ([][]float64, []int64) {
 // ReadFile reads a dataset from file into a string matrix
 // removes incorrectly formatted records
 func ReadFile(path string, separator string) [][]string {
+	const maxCapacity = 512*1024
+
 	inFile, err := os.Open(path)
 	if err != nil {
 		fmt.Println(err)
@@ -1384,15 +1385,18 @@ func ReadFile(path string, separator string) [][]string {
 	}
 
 	defer inFile.Close()
-	scanner := bufio.NewScanner(inFile)
-	scanner.Split(bufio.ScanLines)
 
 	var matrix [][]string
 	nbrRecordsIgnored := 0
 
+	scanner := bufio.NewScanner(inFile)
+
+	buf := make([]byte, maxCapacity)
+	scanner.Buffer(buf, maxCapacity)
+
+	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
 		line := strings.Split(scanner.Text(), separator)
-
 		var array []string
 		for _, e := range line {
 			i := strings.TrimSpace(e)
@@ -1403,10 +1407,13 @@ func ReadFile(path string, separator string) [][]string {
 		matrix = append(matrix, array)
 	}
 
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
 	// remove incorrectly formatted records
 	// todo: take max of len of all rows
 	fmt.Println("matrix:")
-	fmt.Println(matrix)
 
 	nbrFeatures := len(matrix[0])
 	var result [][]string
@@ -1416,7 +1423,7 @@ func ReadFile(path string, separator string) [][]string {
 		if len(row) == nbrFeatures {
 			result = append(result, row)
 		} else {
-			log.Lvl1("Incorrect record formatting: record", row, "will be ignored")
+			log.Lvl2("Incorrect record formatting: record", row, "will be ignored")
 			nbrRecordsIgnored++
 		}
 	}
