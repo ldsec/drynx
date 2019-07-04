@@ -1377,8 +1377,7 @@ func LoadData(dataset string, filename string) ([][]float64, []int64) {
 // ReadFile reads a dataset from file into a string matrix
 // removes incorrectly formatted records
 func ReadFile(path string, separator string) [][]string {
-	//inFile, err := os.Open(path)
-	inFile, err := os.Open("../tmpdata/BC_dataset_training.txt")
+	inFile, err := os.Open(path)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(2)
