@@ -67,22 +67,29 @@ func EncodeLogisticRegression(xData [][]float64, yData []int64, lrParameters lib
 
 		// add an all 1s column to the data (offset term)
 		XStandardised = Augment(XStandardised)
+		fmt.Println("Augment succ")
 
 		N := lrParameters.NbrRecords
 		// compute all approximation coefficients per record
 		approxCoefficients := make([][][]float64, N)
+		fmt.Println("Start computing approx...")
 		for i := 0; i < len(XStandardised); i++ {
 			approxCoefficients[i] = ComputeAllApproxCoefficients(XStandardised[i], yData[i], lrParameters.K)
+			fmt.Println("approx[i]: finished")
 		}
+		fmt.Println("compute all approximation coefficients per record: ok")
 
 		// aggregate the approximation coefficients locally
 		aggregatedApproxCoefficients := AggregateApproxCoefficients(approxCoefficients)
+		fmt.Println("aggregate the approximation coefficients locally: ok")
 
 		// convert (and optionally scale) the aggregated approximation coefficients to int
 		aggregatedApproxCoefficientsInt := Float64ToInt642DArrayWithPrecision(aggregatedApproxCoefficients, lrParameters.PrecisionApproxCoefficients)
+		fmt.Println("convert (and optionally scale) the aggregated approximation coefficients to int: ok")
 
 		// encrypt the aggregated approximation coefficients
 		encryptedApproxCoefficients, _ := ComputeEncryptedApproxCoefficients(aggregatedApproxCoefficientsInt, pubKey)
+		fmt.Println("encrypt the aggregated approximation coefficients: ok")
 
 		// pack the encrypted aggregated approximation coefficients (will need to unpack the result at the querier side)
 		for j := 0; j < lrParameters.K; j++ {
@@ -92,6 +99,7 @@ func EncodeLogisticRegression(xData [][]float64, yData []int64, lrParameters lib
 				encryptedAggregatedApproxCoefficients[j*nLevelPrevious+i] = (*encryptedApproxCoefficients[j])[i]
 			}
 		}
+		fmt.Println("pack the encrypted aggregated approximation coefficients: ok")
 
 		// pack the aggregated approximation coefficients
 		for j := 0; j < lrParameters.K; j++ {
@@ -101,6 +109,7 @@ func EncodeLogisticRegression(xData [][]float64, yData []int64, lrParameters lib
 				aggregatedApproxCoefficientsIntPacked[j*nLevelPrevious+i] = aggregatedApproxCoefficientsInt[j][i]
 			}
 		}
+		fmt.Println("pack the aggregated approximation coefficients: ok")
 	}
 
 	log.Lvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
@@ -359,18 +368,24 @@ func ComputeDistinctApproxCoefficients(X []float64, y int64, k int) [][]float64 
 
 // ComputeAllApproxCoefficients computes all the coefficients of the approximated logistic regression cost function
 func ComputeAllApproxCoefficients(X []float64, y int64, k int) [][]float64 {
+	fmt.Println("enter into ComputeAllApproxCoefficients")
+	fmt.Println("k:", k)
+
 	d := len(X) - 1 // the dimension of the data
 
 	// case k <= 3 ok
 	approxCoefficients := make([][]float64, k)
 	for j := 0; j < k; j++ {
+		fmt.Println("loop")
 		approxCoefficients[j] = make([]float64, int(math.Pow(float64(d+1), float64(j+1))))
 	}
 
 	// initialisation: computation of the coefficients for k = 1
+
 	for s := 0; s <= d; s++ {
 		approxCoefficients[0][s] = X[s] * (2*float64(y) - 1)
 	}
+
 
 	// computation of the coefficients for k >= 2
 	for j := 2; j <= k; j++ {
@@ -379,6 +394,7 @@ func ComputeAllApproxCoefficients(X []float64, y int64, k int) [][]float64 {
 
 		// generate all indices combinations with repetitions, order matters, of size j (cartesian product)
 		combinations := CartesianProduct(0, int64(d+1), j)
+		fmt.Println("generate combinations: ok")
 
 		// compute the product of the Xs for each combination of indices
 		for ri := 0; ri < len(combinations); ri++ {
@@ -979,16 +995,18 @@ func StandardiseWithTrain(matrixTest, matrixTrain [][]float64) [][]float64 {
 // StandardiseWith standardises a dataset column-wise using the given means and standard deviations
 func StandardiseWith(data [][]float64, means []float64, standardDeviations []float64) [][]float64 {
 
+	fmt.Println("enter into StandardiseWith")
 	nbFeatures := len(data[0])
 
 	standardisedData := make([][]float64, len(data))
+
 	for record := 0; record < len(data); record++ {
 		standardisedData[record] = make([]float64, nbFeatures)
 		for i := 0; i < nbFeatures; i++ {
 			standardisedData[record][i] = float64(data[record][i]-means[i]) / standardDeviations[i]
 		}
 	}
-
+	fmt.Println("before Standardise return")
 	return standardisedData
 }
 
@@ -1324,7 +1342,6 @@ func LoadData(dataset string, filename string) ([][]float64, []int64) {
 		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
 	case "BC":
 		fmt.Println("ReadFile starts...")
-		//dataString:= ReadFile("../data/BC_dataset_training.txt", ",")
 		dataString := ReadFile(filename, ",")
 		fmt.Println("ReadFile succeed")
 		data = String2DToFloat64(dataString)
@@ -1574,12 +1591,15 @@ func Range(start int64, end int64) []int64 {
 
 // CartesianProduct returns the cartesian product of <dimension> arrays ranging from <start> (included) to <end> (excluded)
 func CartesianProduct(start, end int64, dimension int) [][]int64 {
+
 	// generate all indices combinations with repetitions, order matters, of size j+1 (cartesian product)
 	indices := make([][]int64, dimension)
 	for i := 0; i < dimension; i++ {
 		indices[i] = Range(start, end)
 	}
+	fmt.Println("Computing Cartesian...")
 	combinationsMatrix := combin.Cartesian(nil, Int64ToFloat642DArray(indices))
+	fmt.Println("combinationsMatrix: ok")
 
 	// convert the cartesian product dense matrix into a 2D slice
 	// note: dimension == nbCols
