@@ -11,6 +11,7 @@ require (
 	github.com/coreos/bbolt v1.3.3
 	github.com/fanliao/go-concurrentMap v0.0.0-20141114143905-7d2d7a5ea67b
 	github.com/golang/protobuf v1.3.2 // indirect
+	github.com/golangplus/testing v0.0.0-20180327235837-af21d9c3145e
 	github.com/kr/pty v1.1.8 // indirect
 	github.com/lca1/unlynx v1.3.1
 	github.com/montanaflynn/stats v0.5.0

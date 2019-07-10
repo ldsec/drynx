@@ -116,7 +116,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 	}
 
 	// generate test proofs
-	testProofs := drynxdata.CreateRandomGoodTestData(el, pub, ps, ranges, nbrProofs)
+	testProofs, _ := drynxdata.CreateRandomGoodTestData(el, pub, ps, ranges, nbrProofs)
 
 	// 5 is the number of different proofs
 	totalNbrProofs := nbrProofs * 5

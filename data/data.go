@@ -12,6 +12,7 @@ import (
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
+	"go.dedis.ch/onet/v3/log"
 )
 
 // DataToVerify contains the proofs to be verified by the skipchain CA
@@ -24,7 +25,7 @@ type DataToVerify struct {
 }
 
 //CreateRandomGoodTestData only creates valid proofs
-func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]libdrynx.PublishSignatureBytes, ranges []*[]int64, nbrProofs int) DataToVerify {
+func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]libdrynx.PublishSignatureBytes, ranges []*[]int64, nbrProofs int) (DataToVerify, error) {
 	var secKey = bn256.NewSuiteG1().Scalar().Pick(random.New())
 	var entityPub = bn256.NewSuiteG1().Point().Mul(secKey, bn256.NewSuiteG1().Point().Base())
 	var tab1 = []int64{1, 2, 3, 6}
@@ -37,7 +38,6 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]libd
 	result.ProofsObfuscation = make([]*libdrynxobfuscation.PublishedListObfuscationProof, nbrProofs)
 	result.ProofShuffle = make([]*libunlynxshuffle.PublishedShufflingProof, nbrProofs)
 
-	//Fill Aggregation with good proofs
 	for i := range result.ProofsAggregation {
 		tab := []int64{1, 2, 3, 4, 5}
 		ev := libunlynx.EncryptIntVector(roster.Aggregate, tab)
@@ -66,7 +66,11 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]libd
 		responses = append(responses, testCipherVect1, testCipherVect2)
 
 		responsesShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(responses, libunlynx.SuiTe.Point().Base(), roster.Aggregate, nil)
-		prf, _ := libunlynxshuffle.ShuffleProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), roster.Aggregate, beta, pi)
+		prf, err := libunlynxshuffle.ShuffleProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), roster.Aggregate, beta, pi)
+		if err != nil {
+			log.Error(err)
+			return DataToVerify{}, err
+		}
 		result.ProofShuffle[i] = &prf
 	}
 
@@ -78,13 +82,15 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]libd
 		}
 
 		_, ks2s, rBNegs, vis := libunlynxkeyswitch.KeySwitchSequence(pub, initialTab, secKey)
-		pkslp, _ := libunlynxkeyswitch.KeySwitchListProofCreation(entityPub, pub, secKey, ks2s, rBNegs, vis)
+		pkslp, err := libunlynxkeyswitch.KeySwitchListProofCreation(entityPub, pub, secKey, ks2s, rBNegs, vis)
+		if err != nil {
+			return DataToVerify{}, err
+		}
 
 		result.ProofsKeySwitch[i] = &pkslp
 	}
 
 	for i := range result.ProofsRange {
-
 		encryption, r := libunlynx.EncryptIntGetR(roster.Aggregate, int64(25))
 
 		// read the signatures needed to compute the range proofs
@@ -103,5 +109,5 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]libd
 		result.ProofsRange[i] = &rps
 	}
 
-	return result
+	return result, nil
 }
