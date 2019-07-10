@@ -349,7 +349,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	for i, v := range queryResponse {
 		go func(group string, cv libunlynx.CipherVector) {
 			defer wg.Done()
-			cvBytes, lenQ := cv.ToBytes()
+			cvBytes, lenQ, _ := cv.ToBytes()
 
 			mutex.Lock()
 			lenQueryResponse = lenQ

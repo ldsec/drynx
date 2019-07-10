@@ -116,8 +116,8 @@ func ObfuscationListProofVerification(plop PublishedListObfuscationProof, percen
 func (pop *PublishedObfuscationProof) ToBytes() PublishedObfuscationProofBytes {
 	popb := PublishedObfuscationProofBytes{}
 	popb.Proof = pop.Proof
-	popb.C = pop.C.ToBytes()
-	popb.Co = pop.Co.ToBytes()
+	popb.C, _ = pop.C.ToBytes()
+	popb.Co, _ = pop.Co.ToBytes()
 	return popb
 }
 

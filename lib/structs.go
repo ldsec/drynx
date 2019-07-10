@@ -289,7 +289,7 @@ func (rad *ResponseAllDPs) FormatAggregationProofs(res map[libunlynx.GroupingKey
 func (rdog *ResponseDPOneGroup) ToBytes() ResponseDPOneGroupBytes {
 	result := ResponseDPOneGroupBytes{}
 	result.Groups = []byte(rdog.Group)
-	tmp, leng := rdog.Data.ToBytes()
+	tmp, leng, _ := rdog.Data.ToBytes()
 	result.Data = tmp
 	result.CVLength = []byte{byte(leng)}
 
@@ -377,7 +377,7 @@ func (sm *ShufflingMessage) ToBytes() (*[]byte, int, int, int) {
 			data := (*sm).Data[i]
 			mutexD.Unlock()
 
-			aux, gacbAux, aabAux, pgaebAux := data.ToBytes()
+			aux, gacbAux, aabAux, pgaebAux, _ := data.ToBytes()
 
 			mutexD.Lock()
 			bb[i] = aux

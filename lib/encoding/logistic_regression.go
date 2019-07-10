@@ -1175,7 +1175,7 @@ func ComputeTPRFPR(predicted []float64, actual []int64) ([]float64, []float64) {
 	stat.SortWeightedLabeled(sortedPredictions, labels, nil)
 
 	// compute TPR and FPR for varying thresholds
-	tpr, fpr := stat.ROC(0, sortedPredictions, labels, nil)
+	tpr, fpr, _ := stat.ROC(nil, sortedPredictions, labels, nil)
 
 	return tpr, fpr
 }

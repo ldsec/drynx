@@ -167,7 +167,7 @@ func (p *ObfuscationProtocol) Start() error {
 		return errors.New("no data reference provided for aggregation")
 	}
 	log.Lvl2("[OBFUSCATION PROTOCOL] <Drynx> Server", p.ServerIdentity(), " started an Obfuscation Protocol (", len(p.ToObfuscateData), "ciphertext(s) )")
-	bytesMessage, length := p.ToObfuscateData.ToBytes()
+	bytesMessage, length, _ := p.ToObfuscateData.ToBytes()
 	p.MutexObf.Unlock()
 
 	if err := p.SendToChildren(&ObfuscationLengthMessage{Length: length}); err != nil {
@@ -303,7 +303,7 @@ func (p *ObfuscationProtocol) ascendingObfuscationPhase() (libunlynx.CipherVecto
 			return libunlynx.CipherVector{}, err
 		}
 		p.MutexObf.Lock()
-		message, _ := (p.ToObfuscateData).ToBytes()
+		message, _, _ := (p.ToObfuscateData).ToBytes()
 		p.MutexObf.Unlock()
 		if err := p.SendToParent(&ObfuscationUpBytesMessage{Data: message}); err != nil {
 			return libunlynx.CipherVector{}, err

@@ -186,7 +186,7 @@ func verifyRangeProofList(data []byte, sample float64, ranges []*[]int64, psb []
 
 // NewAggregationProofRequest creates a AggregationProofRequest to be used in the ProofsCollectionProtocol
 func NewAggregationProofRequest(proofs *libunlynxaggr.PublishedAggregationListProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *AggregationProofRequest {
-	proofBytes := proofs.ToBytes()
+	proofBytes, _ := proofs.ToBytes()
 	dataToSend, err := network.Marshal(&proofBytes)
 	if err != nil {
 		log.Fatal("Error marshalling <PublishAggregationProofBytes> message", err)
@@ -340,7 +340,7 @@ func verifyObfuscation(data []byte, insideProofThresold, sample float64) int64 {
 
 // NewShuffleProofRequest creates a ShuffleProofRequest to be used in the ProofsCollectionProtocol
 func NewShuffleProofRequest(proof *libunlynxshuffle.PublishedShufflingProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *ShuffleProofRequest {
-	psp := proof.ToBytes()
+	psp, _ := proof.ToBytes()
 	dataToSend, err := network.Marshal(&psp)
 	if err != nil {
 		log.Fatal("Error marshalling <PublishedShufflingProofBytes> message", err)
@@ -418,7 +418,7 @@ func verifyShuffle(data []byte, sample float64, roster onet.Roster) int64 {
 
 // NewKeySwitchProofRequest creates a KeySwitchProofRequest to be used in the ProofsCollectionProtocol
 func NewKeySwitchProofRequest(proof *libunlynxkeyswitch.PublishedKSListProof, ID, senderID, differInfo string, entities *onet.Roster, priv kyber.Scalar, sb *skipchain.SkipBlock) *KeySwitchProofRequest {
-	proofBytes := proof.ToBytes()
+	proofBytes, _ := proof.ToBytes()
 	dataToSend, err := network.Marshal(&proofBytes)
 	if err != nil {
 		log.Fatal("Error marshalling <SwitchKeyListCVProofBytes> message")

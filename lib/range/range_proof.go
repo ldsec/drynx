@@ -90,7 +90,7 @@ func (prf *RangeProof) ToBytes() RangeProofBytes {
 	prfBytes := RangeProofBytes{RP: &RangeProofDataBytes{}}
 
 	if prf.RP == nil {
-		prfBytes.Commit = prf.Commit.ToBytes()
+		prfBytes.Commit, _ = prf.Commit.ToBytes()
 		return prfBytes
 	}
 
@@ -101,7 +101,7 @@ func (prf *RangeProof) ToBytes() RangeProofBytes {
 		go func(i int) {
 			defer wg.Done()
 			if i == 0 { // to include it in the parallelization
-				prfBytes.Commit = prf.Commit.ToBytes()
+				prfBytes.Commit, _ = prf.Commit.ToBytes()
 				tmp, err := prf.RP.Challenge.MarshalBinary()
 				if err != nil {
 					log.Fatal(err)
@@ -114,7 +114,7 @@ func (prf *RangeProof) ToBytes() RangeProofBytes {
 				}
 				prfBytes.RP.Zr = &tmpR
 
-				tmpD := libunlynx.AbstractPointsToBytes([]kyber.Point{prf.RP.D})
+				tmpD, _ := libunlynx.AbstractPointsToBytes([]kyber.Point{prf.RP.D})
 				prfBytes.RP.D = &tmpD
 
 				tmpPhi := []byte{}
@@ -136,7 +136,7 @@ func (prf *RangeProof) ToBytes() RangeProofBytes {
 				}
 				tmpV[i] = append(tmpV[i], tmp...)
 			}
-			tmpA[i] = libunlynx.AbstractPointsToBytes(prf.RP.A[i])
+			tmpA[i], _ = libunlynx.AbstractPointsToBytes(prf.RP.A[i])
 
 			for _, w := range prf.RP.Zv[i] {
 				tmp, err2 := w.MarshalBinary()
@@ -200,7 +200,8 @@ func (prf *RangeProof) FromBytes(prpb RangeProofBytes) {
 				}
 				prf.RP.Challenge = tmp
 
-				prf.RP.D = libunlynx.FromBytesToAbstractPoints(*prpb.RP.D)[0]
+				D, _ := libunlynx.FromBytesToAbstractPoints(*prpb.RP.D)
+				prf.RP.D = D[0]
 
 				tmp1 := libunlynx.SuiTe.Scalar().One()
 				err = tmp1.UnmarshalBinary(*prpb.RP.Zr)

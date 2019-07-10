@@ -16,11 +16,11 @@ var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 
 func TestWriteDataFromCSVFile(t *testing.T) {
 	t.Skip()
-	testTimeData := timedataunlynx.ReadDataFromCSVFile(filenameRead, flags)
+	testTimeData, _ := timedataunlynx.ReadDataFromCSVFile(filenameRead, flags)
 
 	timedataunlynx.CreateCSVFile(filenameWrite)
 	for i := 0; i < len(testTimeData[flags[0]]); i++ {
-		setup := timedataunlynx.ReadTomlSetup(filenameToml, i)
+		setup, _ := timedataunlynx.ReadTomlSetup(filenameToml, i)
 		timedataunlynx.WriteDataFromCSVFile(filenameWrite, flags, testTimeData, i, setup)
 	}
 }

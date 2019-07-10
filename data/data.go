@@ -66,7 +66,7 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]libd
 		responses = append(responses, testCipherVect1, testCipherVect2)
 
 		responsesShuffled, pi, beta := libunlynxshuffle.ShuffleSequence(responses, libunlynx.SuiTe.Point().Base(), roster.Aggregate, nil)
-		prf := libunlynxshuffle.ShuffleProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), roster.Aggregate, beta, pi)
+		prf, _ := libunlynxshuffle.ShuffleProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), roster.Aggregate, beta, pi)
 		result.ProofShuffle[i] = &prf
 	}
 
@@ -78,7 +78,7 @@ func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]libd
 		}
 
 		_, ks2s, rBNegs, vis := libunlynxkeyswitch.KeySwitchSequence(pub, initialTab, secKey)
-		pkslp := libunlynxkeyswitch.KeySwitchListProofCreation(entityPub, pub, secKey, ks2s, rBNegs, vis)
+		pkslp, _ := libunlynxkeyswitch.KeySwitchListProofCreation(entityPub, pub, secKey, ks2s, rBNegs, vis)
 
 		result.ProofsKeySwitch[i] = &pkslp
 	}
