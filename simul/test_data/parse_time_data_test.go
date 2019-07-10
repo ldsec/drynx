@@ -1,6 +1,7 @@
 package timedata
 
 import (
+	"github.com/lca1/unlynx/simul/test_data/time_data"
 	"testing"
 )
 
@@ -13,24 +14,13 @@ var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 	"DataCollectionProtocol", "JustExecution", "AllProofs", "WaitTimeDPs", "BI", "Decode", "DiffPPhase", "\n",
 }
 
-func TestReadTomlSetup(t *testing.T) {
-	t.Skip()
-	ReadTomlSetup(filenameToml, 1)
-}
-
-func TestReadDataFromCSV(t *testing.T) {
-	t.Skip()
-	ReadDataFromCSVFile(filenameRead, ",")
-}
-
 func TestWriteDataFromCSVFile(t *testing.T) {
 	t.Skip()
-	lines := ReadDataFromCSVFile(filenameRead, ",")
-	testTimeData := ParseDataFromCSVFile(lines, flags)
+	testTimeData, _ := timedataunlynx.ReadDataFromCSVFile(filenameRead, flags)
 
-	CreateCSVFile(filenameWrite)
+	timedataunlynx.CreateCSVFile(filenameWrite)
 	for i := 0; i < len(testTimeData[flags[0]]); i++ {
-		setup := ReadTomlSetup(filenameToml, i)
-		WriteDataFromCSVFile(filenameWrite, flags, testTimeData, i, setup)
+		setup, _ := timedataunlynx.ReadTomlSetup(filenameToml, i)
+		timedataunlynx.WriteDataFromCSVFile(filenameWrite, flags, testTimeData, i, setup)
 	}
 }

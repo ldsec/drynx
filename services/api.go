@@ -3,8 +3,12 @@ package services
 import (
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/drynx/lib/obfuscation"
+	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
-	"go.dedis.ch/cothority/v3"
+	"github.com/lca1/unlynx/lib/aggregation"
+	"github.com/lca1/unlynx/lib/key_switch"
+	"github.com/lca1/unlynx/lib/shuffle"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/key"
 	"go.dedis.ch/onet/v3"
@@ -24,18 +28,18 @@ type API struct {
 //init of the network messages
 func init() {
 	network.RegisterMessage(libdrynx.GetLatestBlock{})
-	network.RegisterMessage(libdrynx.RangeProofListBytes{})
-	network.RegisterMessage(libdrynx.PublishedShufflingProofBytes{})
-	network.RegisterMessage(libdrynx.PublishedKSListProofBytes{})
-	network.RegisterMessage(libdrynx.PublishAggregationProofBytes{})
-	network.RegisterMessage(libdrynx.PublishedListObfuscationProofBytes{})
+	network.RegisterMessage(libdrynxrange.RangeProofListBytes{})
+	network.RegisterMessage(libunlynxshuffle.PublishedShufflingProofBytes{})
+	network.RegisterMessage(libunlynxkeyswitch.PublishedKSListProofBytes{})
+	network.RegisterMessage(libunlynxaggr.PublishedAggregationListProofBytes{})
+	network.RegisterMessage(libdrynxobfuscation.PublishedListObfuscationProofBytes{})
 }
 
 // NewDrynxClient constructor of a client.
 func NewDrynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 	keys := key.NewKeyPair(libunlynx.SuiTe)
 	newClient := &API{
-		Client:     onet.NewClient(cothority.Suite, ServiceName),
+		Client:     onet.NewClient(libunlynx.SuiTe, ServiceName),
 		clientID:   clientID,
 		entryPoint: entryPoint,
 		public:     keys.Public,
@@ -43,7 +47,7 @@ func NewDrynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 	}
 
 	limit := int64(10000)
-	libdrynx.CreateDecryptionTable(limit, newClient.public, newClient.private)
+	libunlynx.CreateDecryptionTable(limit, newClient.public, newClient.private)
 	return newClient
 }
 
@@ -73,9 +77,10 @@ func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToSer
 		ServerToDP:                 dpToServer,
 		IDtoPublic:                 idToPublic,
 		Threshold:                  thresholds[0],
-		RangeProofThreshold:        thresholds[1],
-		ObfuscationProofThreshold:  thresholds[2],
-		KeySwitchingProofThreshold: thresholds[3],
+		AggregationProofThreshold:  thresholds[1],
+		RangeProofThreshold:        thresholds[2],
+		ObfuscationProofThreshold:  thresholds[3],
+		KeySwitchingProofThreshold: thresholds[4],
 
 		// query statement
 		Query: libdrynx.Query{
@@ -118,7 +123,7 @@ func (c *API) SendSurveyQuery(sq libdrynx.SurveyQuery) (*[]string, *[][]float64,
 	count := 0
 	for i, res := range sr.Data {
 		grp[count] = i
-		aggr[count] = encoding.Decode(res, c.private, sq.Query.Operation)
+		aggr[count] = libdrynxencoding.Decode(res, c.private, sq.Query.Operation)
 		count++
 	}
 	libunlynx.EndTimer(clientDecode)

@@ -1,6 +1,7 @@
 package protocols_test
 
 import (
+	"go.dedis.ch/kyber/v3/util/key"
 	"testing"
 
 	"time"
@@ -43,11 +44,14 @@ func TestDataCollectionOperationsProtocol(t *testing.T) {
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	defer local.CloseAll()
 
-	onet.GlobalProtocolRegister("DataCollectionTest", NewDataCollectionTest)
+	if _, err := onet.GlobalProtocolRegister("DataCollectionTest", NewDataCollectionTest); err != nil {
+		log.Fatal("Failed to register the <DataCollectionTest> protocol:", err)
+	}
 	_, _, tree := local.GenTree(10, true)
 
 	operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg"}
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 
 	for _, op := range operationList {
 		// create query
@@ -62,7 +66,11 @@ func TestDataCollectionOperationsProtocol(t *testing.T) {
 		protocol := rootInstance.(*protocols.DataCollectionProtocol)
 
 		//run protocol
-		go protocol.Start()
+		go func() {
+			if err := protocol.Start(); err != nil {
+				log.Fatal(err)
+			}
+		}()
 
 		timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
 		feedback := protocol.FeedbackChannel
@@ -71,9 +79,9 @@ func TestDataCollectionOperationsProtocol(t *testing.T) {
 		case result := <-feedback:
 			// decrypt results
 			log.Lvl1("Final result [", op, "]:")
-			for key, value := range result {
+			for keyV, value := range result {
 				listResults := libunlynx.DecryptIntVector(secKey, &value)
-				log.Lvl1(key, ":", listResults)
+				log.Lvl1(keyV, ":", listResults)
 			}
 
 			continue

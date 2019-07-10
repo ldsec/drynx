@@ -8,6 +8,8 @@ package protocols
 
 import (
 	"errors"
+	"github.com/lca1/drynx/lib/obfuscation"
+	"github.com/lca1/drynx/lib/proof"
 
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/unlynx/lib"
@@ -27,11 +29,18 @@ func init() {
 	network.RegisterMessage(ChildAggregatedDataMessage{})
 	network.RegisterMessage(ObfuscationUpMessage{})
 	network.RegisterMessage(ObfuscationLengthMessage{})
-	onet.GlobalProtocolRegister(ObfuscationProtocolName, NewObfuscationProtocol)
+	if _, err := onet.GlobalProtocolRegister(ObfuscationProtocolName, NewObfuscationProtocol); err != nil {
+		log.Fatal("Error registering <ObfuscationProtocol>:", err)
+	}
 }
 
 // Messages
 //______________________________________________________________________________________________________________________
+
+// ChildAggregatedDataMessage contains one node's aggregated data.
+type ChildAggregatedDataMessage struct {
+	ChildData []libunlynx.FilteredResponseDet
+}
 
 // ObfuscationDownMessage message sent to trigger an obfuscation protocol.
 type ObfuscationDownMessage struct {
@@ -158,11 +167,15 @@ func (p *ObfuscationProtocol) Start() error {
 		return errors.New("no data reference provided for aggregation")
 	}
 	log.Lvl2("[OBFUSCATION PROTOCOL] <Drynx> Server", p.ServerIdentity(), " started an Obfuscation Protocol (", len(p.ToObfuscateData), "ciphertext(s) )")
-	bytesMessage, length := p.ToObfuscateData.ToBytes()
+	bytesMessage, length, _ := p.ToObfuscateData.ToBytes()
 	p.MutexObf.Unlock()
 
-	p.SendToChildren(&ObfuscationLengthMessage{Length: length})
-	p.SendToChildren(&ObfuscationDownBytesMessage{bytesMessage})
+	if err := p.SendToChildren(&ObfuscationLengthMessage{Length: length}); err != nil {
+		return err
+	}
+	if err := p.SendToChildren(&ObfuscationDownBytesMessage{bytesMessage}); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -172,10 +185,15 @@ func (p *ObfuscationProtocol) Dispatch() error {
 
 	// 1. Obfuscation announcement phase
 	if !p.IsRoot() {
-		p.obfuscationAnnouncementPhase()
+		if err := p.obfuscationAnnouncementPhase(); err != nil {
+			return err
+		}
 	}
 	// 2. Ascending obfuscation phase
-	obfuscatededData := p.ascendingObfuscationPhase()
+	obfuscatededData, err := p.ascendingObfuscationPhase()
+	if err != nil {
+		return err
+	}
 	log.Lvl2("[OBFUSCATION PROTOCOL] <Drynx> Server", p.ServerIdentity(), " completed obfuscation phase (", len(obfuscatededData), "group(s) )")
 
 	// 3. Response reporting
@@ -186,7 +204,7 @@ func (p *ObfuscationProtocol) Dispatch() error {
 }
 
 // Announce forwarding down the tree.
-func (p *ObfuscationProtocol) obfuscationAnnouncementPhase() {
+func (p *ObfuscationProtocol) obfuscationAnnouncementPhase() error {
 	lengthMessage := <-p.LengthNodeChannel
 	dataReferenceMessage := <-p.DataReferenceChannel
 
@@ -196,13 +214,18 @@ func (p *ObfuscationProtocol) obfuscationAnnouncementPhase() {
 	p.ToObfuscateData = cv
 	p.MutexObf.Unlock()
 	if !p.IsLeaf() {
-		p.SendToChildren(&ObfuscationLengthMessage{Length: lengthMessage[0].Length})
-		p.SendToChildren(&ObfuscationDownBytesMessage{Data: dataReferenceMessage.Data})
+		if err := p.SendToChildren(&ObfuscationLengthMessage{Length: lengthMessage[0].Length}); err != nil {
+			return err
+		}
+		if err := p.SendToChildren(&ObfuscationDownBytesMessage{Data: dataReferenceMessage.Data}); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // Results pushing up the tree containing aggregation results.
-func (p *ObfuscationProtocol) ascendingObfuscationPhase() libunlynx.CipherVector {
+func (p *ObfuscationProtocol) ascendingObfuscationPhase() (libunlynx.CipherVector, error) {
 
 	//roundTotComput := libunlynx.StartTimer(p.Name() + "_CollectiveAggregation(ascendingAggregation)")
 
@@ -233,12 +256,20 @@ func (p *ObfuscationProtocol) ascendingObfuscationPhase() libunlynx.CipherVector
 
 	if p.Proofs == 1 {
 		go func() {
-			proof := libdrynx.ObfuscationListProofCreation(proofsCs, proofsCos, proofsSs)
+			proof := libdrynxobfuscation.ObfuscationListProofCreation(proofsCs, proofsCos, proofsSs)
 			pi := p.MapPIs["obfuscation/"+p.ServerIdentity().String()]
-			pi.(*ProofCollectionProtocol).Proof = libdrynx.ProofRequest{ObfuscationProof: libdrynx.NewObfuscationProofRequest(&proof, p.Query.SurveyID, p.ServerIdentity().String(), "", p.Query.Query.RosterVNs, p.Private(), nil)}
+			pi.(*ProofCollectionProtocol).Proof = drynxproof.ProofRequest{ObfuscationProof: drynxproof.NewObfuscationProofRequest(&proof, p.Query.SurveyID, p.ServerIdentity().String(), "", p.Query.Query.RosterVNs, p.Private(), nil)}
 
-			go pi.Dispatch()
-			go pi.Start()
+			go func() {
+				if err := pi.Dispatch(); err != nil {
+					log.Fatal(err)
+				}
+			}()
+			go func() {
+				if err := pi.Start(); err != nil {
+					log.Fatal(err)
+				}
+			}()
 			<-pi.(*ProofCollectionProtocol).FeedbackChannel
 		}()
 	}
@@ -268,13 +299,16 @@ func (p *ObfuscationProtocol) ascendingObfuscationPhase() libunlynx.CipherVector
 	//libunlynx.EndTimer(roundTotComput)
 
 	if !p.IsRoot() {
-
-		p.SendToParent(&ObfuscationLengthMessage{len(p.ToObfuscateData)})
+		if err := p.SendToParent(&ObfuscationLengthMessage{len(p.ToObfuscateData)}); err != nil {
+			return libunlynx.CipherVector{}, err
+		}
 		p.MutexObf.Lock()
-		message, _ := (p.ToObfuscateData).ToBytes()
+		message, _, _ := (p.ToObfuscateData).ToBytes()
 		p.MutexObf.Unlock()
-		p.SendToParent(&ObfuscationUpBytesMessage{Data: message})
+		if err := p.SendToParent(&ObfuscationUpBytesMessage{Data: message}); err != nil {
+			return libunlynx.CipherVector{}, err
+		}
 	}
 
-	return p.ToObfuscateData
+	return p.ToObfuscateData, nil
 }

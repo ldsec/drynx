@@ -1,7 +1,8 @@
-package encoding
+package libdrynxencoding
 
 import (
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/kyber/v3"
 	"math"
@@ -14,7 +15,7 @@ func EncodeCosim(rijs, riks []int64, pubKey kyber.Point) ([]libunlynx.CipherText
 }
 
 // EncodeCosimWithProofs computes the elements needed to compute cosine similarity with the proof of range
-func EncodeCosimWithProofs(rijs, riks []int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
+func EncodeCosimWithProofs(rijs, riks []int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynxrange.CreateProof) {
 	//sum the rijs
 	rijsSum := int64(0)
 	riksSum := int64(0)
@@ -51,20 +52,14 @@ func EncodeCosimWithProofs(rijs, riks []int64, pubKey kyber.Point, sigs [][]libd
 		return resultEncrypteds, resultClear, nil
 	}
 
-	createProofs := make([]libdrynx.CreateProof, len(resultClear))
+	createProofs := make([]libdrynxrange.CreateProof, len(resultClear))
 	wg = libunlynx.StartParallelize(len(resultClear))
 	for i, v := range resultClear {
-		if libunlynx.PARALLELIZE {
-			go func(i int, v int64) {
-				defer wg.Done()
-				//input range validation proof
-				createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: resultRandomRS[i], CaPub: pubKey, Cipher: resultEncrypteds[i]}
-			}(i, v)
-		} else {
+		go func(i int, v int64) {
+			defer wg.Done()
 			//input range validation proof
-			createProofs[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: resultRandomRS[i], CaPub: pubKey, Cipher: resultEncrypteds[i]}
-		}
-
+			createProofs[i] = libdrynxrange.CreateProof{Sigs: libdrynxrange.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: resultRandomRS[i], CaPub: pubKey, Cipher: resultEncrypteds[i]}
+		}(i, v)
 	}
 	libunlynx.EndParallelize(wg)
 

@@ -3,23 +3,15 @@ package libdrynx
 import (
 	"github.com/coreos/bbolt"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/protocols"
 	"go.dedis.ch/cothority/v3/skipchain"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/pairing/bn256"
-	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
 	"sync"
 	"time"
 )
-
-const proofFalse = int64(0)
-
-// ProofTrue is the constant used to indicate that a proof is true in the bitmap
-const ProofTrue = int64(1)
-const proofReceived = int64(2)
-const proofFalseSign = int64(4)
 
 // QueryInfo is a structure used in the service to store information about a query in the concurrent map.
 // This information helps us to know how many proofs have been received and processed.
@@ -70,15 +62,6 @@ type GetBlock struct {
 	ID     string
 }
 
-// DataToVerify contains the proofs to be verified by the skipchain CA
-type DataToVerify struct {
-	ProofsRange       []*RangeProofList
-	ProofsAggregation []*PublishAggregationProof
-	ProofsObfuscation []*PublishedListObfuscationProof
-	ProofsKeySwitch   []*PublishedKSListProof
-	ProofShuffle      []*PublishedShufflingProof
-}
-
 //DataBlock is the structure inserted in the Skipchain
 type DataBlock struct {
 	Roster       *onet.Roster
@@ -124,11 +107,6 @@ type ResponseDPBytes struct {
 	Len  int
 }
 
-// CothorityAggregatedData is the collective aggregation result.
-type CothorityAggregatedData struct {
-	GroupedData map[libunlynx.GroupingKey]libunlynx.FilteredResponse
-}
-
 // WhereQueryAttributeClear is the name and value of a where attribute in the query
 type WhereQueryAttributeClear struct {
 	Name  string
@@ -170,7 +148,6 @@ type QueryDiffP struct {
 	Quanta        float64
 	Scale         float64
 	Limit         float64
-	Optimized     bool
 }
 
 // QueryDPDataGen contains the query information for the generation of data at DP
@@ -263,6 +240,7 @@ type SurveyQuery struct {
 	IDtoPublic map[string]kyber.Point
 	//Threshold for verification in skipChain service
 	Threshold                  float64
+	AggregationProofThreshold  float64
 	ObfuscationProofThreshold  float64
 	RangeProofThreshold        float64
 	KeySwitchingProofThreshold float64
@@ -287,111 +265,32 @@ type EndVerificationRequest struct {
 // EndVerificationResponse is the response to a waiting on the vend of the verification
 type EndVerificationResponse struct{}
 
-//Data for Test Below
-//--------------------------------------------------------------------------------------------------------------------------------------------------
-//Some variables to create dataTest
-var secKey = bn256.NewSuiteG1().Scalar().Pick(random.New())
-var entityPub = bn256.NewSuiteG1().Point().Mul(secKey, bn256.NewSuiteG1().Point().Base())
-var tab1 = []int64{1, 2, 3, 6}
-var tab2 = []int64{2, 4, 8, 6}
-
-//CreateRandomGoodTestData only creates valid proofs
-func CreateRandomGoodTestData(roster *onet.Roster, pub kyber.Point, ps []*[]PublishSignatureBytes, ranges []*[]int64, nbrProofs int) DataToVerify {
-	result := DataToVerify{}
-	result.ProofsKeySwitch = make([]*PublishedKSListProof, nbrProofs)
-	result.ProofsRange = make([]*RangeProofList, nbrProofs)
-	result.ProofsAggregation = make([]*PublishAggregationProof, nbrProofs)
-	result.ProofsObfuscation = make([]*PublishedListObfuscationProof, nbrProofs)
-	result.ProofShuffle = make([]*PublishedShufflingProof, nbrProofs)
-
-	//Fill Aggregation with good proofs
-	for i := range result.ProofsAggregation {
-		tab := []int64{1, 2, 3, 4, 5}
-		ev := libunlynx.EncryptIntVector(roster.Aggregate, tab)
-
-		dpResponse1 := ResponseDPOneGroup{Group: "1", Data: *ev}
-		dpResponse2 := ResponseDPOneGroup{Group: "2", Data: *ev}
-		evresult := libunlynx.NewCipherVector(len(*ev))
-		evresult.Add(*ev, *ev)
-		dpResponseResult1 := ResponseDPOneGroup{Group: "1", Data: *evresult}
-		dpResponseResult2 := ResponseDPOneGroup{Group: "2", Data: *evresult}
-		dpAggregated := ResponseAllDPs{Data: []ResponseDPOneGroup{dpResponseResult1, dpResponseResult2}}
-		dpResponses := ResponseAllDPs{Data: []ResponseDPOneGroup{dpResponse1, dpResponse1, dpResponse2, dpResponse2}}
-		proof := ServerAggregationProofCreation(dpResponses, dpAggregated)
-		result.ProofsAggregation[i] = &proof
-	}
-
-	for i := range result.ProofsObfuscation {
-		tab := []int64{1, 2}
-		e := libunlynx.EncryptIntVector(roster.Aggregate, tab)
-		obfFactor := libunlynx.SuiTe.Scalar().Pick(random.New())
-		newE1 := libunlynx.CipherText{}
-		newE1.MulCipherTextbyScalar((*e)[0], obfFactor)
-		newE2 := libunlynx.CipherText{}
-		newE2.MulCipherTextbyScalar((*e)[1], obfFactor)
-		proof := ObfuscationListProofCreation(*e, libunlynx.CipherVector{newE1, newE2}, []kyber.Scalar{obfFactor, obfFactor})
-		result.ProofsObfuscation[i] = &proof
-	}
-
-	for i := range result.ProofShuffle {
-		testCipherVect1 := *libunlynx.EncryptIntVector(roster.Aggregate, tab1)
-
-		testCipherVect2 := *libunlynx.EncryptIntVector(roster.Aggregate, tab2)
-
-		responses := make([]libunlynx.ProcessResponse, 3)
-		responses[0] = libunlynx.ProcessResponse{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect2}
-		responses[1] = libunlynx.ProcessResponse{GroupByEnc: testCipherVect1, AggregatingAttributes: testCipherVect1}
-		responses[2] = libunlynx.ProcessResponse{GroupByEnc: testCipherVect2, AggregatingAttributes: testCipherVect1}
-
-		responsesShuffled, pi, beta := ShuffleSequence(responses, libunlynx.SuiTe.Point().Base(), roster.Aggregate, nil)
-		prf := ShufflingProofCreation(responses, responsesShuffled, libunlynx.SuiTe.Point().Base(), roster.Aggregate, beta, pi)
-		result.ProofShuffle[i] = &prf
-	}
-
-	for i := range result.ProofsKeySwitch {
-		length := 2
-		cipher := libunlynx.EncryptIntVector(roster.Aggregate, []int64{1, 2})
-		initialTab := make([]kyber.Point, 2)
-		for i, v := range *cipher {
-			initialTab[i] = v.K
-		}
-
-		//switchedVect := libunlynx.NewCipherVector(length)
-		_, ks2s, rBNegs, vis := NewKeySwitching(pub, initialTab, secKey)
-
-		pkslp := KeySwitchListProofCreation(entityPub, pub, secKey, length, ks2s, rBNegs, vis)
-
-		result.ProofsKeySwitch[i] = &pkslp
-	}
-
-	for i := range result.ProofsRange {
-
-		encryption, r := libunlynx.EncryptIntGetR(roster.Aggregate, int64(25))
-
-		// read the signatures needed to compute the range proofs
-		signatures := make([][]PublishSignature, len(roster.List))
-		for i := 0; i < len(roster.List); i++ {
-			signatures[i] = make([]PublishSignature, len(ranges))
-			for j := 0; j < len(ranges); j++ {
-				signatures[i][j] = PublishSignatureBytesToPublishSignatures((*ps[i])[j])
+// FormatAggregationProofs converts the data providers data in a way that can be stored as proofs (a map of GroupingKeys and the collection of CipherVectors that are to be aggregated)
+func (rad *ResponseAllDPs) FormatAggregationProofs(res map[libunlynx.GroupingKey][]libunlynx.CipherVector) {
+	for _, entry := range rad.Data {
+		if _, ok := res[libunlynx.GroupingKey(entry.Group)]; ok {
+			for i, ct := range entry.Data {
+				container := res[libunlynx.GroupingKey(entry.Group)]
+				container[i] = append(container[i], ct)
+				res[libunlynx.GroupingKey(entry.Group)] = container
+			}
+		} else { // if no elements are in the map yet
+			container := make([]libunlynx.CipherVector, len(entry.Data))
+			for i, ct := range entry.Data {
+				tmp := make(libunlynx.CipherVector, 0)
+				tmp = append(tmp, ct)
+				container[i] = tmp
+				res[libunlynx.GroupingKey(entry.Group)] = container
 			}
 		}
-
-		cp := CreateProof{Sigs: ReadColumn(signatures, 0), U: 16, L: 16, Secret: int64(25), R: r, CaPub: roster.Aggregate, Cipher: *encryption}
-		cp1 := CreateProof{Sigs: ReadColumn(signatures, 1), U: 16, L: 16, Secret: int64(25), R: r, CaPub: roster.Aggregate, Cipher: *encryption}
-		cps := []CreateProof{cp, cp1}
-		rps := RangeProofList{Data: CreatePredicateRangeProofListForAllServers(cps)}
-		result.ProofsRange[i] = &rps
 	}
-
-	return result
 }
 
 // ToBytes transforms ResponseDPOneGroup to bytes
 func (rdog *ResponseDPOneGroup) ToBytes() ResponseDPOneGroupBytes {
 	result := ResponseDPOneGroupBytes{}
 	result.Groups = []byte(rdog.Group)
-	tmp, leng := rdog.Data.ToBytes()
+	tmp, leng, _ := rdog.Data.ToBytes()
 	result.Data = tmp
 	result.CVLength = []byte{byte(leng)}
 
@@ -451,7 +350,7 @@ func ConvertToAggregationStruct(dp ResponseAllDPs) map[libunlynx.GroupingKey]lib
 }
 
 // ConvertFromAggregationStruct transforms CothorityAggregatedData to ResponseAllDPs
-func ConvertFromAggregationStruct(cad CothorityAggregatedData) *ResponseAllDPs {
+func ConvertFromAggregationStruct(cad protocolsunlynx.CothorityAggregatedData) *ResponseAllDPs {
 	response := make([]ResponseDPOneGroup, 0)
 	for k, v := range cad.GroupedData {
 		response = append(response, ResponseDPOneGroup{Group: string(k), Data: v.AggregatingAttributes})
@@ -472,27 +371,22 @@ func (sm *ShufflingMessage) ToBytes() (*[]byte, int, int, int) {
 	wg := libunlynx.StartParallelize(len((*sm).Data))
 	var mutexD sync.Mutex
 	for i := range (*sm).Data {
-		if libunlynx.PARALLELIZE {
-			go func(i int) {
-				defer wg.Done()
+		go func(i int) {
+			defer wg.Done()
 
-				mutexD.Lock()
-				data := (*sm).Data[i]
-				mutexD.Unlock()
+			mutexD.Lock()
+			data := (*sm).Data[i]
+			mutexD.Unlock()
 
-				aux, gacbAux, aabAux, pgaebAux := data.ToBytes()
+			aux, gacbAux, aabAux, pgaebAux, _ := data.ToBytes()
 
-				mutexD.Lock()
-				bb[i] = aux
-				gacbLength = gacbAux
-				aabLength = aabAux
-				pgaebLength = pgaebAux
-				mutexD.Unlock()
-			}(i)
-		} else {
-			bb[i], gacbLength, aabLength, pgaebLength = (*sm).Data[i].ToBytes()
-		}
-
+			mutexD.Lock()
+			bb[i] = aux
+			gacbLength = gacbAux
+			aabLength = aabAux
+			pgaebLength = pgaebAux
+			mutexD.Unlock()
+		}(i)
 	}
 	libunlynx.EndParallelize(wg)
 
@@ -507,7 +401,7 @@ func (sm *ShufflingMessage) ToBytes() (*[]byte, int, int, int) {
 func (sm *ShufflingMessage) FromBytes(data *[]byte, gacbLength, aabLength, pgaebLength int) {
 	var nbrData int
 	cipherLength := libunlynx.SuiTe.PointLen() * 2
-	elementLength := (gacbLength*cipherLength + aabLength*cipherLength + pgaebLength*cipherLength) //CAUTION: hardcoded 64 (size of el-gamal element C,K)
+	elementLength := gacbLength*cipherLength + aabLength*cipherLength + pgaebLength*cipherLength //CAUTION: hardcoded 64 (size of el-gamal element C,K)
 	if elementLength != 0 {
 
 		nbrData = len(*data) / elementLength
@@ -516,15 +410,10 @@ func (sm *ShufflingMessage) FromBytes(data *[]byte, gacbLength, aabLength, pgaeb
 		wg := libunlynx.StartParallelize(nbrData)
 		for i := 0; i < nbrData; i++ {
 			v := (*data)[i*elementLength : i*elementLength+elementLength]
-			if libunlynx.PARALLELIZE {
-				go func(v []byte, i int) {
-					defer wg.Done()
-					(*sm).Data[i].FromBytes(v, gacbLength, aabLength, pgaebLength)
-				}(v, i)
-			} else {
+			go func(v []byte, i int) {
+				defer wg.Done()
 				(*sm).Data[i].FromBytes(v, gacbLength, aabLength, pgaebLength)
-			}
-
+			}(v, i)
 		}
 		libunlynx.EndParallelize(wg)
 	}

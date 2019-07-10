@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/lca1/drynx/lib/range"
+	"go.dedis.ch/kyber/v3"
 	"os"
 
 	"sync"
@@ -12,7 +14,6 @@ import (
 	"github.com/lca1/drynx/services"
 	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/cothority/v3/skipchain"
-	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
@@ -99,7 +100,7 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 
 	// has to be set here because cannot be in toml file
 	dpData := libdrynx.QueryDPDataGen{GroupByValues: sim.GroupByValues, GenerateRows: int64(sim.DPRows), GenerateDataMin: sim.MinData, GenerateDataMax: sim.MaxData}
-	diffP := libdrynx.QueryDiffP{LapMean: sim.DiffPEpsilon, LapScale: sim.DiffPDelta, Quanta: sim.DiffPQuanta, NoiseListSize: sim.DiffPSize, Scale: sim.DiffPScale, Limit: sim.DiffPLimit, Optimized: sim.DiffPOpti}
+	diffP := libdrynx.QueryDiffP{LapMean: sim.DiffPEpsilon, LapScale: sim.DiffPDelta, Quanta: sim.DiffPQuanta, NoiseListSize: sim.DiffPSize, Scale: sim.DiffPScale, Limit: sim.DiffPLimit}
 
 	//logistic regression
 	m := int64(sim.DPRows) - 1
@@ -282,9 +283,9 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 				temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
 				for j := 0; j < len(ranges); j++ {
 					if sim.CuttingFactor != 0 {
-						temp[j] = libdrynx.InitRangeProofSignatureDeterministic((*ranges[j])[0])
+						temp[j] = libdrynxrange.InitRangeProofSignatureDeterministic((*ranges[j])[0])
 					} else {
-						temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+						temp[j] = libdrynxrange.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
 					}
 				}
 				ps[index] = &temp
@@ -345,9 +346,9 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 
 	var thresholdEntityProofsVerif []float64
 	if sim.Obfuscation == false {
-		thresholdEntityProofsVerif = []float64{sim.ThresholdGeneral, sim.ThresholdOther, 0.0, sim.ThresholdOther}
+		thresholdEntityProofsVerif = []float64{sim.ThresholdGeneral, sim.ThresholdOther, sim.ThresholdOther, 0.0, sim.ThresholdOther}
 	} else {
-		thresholdEntityProofsVerif = []float64{sim.ThresholdGeneral, sim.ThresholdOther, sim.ThresholdOther, sim.ThresholdOther}
+		thresholdEntityProofsVerif = []float64{sim.ThresholdGeneral, sim.ThresholdOther, sim.ThresholdOther, sim.ThresholdOther, sim.ThresholdOther}
 	}
 	sq := client.GenerateSurveyQuery(rosterServers, rosterVNs, dpToServers, idToPublic, surveyID, operation, ranges, ps, sim.Proofs, sim.Obfuscation, thresholdEntityProofsVerif, diffP, dpData, sim.CuttingFactor)
 	if diffP.NoiseListSize > 0 {
@@ -412,7 +413,9 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 	if sim.Proofs != 0 {
 		libunlynx.EndParallelize(wg)
 		// close DB
-		clientSkip.SendCloseDB(rosterVNs, &libdrynx.CloseDB{Close: 1})
+		if err := clientSkip.SendCloseDB(rosterVNs, &libdrynx.CloseDB{Close: 1}); err != nil {
+			log.Fatal("Error closing the DB:", err)
+		}
 	}
 
 	retrieveBlock := time.Now()

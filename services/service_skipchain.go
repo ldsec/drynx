@@ -36,10 +36,13 @@ func (s *ServiceDrynx) HandleSurveyQueryToVN(recq *libdrynx.SurveyQueryToVN) (ne
 	var totalNbrProofs int
 	log.Lvl2("[SERVICE] <VN> Server", s.ServerIdentity().String(), "received a Survey Query")
 
-	s.Survey.Put(recq.SQ.SurveyID, Survey{
+	_, err := s.Survey.Put(recq.SQ.SurveyID, Survey{
 		SurveyQuery: recq.SQ,
 		Mutex:       &sync.Mutex{},
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	// create the objects if it is the first time
 	if s.Request == nil {
@@ -60,9 +63,15 @@ func (s *ServiceDrynx) HandleSurveyQueryToVN(recq *libdrynx.SurveyQueryToVN) (ne
 	totalNbrProofs = size[0] + size[2] + size[3] + size[1] + size[4]
 
 	if s.ServerIdentity().String() == recq.SQ.Query.RosterVNs.List[0].String() {
-		s.Request.Put(recq.SQ.SurveyID, &libdrynx.QueryInfo{Bitmap: proofsVerified, TotalNbrProofs: sizeQuery, Query: &recq.SQ, SharedBMChannel: make(chan map[string]int64, 100), SharedBMChannelToTerminate: make(chan struct{}, 100), EndVerificationChannel: make(chan skipchain.SkipBlock, 100)})
+		_, err := s.Request.Put(recq.SQ.SurveyID, &libdrynx.QueryInfo{Bitmap: proofsVerified, TotalNbrProofs: sizeQuery, Query: &recq.SQ, SharedBMChannel: make(chan map[string]int64, 100), SharedBMChannelToTerminate: make(chan struct{}, 100), EndVerificationChannel: make(chan skipchain.SkipBlock, 100)})
+		if err != nil {
+			return nil, err
+		}
 	} else {
-		s.Request.Put(recq.SQ.SurveyID, &libdrynx.QueryInfo{Bitmap: proofsVerified, TotalNbrProofs: sizeQuery, Query: &recq.SQ})
+		_, err := s.Request.Put(recq.SQ.SurveyID, &libdrynx.QueryInfo{Bitmap: proofsVerified, TotalNbrProofs: sizeQuery, Query: &recq.SQ})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if s.DBPath == "" {
@@ -364,7 +373,7 @@ func (s *ServiceDrynx) NewProofCollectionProtocolInstance(tn *onet.TreeNodeInsta
 }
 
 // CreateProofCollectionPIs create a set of ProofCollection protocol instances to be used in the protocols: Aggregation, Shuffle, ...
-func (s *ServiceDrynx) CreateProofCollectionPIs(tree *onet.Tree, targetSurvey, name string) onet.ProtocolInstance {
+func (s *ServiceDrynx) CreateProofCollectionPIs(tree *onet.Tree, targetSurvey, name string) (onet.ProtocolInstance, error) {
 	var tn *onet.TreeNodeInstance
 	tn = s.NewTreeNodeInstance(tree, tree.Root, protocols.ProofCollectionProtocolName)
 
@@ -374,8 +383,11 @@ func (s *ServiceDrynx) CreateProofCollectionPIs(tree *onet.Tree, targetSurvey, n
 		log.Fatal("Error running" + name)
 	}
 
-	s.RegisterProtocolInstance(pi)
-	return pi
+	err = s.RegisterProtocolInstance(pi)
+	if err != nil {
+		return nil, err
+	}
+	return pi, nil
 }
 
 // Verifier Functions
@@ -435,29 +447,42 @@ func generateProofCollectionRoster(root *network.ServerIdentity, rosterVNs *onet
 	return onet.NewRoster(roster)
 }
 
-func (s *ServiceDrynx) generateMapPIs(query *libdrynx.SurveyQuery) map[string]onet.ProtocolInstance {
+func (s *ServiceDrynx) generateMapPIs(query *libdrynx.SurveyQuery) (map[string]onet.ProtocolInstance, error) {
 	mapPIs := make(map[string]onet.ProtocolInstance)
 
 	tree := generateProofCollectionRoster(s.ServerIdentity(), query.Query.RosterVNs).GenerateStar()
 
-	piAggregation := s.CreateProofCollectionPIs(tree, query.SurveyID, protocols.ProofCollectionProtocolName)
+	piAggregation, err := s.CreateProofCollectionPIs(tree, query.SurveyID, protocols.ProofCollectionProtocolName)
+	if err != nil {
+		return nil, err
+	}
+
 	mapPIs["aggregation/"+s.ServerIdentity().String()] = piAggregation
 
 	if query.Query.Obfuscation {
-		piObfuscation := s.CreateProofCollectionPIs(tree, query.SurveyID, protocols.ProofCollectionProtocolName)
+		piObfuscation, err := s.CreateProofCollectionPIs(tree, query.SurveyID, protocols.ProofCollectionProtocolName)
+		if err != nil {
+			return nil, err
+		}
 		mapPIs["obfuscation/"+s.ServerIdentity().String()] = piObfuscation
 	}
 
 	// there is differential privacy
 	if query.Query.DiffP.NoiseListSize > 0 {
-		piShuffle := s.CreateProofCollectionPIs(tree, query.SurveyID, protocols.ProofCollectionProtocolName)
+		piShuffle, err := s.CreateProofCollectionPIs(tree, query.SurveyID, protocols.ProofCollectionProtocolName)
+		if err != nil {
+			return nil, err
+		}
 		mapPIs["shuffle/"+s.ServerIdentity().String()] = piShuffle
 	}
 
-	piKeySwitch := s.CreateProofCollectionPIs(tree, query.SurveyID, protocols.ProofCollectionProtocolName)
+	piKeySwitch, err := s.CreateProofCollectionPIs(tree, query.SurveyID, protocols.ProofCollectionProtocolName)
+	if err != nil {
+		return nil, err
+	}
 	mapPIs["keyswitch/"+s.ServerIdentity().String()] = piKeySwitch
 
-	return mapPIs
+	return mapPIs, nil
 }
 
 //OpenDB opens/creates a database

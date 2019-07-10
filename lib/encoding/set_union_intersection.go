@@ -1,7 +1,8 @@
-package encoding
+package libdrynxencoding
 
 import (
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/kyber/v3"
 )
@@ -15,7 +16,7 @@ func EncodeUnion(input []int64, min int64, max int64, pubKey kyber.Point) ([]lib
 }
 
 //EncodeUnionWithProofs encodes the local union vector with range proofs
-func EncodeUnionWithProofs(input []int64, min int64, max int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
+func EncodeUnionWithProofs(input []int64, min int64, max int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynxrange.CreateProof) {
 	//compute the local min
 	//get the set of unique values from the input
 	uniqueValues := Unique(input)
@@ -23,7 +24,7 @@ func EncodeUnionWithProofs(input []int64, min int64, max int64, pubKey kyber.Poi
 	//encode (and encrypt) under OR operation all the bits of min_vector
 	ciphertextTuples := make([]libunlynx.CipherText, max-min+1)
 	cleartextTuples := make([]int64, max-min+1)
-	proofsTuples := make([]libdrynx.CreateProof, max-min+1)
+	proofsTuples := make([]libdrynxrange.CreateProof, max-min+1)
 	filled := make([]bool, max-min+1)
 	wg := libunlynx.StartParallelize(len(uniqueValues))
 	for _, entry := range uniqueValues {
@@ -31,7 +32,7 @@ func EncodeUnionWithProofs(input []int64, min int64, max int64, pubKey kyber.Poi
 			defer wg.Done()
 			tmp := &libunlynx.CipherText{}
 			if sigs != nil {
-				tmp, cleartextTuples[entry-min], proofsTuples[entry-min] = EncodeBitOrWithProof(true, pubKey, libdrynx.ReadColumn(sigs, int(entry-min)), (*lu[entry-min])[1], (*lu[entry-min])[0])
+				tmp, cleartextTuples[entry-min], proofsTuples[entry-min] = EncodeBitOrWithProof(true, pubKey, libdrynxrange.ReadColumn(sigs, int(entry-min)), (*lu[entry-min])[1], (*lu[entry-min])[0])
 			} else {
 				tmp, cleartextTuples[entry-min] = EncodeBitOr(true, pubKey)
 			}
@@ -47,7 +48,7 @@ func EncodeUnionWithProofs(input []int64, min int64, max int64, pubKey kyber.Poi
 			if !filled[i] {
 				tmp := &libunlynx.CipherText{}
 				if sigs != nil {
-					tmp, cleartextTuples[i], proofsTuples[i] = EncodeBitOrWithProof(false, pubKey, libdrynx.ReadColumn(sigs, int(i)), (*lu[i])[1], (*lu[i])[0])
+					tmp, cleartextTuples[i], proofsTuples[i] = EncodeBitOrWithProof(false, pubKey, libdrynxrange.ReadColumn(sigs, int(i)), (*lu[i])[1], (*lu[i])[0])
 				} else {
 					tmp, cleartextTuples[i] = EncodeBitOr(false, pubKey)
 				}
@@ -90,12 +91,12 @@ func EncodeInter(input []int64, min int64, max int64, pubKey kyber.Point) ([]lib
 }
 
 //EncodeInterWithProofs encodes the local intersection vector with range proofs
-func EncodeInterWithProofs(input []int64, min int64, max int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
+func EncodeInterWithProofs(input []int64, min int64, max int64, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynxrange.CreateProof) {
 	//get the set of unique values from the input
 	uniqueValues := Unique(input)
 	ciphertextTuples := make([]libunlynx.CipherText, max-min+1)
 	cleartextTuples := make([]int64, max-min+1)
-	proofsTuples := make([]libdrynx.CreateProof, max-min+1)
+	proofsTuples := make([]libdrynxrange.CreateProof, max-min+1)
 	filled := make([]bool, max-min+1)
 	wg := libunlynx.StartParallelize(len(uniqueValues))
 	for _, entry := range uniqueValues {
@@ -103,7 +104,7 @@ func EncodeInterWithProofs(input []int64, min int64, max int64, pubKey kyber.Poi
 			defer wg.Done()
 			tmp := &libunlynx.CipherText{}
 			if sigs != nil {
-				tmp, cleartextTuples[entry-min], proofsTuples[entry-min] = EncodeBitANDWithProof(true, pubKey, libdrynx.ReadColumn(sigs, int(entry-min)), (*lu[entry-min])[1], (*lu[entry-min])[0])
+				tmp, cleartextTuples[entry-min], proofsTuples[entry-min] = EncodeBitANDWithProof(true, pubKey, libdrynxrange.ReadColumn(sigs, int(entry-min)), (*lu[entry-min])[1], (*lu[entry-min])[0])
 			} else {
 				tmp, cleartextTuples[entry-min] = EncodeBitAND(true, pubKey)
 			}
@@ -120,7 +121,7 @@ func EncodeInterWithProofs(input []int64, min int64, max int64, pubKey kyber.Poi
 			if !filled[i] {
 				tmp := &libunlynx.CipherText{}
 				if sigs != nil {
-					tmp, cleartextTuples[i], proofsTuples[i] = EncodeBitANDWithProof(false, pubKey, libdrynx.ReadColumn(sigs, int(i)), (*lu[i])[1], (*lu[i])[0])
+					tmp, cleartextTuples[i], proofsTuples[i] = EncodeBitANDWithProof(false, pubKey, libdrynxrange.ReadColumn(sigs, int(i)), (*lu[i])[1], (*lu[i])[0])
 				} else {
 					tmp, cleartextTuples[i] = EncodeBitAND(false, pubKey)
 				}

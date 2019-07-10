@@ -2,11 +2,11 @@
 # Drynx
 Drynx is a library for simulating a privacy-preserving and verifiable data sharing/querying tool. It offers a series of independent protocols that when combined offer a verifiably-secure and safe way to compute statistics and train basic machine learning models on distributed sensitive data (e.g., medical data).
 
-Drynx is developed by lca1 (Laboratory for Communications and Applications in EPFL) in collaboration with DeDiS (Laboratory for Decentralized and Distributed Systems). It is build on the [UnLynx library](https://github.com/lca1/unlynx) and does an intensive use of [Overlay-network (ONet) library](https://github.com/dedis/onet) and of the [Advanced Crypto (kyber) library](https://github.com/dedis/kyber).
+Drynx is developed by lca1 (Laboratory for Communications and Applications in EPFL) in collaboration with DeDiS (Laboratory for Decentralized and Distributed Systems). It is build on the [UnLynx library](https://github.com/lca1/unlynx) and does an intensive use of [Overlay-network (ONet) library](https://go.dedis.ch/onet/v3) and of the [Advanced Crypto (kyber) library](https://go.dedis.ch/kyber/v3).
 
 ## Documentation
 
-* For more information regarding the underlying architecture please refer to the stable version of ONet `github.com/dedis/onet`
+* For more information regarding the underlying architecture please refer to the stable version of ONet `go.dedis.ch/onet/v3`
 * To check the code organisation, have a look at [Layout](https://github.com/lca1/drynx/wiki/Layout)
 * For more information on how to run our protocols, services, simulations and apps, go to [Running Drynx](https://github.com/lca1/drynx/wiki/Running-Drynx)
 
@@ -25,21 +25,6 @@ To use the code of this repository you need to:
 ## Version
 
 We only have a development version. The `master`-branch in `github.com/lca1/drynx` is the development version that works but can have incompatible changes.
-
-**Very Important!!** 
-
-Due to the current changes being made to [onet](https://github.com/dedis/onet), [kyber](https://github.com/dedis/kyber) and [cothority](https://github.com/dedis/cothority) (release of v3) you must revert back to previous commits for these three libraries if you want Drynx to work. This will change in the near future. 
-
-```bash
-cd $GOPATH/src/dedis/onet/
-git checkout 5796104343ef247e2eed58e573f68c566db2136f
-
-cd $GOPATH/src/dedis/kyber/
-git checkout f55fec5463cda138dfc7ff15e4091d12c4ddcbfe
-
-cd $GOPATH/src/dedis/cothority/
-git checkout 8751beb9f9ec3d093e4cd0ef8f18d4876ec0aae3
-```
 
 ## License
 

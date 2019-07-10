@@ -1,12 +1,14 @@
-package encoding_test
+package libdrynxencoding_test
 
 import (
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
+	"go.dedis.ch/kyber/v3/util/key"
 	"testing"
 )
 
@@ -16,7 +18,8 @@ func TestEncodeDecodeUnionInter(t *testing.T) {
 	//data
 	inputValues := []int64{1, 2, 3, 1, 5, 1, 2, 3}
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 
 	//maximum value taken by the attribute in question
 	max := int64(10)
@@ -24,7 +27,7 @@ func TestEncodeDecodeUnionInter(t *testing.T) {
 	min := int64(0)
 
 	expectedUnions := make([]int64, max-min+1)
-	uniqueValues := encoding.Unique(inputValues)
+	uniqueValues := libdrynxencoding.Unique(inputValues)
 	for i := int64(0); i < int64(len(expectedUnions)); i++ {
 		expectedUnions[i] = 0
 	}
@@ -34,11 +37,11 @@ func TestEncodeDecodeUnionInter(t *testing.T) {
 	var expectedInters = expectedUnions
 
 	//function call Union
-	unionCipher, _ := encoding.EncodeUnion(inputValues, min, max, pubKey)
-	resultUnions := encoding.DecodeUnion(unionCipher, secKey)
+	unionCipher, _ := libdrynxencoding.EncodeUnion(inputValues, min, max, pubKey)
+	resultUnions := libdrynxencoding.DecodeUnion(unionCipher, secKey)
 	//function call Intersection
-	interCipher, _ := encoding.EncodeInter(inputValues, min, max, pubKey)
-	resultInters := encoding.DecodeInter(interCipher, secKey)
+	interCipher, _ := libdrynxencoding.EncodeInter(inputValues, min, max, pubKey)
+	resultInters := libdrynxencoding.DecodeInter(interCipher, secKey)
 
 	assert.Equal(t, expectedUnions, resultUnions)
 	assert.Equal(t, expectedInters, resultInters)
@@ -48,7 +51,8 @@ func TestEncodeDecodeUnionInterWithProofs(t *testing.T) {
 	//data
 	inputValues := []int64{1, 2, 3, 1, 5, 1, 2, 3}
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 
 	//maximum value taken by the attribute in question
 	max := int64(10)
@@ -56,7 +60,7 @@ func TestEncodeDecodeUnionInterWithProofs(t *testing.T) {
 	min := int64(0)
 
 	expectedUnions := make([]int64, max-min+1)
-	uniqueValues := encoding.Unique(inputValues)
+	uniqueValues := libdrynxencoding.Unique(inputValues)
 	for i := int64(0); i < int64(len(expectedUnions)); i++ {
 		expectedUnions[i] = 0
 	}
@@ -79,8 +83,8 @@ func TestEncodeDecodeUnionInterWithProofs(t *testing.T) {
 	ys[0] = make([]kyber.Point, max-min+1)
 	ys[1] = make([]kyber.Point, max-min+1)
 	for i := range ps[0] {
-		ps[0][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u))
-		ps[1][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u))
+		ps[0][i] = libdrynxrange.PublishSignatureBytesToPublishSignatures(libdrynxrange.InitRangeProofSignature(u))
+		ps[1][i] = libdrynxrange.PublishSignatureBytesToPublishSignatures(libdrynxrange.InitRangeProofSignature(u))
 		ys[0][i] = ps[0][i].Public
 		ys[1][i] = ps[1][i].Public
 		ranges[i] = &[]int64{u, l}
@@ -95,16 +99,16 @@ func TestEncodeDecodeUnionInterWithProofs(t *testing.T) {
 	}
 
 	//function call
-	resultEncryptedUnion, _, prfMin := encoding.EncodeUnionWithProofs(inputValues, min, max, pubKey, ps, ranges)
-	resultMin := encoding.DecodeUnion(resultEncryptedUnion, secKey)
+	resultEncryptedUnion, _, prfMin := libdrynxencoding.EncodeUnionWithProofs(inputValues, min, max, pubKey, ps, ranges)
+	resultMin := libdrynxencoding.DecodeUnion(resultEncryptedUnion, secKey)
 	assert.Equal(t, expectedUnions, resultMin)
-	resultEncryptedInter, _, prfMax := encoding.EncodeInterWithProofs(inputValues, min, max, pubKey, ps, ranges)
-	resultInter := encoding.DecodeInter(resultEncryptedInter, secKey)
+	resultEncryptedInter, _, prfMax := libdrynxencoding.EncodeInterWithProofs(inputValues, min, max, pubKey, ps, ranges)
+	resultInter := libdrynxencoding.DecodeInter(resultEncryptedInter, secKey)
 	assert.Equal(t, expectedInters, resultInter)
 
 	for i, v := range prfMin {
-		assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(v), u, l, yss[i], pubKey))
-		assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prfMax[i]), u, l, yss[i], pubKey))
+		assert.True(t, libdrynxrange.RangeProofVerification(libdrynxrange.CreatePredicateRangeProofForAllServ(v), u, l, yss[i], pubKey))
+		assert.True(t, libdrynxrange.RangeProofVerification(libdrynxrange.CreatePredicateRangeProofForAllServ(prfMax[i]), u, l, yss[i], pubKey))
 	}
 
 }

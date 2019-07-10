@@ -1,24 +1,27 @@
 package services
 
 import (
+	"github.com/btcsuite/goleveldb/leveldb/errors"
+	"github.com/coreos/bbolt"
+	"github.com/fanliao/go-concurrentMap"
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/drynx/lib/proof"
+	"github.com/lca1/drynx/protocols"
 	"github.com/lca1/unlynx/lib"
+	"github.com/lca1/unlynx/lib/aggregation"
+	"github.com/lca1/unlynx/lib/differential_privacy"
+	"github.com/lca1/unlynx/lib/key_switch"
 	"github.com/lca1/unlynx/lib/shuffle"
 	"github.com/lca1/unlynx/lib/tools"
+	"github.com/lca1/unlynx/protocols"
+	"go.dedis.ch/cothority/v3/skipchain"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
-	"time"
-
 	"sync"
-
-	"github.com/btcsuite/goleveldb/leveldb/errors"
-	"github.com/coreos/bbolt"
-	concurrent "github.com/fanliao/go-concurrentMap"
-	"github.com/lca1/drynx/protocols"
-	"github.com/lca1/unlynx/protocols"
-	"go.dedis.ch/cothority/v3/skipchain"
-	"go.dedis.ch/kyber/v3/util/random"
+	"time"
 )
 
 // ServiceName is the registered name for the drynx service.
@@ -31,7 +34,7 @@ type Survey struct {
 	SurveyQuery        libdrynx.SurveyQuery
 	QueryResponseState libdrynx.ResponseAllDPs // QueryResponse keeps track of the response from the data providers, the aggregated data, and the final results
 	Noises             libunlynx.CipherVector
-	ShufflePrecompute  []libunlynx.CipherVectorScalar
+	ShufflePrecompute  []libunlynxshuffle.CipherVectorScalar
 	MapPIs             map[string]onet.ProtocolInstance
 
 	// channels
@@ -103,7 +106,9 @@ type MsgTypes struct {
 var msgTypes = MsgTypes{}
 
 func init() {
-	onet.RegisterNewServiceWithSuite(ServiceName, libunlynx.SuiTe, NewService)
+	_, err := onet.RegisterNewService(ServiceName, NewService)
+	log.ErrFatal(err)
+	//onet.RegisterNewServiceWithSuite(ServiceName, libunlynx.SuiTe, NewService)
 
 	msgTypes.msgSurveyQuery = network.RegisterMessage(&libdrynx.SurveyQuery{})
 	msgTypes.msgSurveyQueryToDP = network.RegisterMessage(&libdrynx.SurveyQueryToDP{})
@@ -187,19 +192,24 @@ func NewService(c *onet.Context) (onet.Service, error) {
 func (s *ServiceDrynx) Process(msg *network.Envelope) {
 	if msg.MsgType.Equal(msgTypes.msgSurveyQuery) {
 		tmp := (msg.Msg).(*libdrynx.SurveyQuery)
-		s.HandleSurveyQuery(tmp)
+		_, err := s.HandleSurveyQuery(tmp)
+		log.ErrFatal(err)
 	} else if msg.MsgType.Equal(msgTypes.msgSurveyQueryToDP) {
 		tmp := (msg.Msg).(*libdrynx.SurveyQueryToDP)
-		s.HandleSurveyQueryToDP(tmp)
+		_, err := s.HandleSurveyQueryToDP(tmp)
+		log.ErrFatal(err)
 	} else if msg.MsgType.Equal(msgTypes.msgDPqueryReceived) {
 		tmp := (msg.Msg).(*DPqueryReceived)
-		s.HandleDPqueryReceived(tmp)
+		_, err := s.HandleDPqueryReceived(tmp)
+		log.ErrFatal(err)
 	} else if msg.MsgType.Equal(msgTypes.msgSyncDCP) {
 		tmp := (msg.Msg).(*SyncDCP)
-		s.HandleSyncDCP(tmp)
+		_, err := s.HandleSyncDCP(tmp)
+		log.ErrFatal(err)
 	} else if msg.MsgType.Equal(msgTypes.msgDPdataFinished) {
 		tmp := (msg.Msg).(*DPdataFinished)
-		s.HandleDPdataFinished(tmp)
+		_, err := s.HandleDPdataFinished(tmp)
+		log.ErrFatal(err)
 	}
 }
 
@@ -278,11 +288,15 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	// only generate ProofCollection protocol instances if proofs is enabled
 	var mapPIs map[string]onet.ProtocolInstance
 	if recq.Query.Proofs != 0 {
-		mapPIs = s.generateMapPIs(recq)
+		var err error
+		mapPIs, err = s.generateMapPIs(recq)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// survey instantiation
-	s.Survey.Put(recq.SurveyID, Survey{
+	_, err := s.Survey.Put(recq.SurveyID, Survey{
 		SurveyQuery:    *recq,
 		DPqueryChannel: make(chan int, nbrDPs),
 		SyncDCPChannel: make(chan int, nbrDPs),
@@ -290,16 +304,15 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 		DiffPChannel:   make(chan int, nbrDPs),
 		MapPIs:         mapPIs,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	survey := castToSurvey(s.Survey.Get(recq.SurveyID))
 
 	// prepares the precomputation for shuffling
 	lineSize := 100 // + 1 is for the possible count attribute
-	agg, err := recq.RosterServers.ServiceAggregate("drynx")
-	if err != nil {
-		log.Fatal("Didn't find appropriate aggregate key")
-	}
-	survey.ShufflePrecompute = libunlynxshuffle.PrecomputationWritingForShuffling(false, gobFile, s.ServerIdentity().String(), libunlynx.SuiTe.Scalar().Pick(random.New()), agg, lineSize)
+	survey.ShufflePrecompute, _ = libunlynxshuffle.PrecomputationWritingForShuffling(false, gobFile, s.ServerIdentity().String(), libunlynx.SuiTe.Scalar().Pick(random.New()), recq.RosterServers.Aggregate, lineSize)
 
 	// if is the root server: send query to all other servers and its data providers
 	if recq.IntraMessage == false {
@@ -326,12 +339,9 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 		go func() {
 			//diffPTimer := libDrynx.StartTimer(s.ServerIdentity().String() + "_DiffPPhase")
 			if libdrynx.AddDiffP(castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.Query.DiffP) {
-				if castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.Query.DiffP.Optimized {
-					s.DROLocalPhase(castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.SurveyID)
-				} else {
-					s.DROPhase(castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.SurveyID)
+				if err := s.DROPhase(castToSurvey(s.Survey.Get(recq.SurveyID)).SurveyQuery.SurveyID); err != nil {
+					log.Fatal(err)
 				}
-
 			}
 			//libDrynx.EndTimer(diffPTimer)
 		}()
@@ -388,7 +398,9 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 	// ready to start the collective aggregation & key switching protocol
 	if recq.IntraMessage == false {
 		startJustExecution := libunlynx.StartTimer("JustExecution")
-		s.StartService(recq.SurveyID)
+		if err := s.StartService(recq.SurveyID); err != nil {
+			return nil, err
+		}
 
 		log.Lvl2("[SERVICE] <drynx> Server", s.ServerIdentity(), " completed the query processing...")
 
@@ -406,10 +418,12 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 
 // NewProtocol creates a protocol instance executed by all nodes
 func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfig) (onet.ProtocolInstance, error) {
-	tn.SetConfig(conf)
+	err := tn.SetConfig(conf)
+	if err != nil {
+		return nil, err
+	}
 
 	var pi onet.ProtocolInstance
-	var err error
 
 	target := string(conf.Data)
 
@@ -426,14 +440,9 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 			survey := castToSurvey(s.Survey.Get(target))
 			dataCollectionProtocol := pi.(*protocols.DataCollectionProtocol)
 
-			agg, err := survey.SurveyQuery.RosterServers.ServiceAggregate("drynx")
-			if err != nil {
-				log.Fatal("Didn't find appropriate aggregate key")
-			}
-
 			queryStatement := protocols.SurveyToDP{
 				SurveyID:  survey.SurveyQuery.SurveyID,
-				Aggregate: agg,
+				Aggregate: survey.SurveyQuery.RosterServers.Aggregate,
 				Query:     survey.SurveyQuery.Query,
 			}
 			dataCollectionProtocol.Survey = queryStatement
@@ -441,40 +450,15 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 		}
 		return pi, nil
 
-	case protocols.CollectiveAggregationProtocolName:
+	case protocolsunlynx.CollectiveAggregationProtocolName:
 		survey := castToSurvey(s.Survey.Get(target))
-		pi, err = protocols.NewCollectiveAggregationProtocol(tn)
+		pi, err = s.NewCollectiveAggregationProtocol(tn, target, survey)
 		if err != nil {
 			return nil, err
 		}
 
-		// convert the result to fit the collective aggregation protocol
-		groupedData := libdrynx.ConvertToAggregationStruct(survey.QueryResponseState)
-
-		if survey.SurveyQuery.Query.Proofs != 0 {
-			go func() {
-				log.Lvl2("SERVICE] <drynx> Server", s.ServerIdentity(), "creates local aggregation proof")
-				resultAggrLocal := libdrynx.ResponseAllDPs{}
-				for i, v := range groupedData {
-					resultAggrLocal.Data = append(resultAggrLocal.Data, libdrynx.ResponseDPOneGroup{Group: string(i), Data: v.AggregatingAttributes})
-				}
-				aggrLocalProof := libdrynx.ServerAggregationProofCreation(survey.QueryResponseState, resultAggrLocal)
-				if survey.SurveyQuery.Query.Proofs == 2 {
-					aggrLocalProof.DPsData = libdrynx.ResponseAllDPs{}
-				}
-
-				pi := survey.MapPIs["aggregation/"+s.ServerIdentity().String()]
-				pi.(*protocols.ProofCollectionProtocol).Proof = libdrynx.ProofRequest{AggregationProof: libdrynx.NewAggregationProofRequest(&aggrLocalProof, target, s.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, tn.Private(), nil)}
-				go pi.Dispatch()
-				go pi.Start()
-				<-pi.(*protocols.ProofCollectionProtocol).FeedbackChannel
-			}()
-		}
-
-		collectiveAggregation := pi.(*protocols.CollectiveAggregationProtocol)
-		collectiveAggregation.GroupedData = &groupedData
-
 		return pi, nil
+
 	case protocols.ObfuscationProtocolName:
 		survey := castToSurvey(s.Survey.Get(target))
 		pi, err = protocols.NewObfuscationProtocol(tn)
@@ -492,80 +476,20 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 	case protocolsunlynx.DROProtocolName:
 		survey := castToSurvey(s.Survey.Get(target))
 		log.Lvl2("SERVICE] <drynx> Server", s.ServerIdentity(), " Servers collectively add noise for differential privacy")
-
-		// TODO remove duplicate code
-		if castToSurvey(s.Survey.Get(target)).SurveyQuery.Query.DiffP.Optimized {
-			pi, err = protocols.NewShufflingLocalProtocol(tn)
-			if err != nil {
-				return nil, err
-			}
-			shuffle := pi.(*protocols.ShufflingLocalProtocol)
-			shuffle.Proofs = survey.SurveyQuery.Query.Proofs
-			shuffle.Precomputed = survey.ShufflePrecompute
-			shuffle.Query = &survey.SurveyQuery
-			shuffle.MapPIs = survey.MapPIs
-
-			clientResponses := make([]libunlynx.ProcessResponse, 0)
-			if survey.SurveyQuery.Query.DiffP.Scale == 0 {
-				survey.SurveyQuery.Query.DiffP.Scale = 1
-			}
-			noiseArray := libdrynx.GenerateNoiseValuesScale(int64(survey.SurveyQuery.Query.DiffP.NoiseListSize), survey.SurveyQuery.Query.DiffP.LapMean, survey.SurveyQuery.Query.DiffP.LapScale, survey.SurveyQuery.Query.DiffP.Quanta, survey.SurveyQuery.Query.DiffP.Scale, survey.SurveyQuery.Query.DiffP.Limit)
-
-			for _, v := range noiseArray {
-				clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
-			}
-			shuffle.TargetOfShuffle = &clientResponses
-
-		} else {
-			pi, err = protocols.NewShufflingProtocol(tn)
-			if err != nil {
-				return nil, err
-			}
-			shuffle := pi.(*protocols.ShufflingProtocol)
-
-			shuffle.Proofs = survey.SurveyQuery.Query.Proofs
-			shuffle.Precomputed = survey.ShufflePrecompute
-			shuffle.Query = &survey.SurveyQuery
-			shuffle.MapPIs = survey.MapPIs
-
-			if tn.IsRoot() {
-				clientResponses := make([]libunlynx.ProcessResponse, 0)
-				if survey.SurveyQuery.Query.DiffP.Scale == 0 {
-					survey.SurveyQuery.Query.DiffP.Scale = 1
-				}
-				noiseArray := libdrynx.GenerateNoiseValuesScale(int64(survey.SurveyQuery.Query.DiffP.NoiseListSize), survey.SurveyQuery.Query.DiffP.LapMean, survey.SurveyQuery.Query.DiffP.LapScale, survey.SurveyQuery.Query.DiffP.Quanta, survey.SurveyQuery.Query.DiffP.Scale, survey.SurveyQuery.Query.DiffP.Limit)
-				for _, v := range noiseArray {
-					clientResponses = append(clientResponses, libunlynx.ProcessResponse{GroupByEnc: nil, AggregatingAttributes: libunlynx.IntArrayToCipherVector([]int64{int64(v)})})
-				}
-				shuffle.TargetOfShuffle = &clientResponses
-			}
-		}
-		return pi, nil
-
-	case protocols.KeySwitchingProtocolName:
-		survey := castToSurvey(s.Survey.Get(target))
-		pi, err = protocols.NewKeySwitchingProtocol(tn)
+		pi, err = s.NewShufflingProtocol(tn, survey)
 		if err != nil {
 			return nil, err
 		}
-		keySwitch := pi.(*protocols.KeySwitchingProtocol)
-		keySwitch.Proofs = survey.SurveyQuery.Query.Proofs
-		keySwitch.Query = &survey.SurveyQuery
-		keySwitch.MapPIs = survey.MapPIs
 
-		if tn.IsRoot() {
-			if libdrynx.AddDiffP(survey.SurveyQuery.Query.DiffP) {
-				for i, v := range survey.QueryResponseState.Data {
-					survey.QueryResponseState.Data[i].Data.Add(v.Data, survey.Noises[:len(v.Data)])
-				}
-			}
-			keySwitch.TargetOfSwitch = convertToCipherVector(&survey.QueryResponseState)
-			tmp := survey.SurveyQuery.ClientPubKey
-			keySwitch.TargetPublicKey = &tmp
+		return pi, nil
 
-			s.Survey.Put(string(target), survey)
-
+	case protocolsunlynx.KeySwitchingProtocolName:
+		survey := castToSurvey(s.Survey.Get(target))
+		pi, err = s.NewKeySwitchingProtocol(tn, target, survey)
+		if err != nil {
+			return nil, err
 		}
+
 		return pi, nil
 
 	default:
@@ -573,6 +497,159 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 	}
 
 	return pi, nil
+}
+
+// NewCollectiveAggregationProtocol defines a new collective aggregation protocol
+func (s *ServiceDrynx) NewCollectiveAggregationProtocol(tn *onet.TreeNodeInstance, target string, survey Survey) (onet.ProtocolInstance, error) {
+	pi, err := protocolsunlynx.NewCollectiveAggregationProtocol(tn)
+	if err != nil {
+		return nil, err
+	}
+
+	// convert the result to fit the collective aggregation protocol
+	groupedData := libdrynx.ConvertToAggregationStruct(survey.QueryResponseState)
+
+	collectiveAggr := pi.(*protocolsunlynx.CollectiveAggregationProtocol)
+	collectiveAggr.GroupedData = &groupedData
+	//TODO: change proofs
+	if survey.SurveyQuery.Query.Proofs == 1 {
+		collectiveAggr.Proofs = true
+	} else if survey.SurveyQuery.Query.Proofs == 0 {
+		collectiveAggr.Proofs = false
+	}
+	collectiveAggr.MapPIs = survey.MapPIs
+	collectiveAggr.ProofFunc = func(data []libunlynx.CipherVector, res libunlynx.CipherVector) *libunlynxaggr.PublishedAggregationListProof {
+		go func() {
+			//TODO: find a better way to do this (cleaner way)
+			cvMap := make(map[libunlynx.GroupingKey][]libunlynx.CipherVector)
+			survey.QueryResponseState.FormatAggregationProofs(cvMap)
+			aggrLocalProof := libunlynxaggr.PublishedAggregationListProof{}
+			aggrLocalProof.List = make([]libunlynxaggr.PublishedAggregationProof, 0)
+			for k, v := range cvMap {
+				aggrLocalProof.List = append(aggrLocalProof.List, libunlynxaggr.AggregationListProofCreation(v, groupedData[k].AggregatingAttributes).List...)
+			}
+
+			pi := survey.MapPIs["aggregation/"+s.ServerIdentity().String()]
+			pi.(*protocols.ProofCollectionProtocol).Proof = drynxproof.ProofRequest{AggregationProof: drynxproof.NewAggregationProofRequest(&aggrLocalProof, target, s.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, tn.Private(), nil)}
+
+			go func() {
+				if err := pi.Dispatch(); err != nil {
+					log.Fatal(err)
+				}
+			}()
+			go func() {
+				if err := pi.Start(); err != nil {
+					log.Fatal(err)
+				}
+			}()
+			<-pi.(*protocols.ProofCollectionProtocol).FeedbackChannel
+		}()
+		return nil
+	}
+
+	return pi, nil
+}
+
+// NewKeySwitchingProtocol defines a new key switching protocol
+func (s *ServiceDrynx) NewKeySwitchingProtocol(tn *onet.TreeNodeInstance, target string, survey Survey) (onet.ProtocolInstance, error) {
+	pi, err := protocolsunlynx.NewKeySwitchingProtocol(tn)
+	if err != nil {
+		return nil, err
+	}
+	keySwitch := pi.(*protocolsunlynx.KeySwitchingProtocol)
+	//TODO: change proofs
+	if survey.SurveyQuery.Query.Proofs == 1 {
+		keySwitch.Proofs = true
+	} else if survey.SurveyQuery.Query.Proofs == 0 {
+		keySwitch.Proofs = false
+	}
+	keySwitch.MapPIs = survey.MapPIs
+	keySwitch.ProofFunc = func(pubKey, targetPubKey kyber.Point, secretKey kyber.Scalar, ks2s, rBNegs []kyber.Point, vis []kyber.Scalar) *libunlynxkeyswitch.PublishedKSListProof {
+		go func() {
+			proof, _ := libunlynxkeyswitch.KeySwitchListProofCreation(pubKey, targetPubKey, secretKey, ks2s, rBNegs, vis)
+			pcp := keySwitch.MapPIs["keyswitch/"+keySwitch.ServerIdentity().String()]
+			pcp.(*protocols.ProofCollectionProtocol).Proof = drynxproof.ProofRequest{KeySwitchProof: drynxproof.NewKeySwitchProofRequest(&proof, survey.SurveyQuery.SurveyID, keySwitch.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, keySwitch.Private(), nil)}
+			go func() {
+				if err := pcp.Dispatch(); err != nil {
+					log.Fatal(err)
+				}
+			}()
+			go func() {
+				if err := pcp.Start(); err != nil {
+					log.Fatal(err)
+				}
+			}()
+			<-pcp.(*protocols.ProofCollectionProtocol).FeedbackChannel
+		}()
+		return nil
+	}
+
+	if tn.IsRoot() {
+		if libdrynx.AddDiffP(survey.SurveyQuery.Query.DiffP) {
+			for i, v := range survey.QueryResponseState.Data {
+				survey.QueryResponseState.Data[i].Data.Add(v.Data, survey.Noises[:len(v.Data)])
+			}
+		}
+		keySwitch.TargetOfSwitch = convertToCipherVector(&survey.QueryResponseState)
+		tmp := survey.SurveyQuery.ClientPubKey
+		keySwitch.TargetPublicKey = &tmp
+
+		_, err = s.Survey.Put(string(target), survey)
+		if err != nil {
+			return nil, err
+		}
+
+	}
+	return pi, err
+}
+
+// NewShufflingProtocol defines a new shuffling protocol
+func (s *ServiceDrynx) NewShufflingProtocol(tn *onet.TreeNodeInstance, survey Survey) (onet.ProtocolInstance, error) {
+	pi, err := protocolsunlynx.NewShufflingProtocol(tn)
+	if err != nil {
+		return nil, err
+	}
+	shuffle := pi.(*protocolsunlynx.ShufflingProtocol)
+	if survey.SurveyQuery.Query.Proofs == 1 {
+		shuffle.Proofs = true
+	} else if survey.SurveyQuery.Query.Proofs == 0 {
+		shuffle.Proofs = false
+	}
+	shuffle.Precomputed = survey.ShufflePrecompute
+	shuffle.MapPIs = survey.MapPIs
+	shuffle.ProofFunc = func(shuffleTarget, shuffledData []libunlynx.CipherVector, collectiveKey kyber.Point, beta [][]kyber.Scalar, pi []int) *libunlynxshuffle.PublishedShufflingProof {
+		go func() {
+			proof, _ := libunlynxshuffle.ShuffleProofCreation(shuffleTarget, shuffledData, libunlynx.SuiTe.Point().Base(), collectiveKey, beta, pi)
+			pcp := shuffle.MapPIs["shuffle/"+shuffle.ServerIdentity().String()]
+			pcp.(*protocols.ProofCollectionProtocol).Proof = drynxproof.ProofRequest{ShuffleProof: drynxproof.NewShuffleProofRequest(&proof, survey.SurveyQuery.SurveyID, shuffle.ServerIdentity().String(), "", survey.SurveyQuery.Query.RosterVNs, shuffle.Private(), nil)}
+			go func() {
+				if err := pcp.Dispatch(); err != nil {
+					log.Fatal(err)
+				}
+			}()
+			go func() {
+				if err := pcp.Start(); err != nil {
+					log.Fatal(err)
+				}
+			}()
+			<-pcp.(*protocols.ProofCollectionProtocol).FeedbackChannel
+		}()
+		return nil
+	}
+
+	if tn.IsRoot() {
+		st := make([]libunlynx.CipherVector, 0)
+		if survey.SurveyQuery.Query.DiffP.Scale == 0 {
+			survey.SurveyQuery.Query.DiffP.Scale = 1
+		}
+		noiseArray := libunlynxdiffprivacy.GenerateNoiseValuesScale(int64(survey.SurveyQuery.Query.DiffP.NoiseListSize), survey.SurveyQuery.Query.DiffP.LapMean, survey.SurveyQuery.Query.DiffP.LapScale, survey.SurveyQuery.Query.DiffP.Quanta, survey.SurveyQuery.Query.DiffP.Scale, survey.SurveyQuery.Query.DiffP.Limit)
+		for _, v := range noiseArray {
+			st = append(st, libunlynx.IntArrayToCipherVector([]int64{int64(v)}))
+		}
+		shuffle.ShuffleTarget = &st
+	}
+
+	return pi, err
 }
 
 // StartProtocol starts a specific protocol
@@ -597,9 +674,20 @@ func (s *ServiceDrynx) StartProtocol(name string, targetSurvey string) (onet.Pro
 		log.Fatal("Error running" + name)
 	}
 
-	s.RegisterProtocolInstance(pi)
-	go pi.Dispatch()
-	go pi.Start()
+	err = s.RegisterProtocolInstance(pi)
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		if err := pi.Dispatch(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+	go func() {
+		if err := pi.Start(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	return pi, err
 }
@@ -609,7 +697,7 @@ func (s *ServiceDrynx) StartProtocol(name string, targetSurvey string) (onet.Pro
 
 // StartService starts the service (with all its different steps/protocols)
 func (s *ServiceDrynx) StartService(targetSurvey string) error {
-	log.Lvl2("SERVICE] <drynx> Server", s.ServerIdentity(), " starts a collective aggregation, (differential privacy) & key switching for survey ", targetSurvey)
+	log.Lvl2("[SERVICE] <drynx> Server", s.ServerIdentity(), " starts a collective aggregation, (differential privacy) & key switching for survey ", targetSurvey)
 
 	target := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 
@@ -664,22 +752,28 @@ func (s *ServiceDrynx) DataCollectionPhase(targetSurvey string) error {
 
 		}
 	}
-	s.Survey.Put(string(targetSurvey), survey)
+	_, err = s.Survey.Put(string(targetSurvey), survey)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 // AggregationPhase performs the per-group aggregation on the currently grouped data.
 func (s *ServiceDrynx) AggregationPhase(targetSurvey string) error {
-	pi, err := s.StartProtocol(protocols.CollectiveAggregationProtocolName, targetSurvey)
+	pi, err := s.StartProtocol(protocolsunlynx.CollectiveAggregationProtocolName, targetSurvey)
 	if err != nil {
 		return err
 	}
-	cothorityAggregatedData := <-pi.(*protocols.CollectiveAggregationProtocol).FeedbackChannel
+	cothorityAggregatedData := <-pi.(*protocolsunlynx.CollectiveAggregationProtocol).FeedbackChannel
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 
 	survey.QueryResponseState = *libdrynx.ConvertFromAggregationStruct(cothorityAggregatedData)
-	s.Survey.Put(string(targetSurvey), survey)
+	_, err = s.Survey.Put(string(targetSurvey), survey)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -693,7 +787,10 @@ func (s *ServiceDrynx) ObfuscationPhase(targetSurvey string) error {
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 	survey.QueryResponseState = *convertFromKeySwitchingStruct(obfuscationData, survey.QueryResponseState)
-	s.Survey.Put(string(targetSurvey), survey)
+	_, err = s.Survey.Put(string(targetSurvey), survey)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -704,16 +801,19 @@ func (s *ServiceDrynx) DROPhase(targetSurvey string) error {
 		return err
 	}
 
-	shufflingResult := <-pi.(*protocols.ShufflingProtocol).FeedbackChannel
+	shufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 	noises := *libunlynx.NewCipherVector(len(shufflingResult))
 	for i, v := range shufflingResult {
-		noises[i] = v.AggregatingAttributes[0]
+		noises[i] = v[0]
 	}
 	survey.Noises = noises
 	survey.DiffPChannel <- 1
-	s.Survey.Put(string(targetSurvey), survey)
+	_, err = s.Survey.Put(string(targetSurvey), survey)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -723,29 +823,35 @@ func (s *ServiceDrynx) DROLocalPhase(targetSurvey string) error {
 	if err != nil {
 		return err
 	}
-	shufflingResult := <-pi.(*protocols.ShufflingLocalProtocol).FeedbackChannel
+	shufflingResult := <-pi.(*protocolsunlynx.ShufflingProtocol).FeedbackChannel
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 	noises := *libunlynx.NewCipherVector(len(shufflingResult))
 	for i, v := range shufflingResult {
-		noises[i] = v.AggregatingAttributes[0]
+		noises[i] = v[0]
 	}
 	survey.Noises = noises
 	survey.DiffPChannel <- 1
-	s.Survey.Put(string(targetSurvey), survey)
+	_, err = s.Survey.Put(string(targetSurvey), survey)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 // KeySwitchingPhase performs the switch to the querier's key on the currently aggregated data.
 func (s *ServiceDrynx) KeySwitchingPhase(targetSurvey string) error {
-	pi, err := s.StartProtocol(protocols.KeySwitchingProtocolName, targetSurvey)
+	pi, err := s.StartProtocol(protocolsunlynx.KeySwitchingProtocolName, targetSurvey)
 	if err != nil {
 		return err
 	}
-	keySwitchedAggregatedResponses := <-pi.(*protocols.KeySwitchingProtocol).FeedbackChannel
+	keySwitchedAggregatedResponses := <-pi.(*protocolsunlynx.KeySwitchingProtocol).FeedbackChannel
 
 	survey := castToSurvey(s.Survey.Get((string)(targetSurvey)))
 	survey.QueryResponseState = *convertFromKeySwitchingStruct(keySwitchedAggregatedResponses, survey.QueryResponseState)
-	s.Survey.Put(targetSurvey, survey)
+	_, err = s.Survey.Put(targetSurvey, survey)
+	if err != nil {
+		return err
+	}
 	return err
 }
 

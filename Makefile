@@ -16,7 +16,7 @@ test_fmt:
 test_lint:
 	@echo Checking linting of files
 	@{ \
-		go get -u golang.org/x/lint/golint; \
+		GO111MODULE=off go get -u golang.org/x/lint/golint; \
 		el=$(EXCLUDE_LINT); \
 		lintfiles=$$( golint ./... | egrep -v "$$el" ); \
 		if [ -n "$$lintfiles" ]; then \

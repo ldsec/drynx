@@ -1,11 +1,13 @@
-package encoding_test
+package libdrynxencoding_test
 
 import (
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/key"
 	"testing"
 )
 
@@ -14,7 +16,8 @@ func TestEncodeDecodeMinMax(t *testing.T) {
 	//data
 	inputValues := []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 3, 2, 15, 6, 17, 2, -5, 72, -20, 100, -190, 200}
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 
 	//maximum possible value taken by the attribute in question
 	globalMax := int64(200)
@@ -34,11 +37,11 @@ func TestEncodeDecodeMinMax(t *testing.T) {
 	}
 
 	//function call min
-	minCipher, _ := encoding.EncodeMin(inputValues, globalMax, globalMin, pubKey)
-	resultMin := encoding.DecodeMin(minCipher, globalMin, secKey)
+	minCipher, _ := libdrynxencoding.EncodeMin(inputValues, globalMax, globalMin, pubKey)
+	resultMin := libdrynxencoding.DecodeMin(minCipher, globalMin, secKey)
 	//function call max
-	maxCipher, _ := encoding.EncodeMax(inputValues, globalMax, globalMin, pubKey)
-	resultMax := encoding.DecodeMax(maxCipher, globalMin, secKey)
+	maxCipher, _ := libdrynxencoding.EncodeMax(inputValues, globalMax, globalMin, pubKey)
+	resultMax := libdrynxencoding.DecodeMax(maxCipher, globalMin, secKey)
 
 	assert.Equal(t, expectedMin, resultMin)
 	assert.Equal(t, expectedMax, resultMax)
@@ -48,7 +51,8 @@ func TestEncodeDecodeMinMaxWithProofs(t *testing.T) {
 	//data
 	inputValues := []int64{1, 2, 10}
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 
 	//maximum possible value taken by the attribute in question
 	globalMax := int64(10)
@@ -81,8 +85,8 @@ func TestEncodeDecodeMinMaxWithProofs(t *testing.T) {
 	ys[0] = make([]kyber.Point, globalMax-globalMin+1)
 	ys[1] = make([]kyber.Point, globalMax-globalMin+1)
 	for i := range ps[0] {
-		ps[0][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u))
-		ps[1][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u))
+		ps[0][i] = libdrynxrange.PublishSignatureBytesToPublishSignatures(libdrynxrange.InitRangeProofSignature(u))
+		ps[1][i] = libdrynxrange.PublishSignatureBytesToPublishSignatures(libdrynxrange.InitRangeProofSignature(u))
 		ys[0][i] = ps[0][i].Public
 		ys[1][i] = ps[1][i].Public
 		ranges[i] = &[]int64{u, l}
@@ -97,16 +101,16 @@ func TestEncodeDecodeMinMaxWithProofs(t *testing.T) {
 	}
 
 	//function call
-	resultEncryptedMin, _, prfMin := encoding.EncodeMinWithProofs(inputValues, globalMax, globalMin, pubKey, ps, ranges)
-	resultMin := encoding.DecodeMin(resultEncryptedMin, globalMin, secKey)
+	resultEncryptedMin, _, prfMin := libdrynxencoding.EncodeMinWithProofs(inputValues, globalMax, globalMin, pubKey, ps, ranges)
+	resultMin := libdrynxencoding.DecodeMin(resultEncryptedMin, globalMin, secKey)
 	assert.Equal(t, expectedMin, resultMin)
-	resultEncryptedMax, _, prfMax := encoding.EncodeMaxWithProofs(inputValues, globalMax, globalMin, pubKey, ps, ranges)
-	resultMax := encoding.DecodeMax(resultEncryptedMax, globalMin, secKey)
+	resultEncryptedMax, _, prfMax := libdrynxencoding.EncodeMaxWithProofs(inputValues, globalMax, globalMin, pubKey, ps, ranges)
+	resultMax := libdrynxencoding.DecodeMax(resultEncryptedMax, globalMin, secKey)
 	assert.Equal(t, expectedMax, resultMax)
 
 	for i, v := range prfMin {
-		assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(v), u, l, yss[i], pubKey))
-		assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prfMax[i]), u, l, yss[i], pubKey))
+		assert.True(t, libdrynxrange.RangeProofVerification(libdrynxrange.CreatePredicateRangeProofForAllServ(v), u, l, yss[i], pubKey))
+		assert.True(t, libdrynxrange.RangeProofVerification(libdrynxrange.CreatePredicateRangeProofForAllServ(prfMax[i]), u, l, yss[i], pubKey))
 	}
 
 }

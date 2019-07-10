@@ -1,25 +1,24 @@
-package encoding
+package libdrynxencoding
 
 import (
+	"bufio"
+	"fmt"
+	"github.com/lca1/drynx/lib"
+	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
 	"github.com/montanaflynn/stats"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
+	"gonum.org/v1/gonum/integrate"
+	"gonum.org/v1/gonum/stat"
 	"gonum.org/v1/gonum/stat/combin"
-
-	"bufio"
-	"fmt"
 	"math"
 	"math/rand"
 	"os"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/lca1/drynx/lib"
-	"go.dedis.ch/onet/v3/network"
-	"gonum.org/v1/gonum/integrate"
-	"gonum.org/v1/gonum/stat"
 )
 
 // TaylorCoefficients are the taylor coefficients (first taylor expansion coefficients of ln(1/(1+exp(x)))
@@ -117,7 +116,7 @@ type CipherAndRandom struct {
 }
 
 // EncodeLogisticRegressionWithProofs computes and encrypts the data provider's coefficients for logistic regression with range proofs
-func EncodeLogisticRegressionWithProofs(xData [][]float64, yData []int64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynx.CreateProof) {
+func EncodeLogisticRegressionWithProofs(xData [][]float64, yData []int64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynxrange.CreateProof) {
 
 	d := lrParameters.NbrFeatures
 	n := getTotalNumberApproxCoefficients(d, lrParameters.K)
@@ -189,19 +188,14 @@ func EncodeLogisticRegressionWithProofs(xData [][]float64, yData []int64, lrPara
 	log.Lvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
 	log.Lvl2("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
 
-	createRangeProof := make([]libdrynx.CreateProof, len(aggregatedApproxCoefficientsIntPacked))
+	createRangeProof := make([]libdrynxrange.CreateProof, len(aggregatedApproxCoefficientsIntPacked))
 	wg1 := libunlynx.StartParallelize(len(aggregatedApproxCoefficientsIntPacked))
 	for i, v := range aggregatedApproxCoefficientsIntPacked {
-		if libunlynx.PARALLELIZE {
-			go func(i int, v int64) {
-				defer wg1.Done()
-				//input range validation proof
-				createRangeProof[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: encryptedAggregatedApproxCoefficients[i].r, CaPub: pubKey, Cipher: encryptedAggregatedApproxCoefficients[i].C}
-			}(i, v)
-		} else {
+		go func(i int, v int64) {
+			defer wg1.Done()
 			//input range validation proof
-			createRangeProof[i] = libdrynx.CreateProof{Sigs: libdrynx.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: encryptedAggregatedApproxCoefficients[i].r, CaPub: pubKey, Cipher: encryptedAggregatedApproxCoefficients[i].C}
-		}
+			createRangeProof[i] = libdrynxrange.CreateProof{Sigs: libdrynxrange.ReadColumn(sigs, i), U: (*lu[i])[0], L: (*lu[i])[1], Secret: v, R: encryptedAggregatedApproxCoefficients[i].r, CaPub: pubKey, Cipher: encryptedAggregatedApproxCoefficients[i].C}
+		}(i, v)
 	}
 	libunlynx.EndParallelize(wg1)
 
@@ -1180,7 +1174,7 @@ func ComputeTPRFPR(predicted []float64, actual []int64) ([]float64, []float64) {
 	stat.SortWeightedLabeled(sortedPredictions, labels, nil)
 
 	// compute TPR and FPR for varying thresholds
-	tpr, fpr := stat.ROC(0, sortedPredictions, labels, nil)
+	tpr, fpr, _ := stat.ROC(nil, sortedPredictions, labels, nil)
 
 	return tpr, fpr
 }
@@ -1244,7 +1238,9 @@ func SaveToFile(array []float64, filename string) {
 	}
 	_, err = file.WriteString(fmt.Sprintln(array[len(array)-1]))
 
-	file.Close()
+	if err := file.Close(); err != nil {
+		log.Fatal("Error closing file:", err)
+	}
 }
 
 // PrintForLatex for copy-pasting in LaTex
@@ -1373,8 +1369,8 @@ func ReadFile(path string, separator string) [][]string {
 		fmt.Println(err)
 		os.Exit(2)
 	}
-
 	defer inFile.Close()
+
 	scanner := bufio.NewScanner(inFile)
 	scanner.Split(bufio.ScanLines)
 

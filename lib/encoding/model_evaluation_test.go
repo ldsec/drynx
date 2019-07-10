@@ -1,11 +1,13 @@
-package encoding_test
+package libdrynxencoding_test
 
 import (
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/key"
 	"testing"
 )
 
@@ -24,7 +26,8 @@ func TestEncodeDecodeModelEvaluation(t *testing.T) {
 	inputValuesYPreds := []int64{1, 2, 3, 4, 5, 6, 7, 8, 1, 67}*/
 
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 	//expected results
 	N := int64(len(inputValuesY))
 	sumY := int64(0)
@@ -40,8 +43,8 @@ func TestEncodeDecodeModelEvaluation(t *testing.T) {
 
 	//function call
 	var resultEncrypted []libunlynx.CipherText
-	resultEncrypted, _ = encoding.EncodeModelEvaluation(inputValuesY, inputValuesYPreds, pubKey)
-	result := encoding.DecodeModelEvaluation(resultEncrypted, secKey)
+	resultEncrypted, _ = libdrynxencoding.EncodeModelEvaluation(inputValuesY, inputValuesYPreds, pubKey)
+	result := libdrynxencoding.DecodeModelEvaluation(resultEncrypted, secKey)
 
 	assert.Equal(t, rExpect, result)
 }
@@ -53,7 +56,8 @@ func TestEncodeDecodeModelEvaluationWithProofs(t *testing.T) {
 	inputValuesYPreds := []int64{32, 12, 23, 4, 13, -7, 12, 8, 2, 6, 2}
 
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 	//expected results
 	N := int64(len(inputValuesY))
 	sumY := int64(0)
@@ -79,8 +83,8 @@ func TestEncodeDecodeModelEvaluationWithProofs(t *testing.T) {
 	ys[0] = make([]kyber.Point, 4)
 	ys[1] = make([]kyber.Point, 4)
 	for i := range ps[0] {
-		ps[0][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u[i]))
-		ps[1][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u[i]))
+		ps[0][i] = libdrynxrange.PublishSignatureBytesToPublishSignatures(libdrynxrange.InitRangeProofSignature(u[i]))
+		ps[1][i] = libdrynxrange.PublishSignatureBytesToPublishSignatures(libdrynxrange.InitRangeProofSignature(u[i]))
 		ys[0][i] = ps[0][i].Public
 		ys[1][i] = ps[1][i].Public
 		ranges[i] = &[]int64{u[i], l[i]}
@@ -95,12 +99,12 @@ func TestEncodeDecodeModelEvaluationWithProofs(t *testing.T) {
 	}
 
 	//function call
-	resultEncrypted, _, prf := encoding.EncodeModelEvaluationWithProofs(inputValuesY, inputValuesYPreds, pubKey, ps, ranges)
-	result := encoding.DecodeModelEvaluation(resultEncrypted, secKey)
+	resultEncrypted, _, prf := libdrynxencoding.EncodeModelEvaluationWithProofs(inputValuesY, inputValuesYPreds, pubKey, ps, ranges)
+	result := libdrynxencoding.DecodeModelEvaluation(resultEncrypted, secKey)
 
-	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[0]), u[0], l[0], yss[0], pubKey))
-	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[1]), u[1], l[1], yss[1], pubKey))
-	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[2]), u[2], l[2], yss[2], pubKey))
-	assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[3]), u[3], l[3], yss[3], pubKey))
+	assert.True(t, libdrynxrange.RangeProofVerification(libdrynxrange.CreatePredicateRangeProofForAllServ(prf[0]), u[0], l[0], yss[0], pubKey))
+	assert.True(t, libdrynxrange.RangeProofVerification(libdrynxrange.CreatePredicateRangeProofForAllServ(prf[1]), u[1], l[1], yss[1], pubKey))
+	assert.True(t, libdrynxrange.RangeProofVerification(libdrynxrange.CreatePredicateRangeProofForAllServ(prf[2]), u[2], l[2], yss[2], pubKey))
+	assert.True(t, libdrynxrange.RangeProofVerification(libdrynxrange.CreatePredicateRangeProofForAllServ(prf[3]), u[3], l[3], yss[3], pubKey))
 	assert.Equal(t, rExpect, result)
 }

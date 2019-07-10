@@ -2,27 +2,23 @@ package services_test
 
 import (
 	"fmt"
-	"go.dedis.ch/cothority/v3"
-
+	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/drynx/lib/range"
+	"github.com/lca1/drynx/services"
 	"github.com/lca1/unlynx/lib"
+	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/cothority/v3/skipchain"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
 	"gopkg.in/satori/go.uuid.v1"
-
 	"math"
 	"os"
 	"strconv"
 	"sync"
 	"testing"
-
-	"github.com/lca1/drynx/lib"
-	"github.com/stretchr/testify/assert"
-	"go.dedis.ch/cothority/v3/skipchain"
-
-	"github.com/lca1/drynx/services"
 )
 
 func generateNodes(local *onet.LocalTest, nbrServers int, nbrDPs int, nbrVNs int) (*onet.Roster, *onet.Roster, *onet.Roster) {
@@ -67,17 +63,15 @@ func repartitionDPs(elServers *onet.Roster, elDPs *onet.Roster, dpRepartition []
 //______________________________________________________________________________________________________________________
 /// Test service Drynx for all operations
 func TestServiceDrynx(t *testing.T) {
-	t.Skip("not this one")
-	log.SetDebugVisible(1)
+	log.SetDebugVisible(2)
 
 	//------SET PARAMS--------
 
-	proofs := 1 // 0 is not proof, 1 is proofs, 2 is optimized proofs
+	proofs := 1 // 0 is not proof, 1 is proofs
 	rangeProofs := true
 	obfuscation := false
 
-	diffPri := true
-	diffPriOpti := true
+	diffPri := false
 	nbrRows := int64(1)
 	nbrServers := 3
 	nbrDPs := 5
@@ -87,24 +81,22 @@ func TestServiceDrynx(t *testing.T) {
 	//simulation
 	cuttingFactor := 0
 
-	operationList := []string{"frequencyCount"} //, "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
-	//operationList := []string{"sum", "mean", "variance", "cosim", "frequencyCount", "lin_reg"}
-	//operationList := []string{"bool_AND", "bool_OR", "min", "max", "union", "inter"}
-	//operationList := []string{"variance"}
-	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
+	//operationList := []string{"sum", "frequencyCount", "mean", "variance", "cosim", "frequencyCount", "bool_AND", "bool_OR", "min", "max", "lin_reg", "union", "inter"}
+	operationList := []string{"sum", "frequencyCount"}
+	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold aggregation, 3: threshold range, 4: obfuscation, 5: threshold key switch
 	//------------------------
 
 	if proofs == 1 {
 		if obfuscation {
-			thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 1.0}
+			thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 1.0, 1.0}
 		} else {
-			thresholdEntityProofsVerif = []float64{1.0, 1.0, 0.0, 1.0}
+			thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 0.0, 1.0}
 		}
 	} else {
-		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
+		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0, 0.0}
 	}
 
-	local := onet.NewLocalTest(cothority.Suite)
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	elServers, elDPs, elVNs := generateNodes(local, nbrServers, nbrDPs, nbrVNs)
 
 	if proofs == 0 {
@@ -179,9 +171,9 @@ func TestServiceDrynx(t *testing.T) {
 		// choosing the limit is done by drawing the curve (e.g. wolframalpha)
 		diffP := libdrynx.QueryDiffP{}
 		if diffPri {
-			diffP = libdrynx.QueryDiffP{LapMean: 0, LapScale: 15.0, NoiseListSize: 1000, Limit: 65, Scale: 1, Optimized: diffPriOpti}
+			diffP = libdrynx.QueryDiffP{LapMean: 0, LapScale: 15.0, NoiseListSize: 1000, Limit: 65, Scale: 1}
 		} else {
-			diffP = libdrynx.QueryDiffP{LapMean: 0.0, LapScale: 0.0, NoiseListSize: 0, Quanta: 0.0, Scale: 0, Optimized: diffPriOpti}
+			diffP = libdrynx.QueryDiffP{LapMean: 0.0, LapScale: 0.0, NoiseListSize: 0, Quanta: 0.0, Scale: 0}
 		}
 
 		// DPs signatures for Input Range Validation
@@ -195,9 +187,9 @@ func TestServiceDrynx(t *testing.T) {
 				temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
 				for j := 0; j < len(ranges); j++ {
 					if cuttingFactor != 0 {
-						temp[j] = libdrynx.InitRangeProofSignatureDeterministic((*ranges[j])[0])
+						temp[j] = libdrynxrange.InitRangeProofSignatureDeterministic((*ranges[j])[0])
 					} else {
-						temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+						temp[j] = libdrynxrange.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
 					}
 				}
 				ps[i] = &temp
@@ -232,7 +224,7 @@ func TestServiceDrynx(t *testing.T) {
 			idToPublic[v.String()] = v.ServicePublic(services.ServiceName)
 		}
 
-		if proofs != 0 {
+		if proofs != 0 && elVNs != nil {
 			for _, v := range elVNs.List {
 				idToPublic[v.String()] = v.ServicePublic(services.ServiceName)
 			}
@@ -248,7 +240,7 @@ func TestServiceDrynx(t *testing.T) {
 		}
 
 		var wg *sync.WaitGroup
-		if proofs != 0 {
+		if proofs != 0 && elVNs != nil {
 			// send query to the skipchain and 'wait' for all proofs' verification to be done
 			clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip-"+op)
 
@@ -293,7 +285,7 @@ func TestServiceDrynx(t *testing.T) {
 
 	}
 
-	if proofs != 0 {
+	if proofs != 0 && elVNs != nil {
 		clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip")
 		for _, wg := range wgProofs {
 			libunlynx.EndParallelize(wg)
@@ -346,12 +338,13 @@ func TestServiceDrynx(t *testing.T) {
 		}
 
 		// close DB
-		clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1})
+		if err := clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1}); err != nil {
+			t.Fatal("Error closing the DB:", err)
+		}
 	}
 }
 
 func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
-	t.Skip("not this one")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 
@@ -393,14 +386,14 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	filePathTraining := "../data/SPECTF_heart_dataset_training.txt"
 	filePathTesting := "../data/SPECTF_heart_dataset_testing.txt"
 
-	XTrain, _ := encoding.LoadData("SPECTF", filePathTraining)
-	XTest, yTest := encoding.LoadData("SPECTF", filePathTesting)
+	XTrain, _ := libdrynxencoding.LoadData("SPECTF", filePathTraining)
+	XTest, yTest := libdrynxencoding.LoadData("SPECTF", filePathTesting)
 
 	var means = make([]float64, 0)
 	var standardDeviations = make([]float64, 0)
 	if standardisationMode == 0 || standardisationMode == 1 {
-		means = encoding.ComputeMeans(XTrain)
-		standardDeviations = encoding.ComputeStandardDeviations(XTrain)
+		means = libdrynxencoding.ComputeMeans(XTrain)
+		standardDeviations = libdrynxencoding.ComputeStandardDeviations(XTrain)
 	} else {
 		means = nil
 		standardDeviations = nil
@@ -421,20 +414,20 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 
 	operationList := []string{"logistic regression"}
 
-	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
+	thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold aggregation, 3: threshold range, 4: obfuscation, 5: threshold key switch
 	//------------------------
 
 	if proofs == 1 {
 		if obfuscation {
-			thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 1.0}
+			thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 1.0, 1.0}
 		} else {
-			thresholdEntityProofsVerif = []float64{1.0, 1.0, 0.0, 1.0}
+			thresholdEntityProofsVerif = []float64{1.0, 1.0, 1.0, 0.0, 1.0}
 		}
 	} else {
-		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
+		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0, 0.0}
 	}
 
-	local := onet.NewLocalTest(cothority.Suite)
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	elServers, elDPs, elVNs := generateNodes(local, nbrServers, nbrDPs, nbrVNs)
 
 	if proofs == 0 {
@@ -525,9 +518,9 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 				temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
 				for j := 0; j < len(ranges); j++ {
 					if cuttingFactor != 0 {
-						temp[j] = libdrynx.InitRangeProofSignatureDeterministic((*ranges[j])[0])
+						temp[j] = libdrynxrange.InitRangeProofSignatureDeterministic((*ranges[j])[0])
 					} else {
-						temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+						temp[j] = libdrynxrange.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
 					}
 				}
 				ps[i] = &temp
@@ -562,7 +555,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 			idToPublic[v.String()] = v.ServicePublic(services.ServiceName)
 		}
 
-		if proofs != 0 {
+		if proofs != 0 && elVNs != nil {
 			for _, v := range elVNs.List {
 				idToPublic[v.String()] = v.ServicePublic(services.ServiceName)
 			}
@@ -578,7 +571,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		}
 
 		var wg *sync.WaitGroup
-		if proofs != 0 {
+		if proofs != 0 && elVNs != nil {
 			// send query to the skipchain and 'wait' for all proofs' verification to be done
 			clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip-"+op)
 
@@ -652,7 +645,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	log.Lvl1("ICI")
 	//encoding.PrintForLatex(meanAccuracy, meanPrecision, meanRecall, meanFscore, meanAUC)
 
-	if proofs != 0 {
+	if proofs != 0 && elVNs != nil {
 		clientSkip := services.NewDrynxClient(elVNs.List[0], "test-skip")
 		for _, wg := range wgProofs {
 			libunlynx.EndParallelize(wg)
@@ -705,7 +698,9 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 		}
 
 		// close DB
-		clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1})
+		if err := clientSkip.SendCloseDB(elVNs, &libdrynx.CloseDB{Close: 1}); err != nil {
+			t.Fatal("Error closing the DB:", err)
+		}
 	}
 }
 
@@ -714,9 +709,9 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 	os.Remove("pre_compute_multiplications.gob")
 
 	// these nodes act as both servers and data providers
-	local := onet.NewLocalTest(cothority.Suite)
-	local1 := onet.NewLocalTest(cothority.Suite)
-	local2 := onet.NewLocalTest(cothority.Suite)
+	local := onet.NewLocalTest(libunlynx.SuiTe)
+	local1 := onet.NewLocalTest(libunlynx.SuiTe)
+	local2 := onet.NewLocalTest(libunlynx.SuiTe)
 
 	// create servers and data providers
 	_, el, _ := local.GenTree(10, true)
@@ -817,18 +812,18 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 	fmt.Println(filepath)
 
 	// load the dataset
-	X, y := encoding.LoadData(dataset, filepath)
+	X, y := libdrynxencoding.LoadData(dataset, filepath)
 
 	for i := 0; i < numberTrials; i++ {
 		log.Lvl1("Evaluating prediction on dataset for trial:", i)
 
 		// split into training and testing set
 		seed := initSeed + int64(i)
-		XTrain, yTrain, XTest, yTest := encoding.PartitionDataset(X, y, ratio, true, seed)
+		XTrain, yTrain, XTest, yTest := libdrynxencoding.PartitionDataset(X, y, ratio, true, seed)
 
 		// write to file
-		trainingSet := encoding.InsertColumn(XTrain, encoding.Int64ToFloat641DArray(yTrain), 0)
-		testingSet := encoding.InsertColumn(XTest, encoding.Int64ToFloat641DArray(yTest), 0)
+		trainingSet := libdrynxencoding.InsertColumn(XTrain, libdrynxencoding.Int64ToFloat641DArray(yTrain), 0)
+		testingSet := libdrynxencoding.InsertColumn(XTest, libdrynxencoding.Int64ToFloat641DArray(yTest), 0)
 
 		fileTraining, err := os.Create(filePathTraining)
 		fileTesting, err := os.Create(filePathTesting)
@@ -850,8 +845,8 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 		var means = make([]float64, 0)
 		var standardDeviations = make([]float64, 0)
 		if standardisationMode == 0 || standardisationMode == 1 {
-			means = encoding.ComputeMeans(XTrain)
-			standardDeviations = encoding.ComputeStandardDeviations(XTrain)
+			means = libdrynxencoding.ComputeMeans(XTrain)
+			standardDeviations = libdrynxencoding.ComputeStandardDeviations(XTrain)
 		} else {
 			means = nil
 			standardDeviations = nil
@@ -892,7 +887,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 			for i := range el.List {
 				temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
 				for j := 0; j < len(ranges); j++ {
-					temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+					temp[j] = libdrynxrange.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
 				}
 				ps[i] = &temp
 			}
@@ -926,7 +921,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 			idToPublic[v.String()] = v.ServicePublic(services.ServiceName)
 		}
 
-		thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
+		thresholdEntityProofsVerif := []float64{1.0, 1.0, 1.0, 1.0, 1.0} // 1: threshold general, 2: threshold range, 3: obfuscation, 4: threshold key switch
 		// query sending + results receiving
 		cuttingFactor := 0
 		sq := client.GenerateSurveyQuery(el, elVNs, dpToServers, idToPublic, uuid.NewV4().String(), operation, ranges, ps, proofs, false, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor)
@@ -960,8 +955,12 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 			meanAUC += auc
 		}
 
-		fileTraining.Close()
-		fileTesting.Close()
+		if err := fileTraining.Close(); err != nil {
+			t.Fatal(err)
+		}
+		if err := fileTesting.Close(); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	meanAccuracy /= float64(numberTrials)
@@ -978,7 +977,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 	fmt.Println("AUC:      ", meanAUC)
 	fmt.Println()
 
-	encoding.PrintForLatex(meanAccuracy, meanPrecision, meanRecall, meanFscore, meanAUC)
+	libdrynxencoding.PrintForLatex(meanAccuracy, meanPrecision, meanRecall, meanFscore, meanAUC)
 }
 
 func performanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, means []float64,
@@ -990,26 +989,26 @@ func performanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, 
 		len(means) > 0 && len(standardDeviations) > 0 {
 		// using global means and standard deviations, if given
 		log.Lvl1("Standardising the testing set with global means and standard deviations...")
-		XTest = encoding.StandardiseWith(XTest, means, standardDeviations)
+		XTest = libdrynxencoding.StandardiseWith(XTest, means, standardDeviations)
 	} else {
 		// using local means and standard deviations, if not given
 		log.Lvl1("Standardising the testing set with local means and standard deviations...")
-		XTest = encoding.Standardise(XTest)
+		XTest = libdrynxencoding.Standardise(XTest)
 	}
 
 	predictions := make([]int64, len(XTest))
 	predictionsFloat := make([]float64, len(XTest))
 	for i := range XTest {
-		predictionsFloat[i] = encoding.PredictInClear(XTest[i], weights)
+		predictionsFloat[i] = libdrynxencoding.PredictInClear(XTest[i], weights)
 		predictions[i] = int64(math.Round(predictionsFloat[i]))
 		fmt.Printf("%12.8e %1d %2d\n", predictionsFloat[i], predictions[i], yTest[i])
 	}
 
-	accuracy := encoding.Accuracy(predictions, yTest)
-	precision := encoding.Precision(predictions, yTest)
-	recall := encoding.Recall(predictions, yTest)
-	fscore := encoding.Fscore(predictions, yTest)
-	auc := encoding.AreaUnderCurve(predictionsFloat, yTest)
+	accuracy := libdrynxencoding.Accuracy(predictions, yTest)
+	precision := libdrynxencoding.Precision(predictions, yTest)
+	recall := libdrynxencoding.Recall(predictions, yTest)
+	fscore := libdrynxencoding.Fscore(predictions, yTest)
+	auc := libdrynxencoding.AreaUnderCurve(predictionsFloat, yTest)
 
 	fmt.Println("accuracy: ", accuracy)
 	fmt.Println("precision:", precision)
@@ -1030,7 +1029,7 @@ func performanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, 
 }
 
 func TestServiceDrynxLogisticRegressionV2(t *testing.T) {
-	//t.Skip("NOP")
+	t.Skip("NOP")
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 
@@ -1115,14 +1114,14 @@ func TestServiceDrynxLogisticRegressionV2(t *testing.T) {
 	filePathTraining := "../data/" + dataset + "_dataset_training.txt"
 	filePathTesting := "../data/" + dataset + "_dataset_testing.txt"
 
-	XTrain, _ := encoding.LoadData(dataset, filePathTraining)
-	XTest, yTest := encoding.LoadData(dataset, filePathTesting)
+	XTrain, _ := libdrynxencoding.LoadData(dataset, filePathTraining)
+	XTest, yTest := libdrynxencoding.LoadData(dataset, filePathTesting)
 
 	var means = make([]float64, 0)
 	var standardDeviations = make([]float64, 0)
 	if standardisationMode == 0 || standardisationMode == 1 {
-		means = encoding.ComputeMeans(XTrain)
-		standardDeviations = encoding.ComputeStandardDeviations(XTrain)
+		means = libdrynxencoding.ComputeMeans(XTrain)
+		standardDeviations = libdrynxencoding.ComputeStandardDeviations(XTrain)
 	} else {
 		means = nil
 		standardDeviations = nil
@@ -1155,7 +1154,7 @@ func TestServiceDrynxLogisticRegressionV2(t *testing.T) {
 		thresholdEntityProofsVerif = []float64{0.0, 0.0, 0.0, 0.0}
 	}
 
-	local := onet.NewLocalTest(cothority.Suite)
+	local := onet.NewLocalTest(libunlynx.SuiTe)
 	elServers, elDPs, elVNs := generateNodes(local, nbrServers, nbrDPs, nbrVNs)
 
 	if proofs == 0 {
@@ -1246,9 +1245,9 @@ func TestServiceDrynxLogisticRegressionV2(t *testing.T) {
 				temp := make([]libdrynx.PublishSignatureBytes, len(ranges))
 				for j := 0; j < len(ranges); j++ {
 					if cuttingFactor != 0 {
-						temp[j] = libdrynx.InitRangeProofSignatureDeterministic((*ranges[j])[0])
+						temp[j] = libdrynxrange.InitRangeProofSignatureDeterministic((*ranges[j])[0])
 					} else {
-						temp[j] = libdrynx.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
+						temp[j] = libdrynxrange.InitRangeProofSignature((*ranges[j])[0]) // u is the first elem
 					}
 				}
 				ps[i] = &temp

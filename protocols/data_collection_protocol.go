@@ -2,22 +2,20 @@ package protocols
 
 import (
 	"errors"
-	"github.com/lca1/unlynx/services/default/data"
-
 	"fmt"
-
-	"math/rand"
-
-	"sync"
-
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/drynx/lib/proof"
+	"github.com/lca1/drynx/lib/range"
+	"github.com/lca1/unlynx/data"
 	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
+	"math/rand"
+	"sync"
 )
 
 // DataCollectionProtocolName is the registered name for the data provider protocol.
@@ -28,7 +26,9 @@ var mutexGroups sync.Mutex
 func init() {
 	network.RegisterMessage(AnnouncementDCMessage{})
 	network.RegisterMessage(DataCollectionMessage{})
-	onet.GlobalProtocolRegister(DataCollectionProtocolName, NewDataCollectionProtocol)
+	if _, err := onet.GlobalProtocolRegister(DataCollectionProtocolName, NewDataCollectionProtocol); err != nil {
+		log.Fatal("Error registering <DataCollectionProtocol>:", err)
+	}
 }
 
 // Messages
@@ -136,7 +136,9 @@ func (p *DataCollectionProtocol) Dispatch() error {
 		dcm := DataCollectionMessage{DCMdata: response}
 
 		// 2. Send data to root
-		p.SendTo(p.Root(), &dcm)
+		if err := p.SendTo(p.Root(), &dcm); err != nil {
+			return err
+		}
 	} else {
 		// 3. If root wait for all other nodes to send their data
 		dcmAggregate := make(map[string]libunlynx.CipherVector, 0)
@@ -182,22 +184,21 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	}
 	mutexGroups.Lock()
 
-	dataunlynx.Groups = make([][]int64, 0)
+	groups := make([][]int64, 0)
 	group := make([]int64, 0)
-	dataunlynx.AllPossibleGroups(numType[:], group, 0)
-	groupsString := make([]string, len(dataunlynx.Groups))
+	dataunlynx.AllPossibleGroups(numType[:], group, 0, &groups)
+	groupsString := make([]string, len(groups))
 
-	for i, v := range dataunlynx.Groups {
+	for i, v := range groups {
 		groupsString[i] = fmt.Sprint(v)
 	}
-	dataunlynx.Groups = make([][]int64, 0)
 	mutexGroups.Unlock()
 	// read the signatures needed to compute the range proofs
 	signatures := make([][]libdrynx.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize1)
 	for i := 0; i < p.Survey.Query.IVSigs.InputValidationSize1; i++ {
 		signatures[i] = make([]libdrynx.PublishSignature, p.Survey.Query.IVSigs.InputValidationSize2)
 		for j := 0; j < p.Survey.Query.IVSigs.InputValidationSize2; j++ {
-			signatures[i][j] = libdrynx.PublishSignatureBytesToPublishSignatures((*p.Survey.Query.IVSigs.InputValidationSigs[i])[j])
+			signatures[i][j] = libdrynxrange.PublishSignatureBytesToPublishSignatures((*p.Survey.Query.IVSigs.InputValidationSigs[i])[j])
 		}
 	}
 
@@ -212,7 +213,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		if lrParameters.FilePath != "" {
 			// note: GetDataForDataProvider(...) business only for testing purpose
 			dataProviderID := p.TreeNode().ServerIdentity
-			xFloat, yInt = encoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.DatasetName, p.Survey.Query.Operation.LRParameters.FilePath, *dataProviderID)
+			xFloat, yInt = libdrynxencoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.DatasetName, p.Survey.Query.Operation.LRParameters.FilePath, *dataProviderID)
 
 			// set the number of records to the number of records owned by this data provider
 			//dataSpecifics = recq.Query.Operation.DataSpecifics
@@ -237,7 +238,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 
 	// ------- START: ENCODING & ENCRYPTION -------
 	//encodeTime := libunlynx.StartTimer(p.Name() + "_DPencoding")
-	cprf := make([]libdrynx.CreateProof, 0)
+	cprf := make([]libdrynxrange.CreateProof, 0)
 
 	// compute response
 	queryResponse := make(map[string]libunlynx.CipherVector, 0)
@@ -251,9 +252,9 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		}
 		if p.Survey.Query.Operation.NameOp == "logistic regression" {
 			//p.Survey.Query.Ranges = nil
-			encryptedResponse, clearResponse, cprf = encoding.EncodeForFloat(xFloat, yInt, lrParameters, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation.NameOp)
+			encryptedResponse, clearResponse, cprf = libdrynxencoding.EncodeForFloat(xFloat, yInt, lrParameters, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation.NameOp)
 		} else {
-			encryptedResponse, clearResponse, cprf = encoding.Encode(fakeData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
+			encryptedResponse, clearResponse, cprf = libdrynxencoding.Encode(fakeData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
 		}
 
 		log.Lvl2("Data Provider", p.Name(), "computes the query response", clearResponse, "for groups:", groupsString, "with operation:", p.Survey.Query.Operation)
@@ -268,29 +269,29 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		if p.Survey.Query.Proofs != 0 {
 			go func() {
 				startAllProofs := libunlynx.StartTimer(p.Name() + "_AllProofs")
-				rpl := libdrynx.RangeProofList{}
+				rpl := libdrynxrange.RangeProofList{}
 
 				//rangeProofCreation := libunlynx.StartTimer(p.Name() + "_RangeProofCreation")
 				// no range proofs (send only the ciphertexts)
 				if len(cprf) == 0 {
-					tmp := make([]libdrynx.RangeProof, 0)
+					tmp := make([]libdrynxrange.RangeProof, 0)
 					for _, ct := range queryResponse[v] {
-						tmp = append(tmp, libdrynx.RangeProof{Commit: ct, RP: nil})
+						tmp = append(tmp, libdrynxrange.RangeProof{Commit: ct, RP: nil})
 					}
-					rpl = libdrynx.RangeProofList{Data: tmp}
+					rpl = libdrynxrange.RangeProofList{Data: tmp}
 				} else { // if range proofs
-					rpl = libdrynx.RangeProofList{Data: libdrynx.CreatePredicateRangeProofListForAllServers(cprf)}
+					rpl = libdrynxrange.RangeProofList{Data: libdrynxrange.CreatePredicateRangeProofListForAllServers(cprf)}
 				}
 				// scaling for simulation purposes
 				if p.Survey.Query.CuttingFactor != 0 {
-					rplNew := libdrynx.RangeProofList{}
-					rplNew.Data = make([]libdrynx.RangeProof, len(rpl.Data)*p.Survey.Query.CuttingFactor)
+					rplNew := libdrynxrange.RangeProofList{}
+					rplNew.Data = make([]libdrynxrange.RangeProof, len(rpl.Data)*p.Survey.Query.CuttingFactor)
 					counter := 0
 					suitePair := bn256.NewSuite()
 					for j := 0; j < p.Survey.Query.CuttingFactor; j++ {
 						for _, v := range rpl.Data {
 
-							rplNew.Data[counter].RP = &libdrynx.RangeProofData{}
+							rplNew.Data[counter].RP = &libdrynxrange.RangeProofData{}
 							rplNew.Data[counter].RP.V = make([][]kyber.Point, len(v.RP.V))
 							for k, w := range v.RP.V {
 								rplNew.Data[counter].RP.V[k] = make([]kyber.Point, len(w))
@@ -317,11 +318,19 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 				}
 
 				pi := p.MapPIs["range/"+p.ServerIdentity().String()]
-				pi.(*ProofCollectionProtocol).Proof = libdrynx.ProofRequest{RangeProof: libdrynx.NewRangeProofRequest(&rpl, p.Survey.SurveyID, p.ServerIdentity().String(), "", p.Survey.Query.RosterVNs, p.Private(), nil)}
+				pi.(*ProofCollectionProtocol).Proof = drynxproof.ProofRequest{RangeProof: drynxproof.NewRangeProofRequest(&rpl, p.Survey.SurveyID, p.ServerIdentity().String(), "", p.Survey.Query.RosterVNs, p.Private(), nil)}
 				//libunlynx.EndTimer(rangeProofCreation)
 
-				go pi.Dispatch()
-				go pi.Start()
+				go func() {
+					if err := pi.Dispatch(); err != nil {
+						log.Fatal(err)
+					}
+				}()
+				go func() {
+					if err := pi.Start(); err != nil {
+						log.Fatal(err)
+					}
+				}()
 				<-pi.(*ProofCollectionProtocol).FeedbackChannel
 
 				libunlynx.EndTimer(startAllProofs)
@@ -341,7 +350,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	for i, v := range queryResponse {
 		go func(group string, cv libunlynx.CipherVector) {
 			defer wg.Done()
-			cvBytes, lenQ := cv.ToBytes()
+			cvBytes, lenQ, _ := cv.ToBytes()
 
 			mutex.Lock()
 			lenQueryResponse = lenQ

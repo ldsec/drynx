@@ -1,7 +1,8 @@
-package encoding
+package libdrynxencoding
 
 import (
 	"github.com/lca1/drynx/lib"
+	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/random"
@@ -19,10 +20,10 @@ func EncodeBitOr(input bool, pubKey kyber.Point) (*libunlynx.CipherText, int64) 
 }
 
 //EncodeBitOrWithProof computes the encoding of bit Xi, under the OR operation with range proofs
-func EncodeBitOrWithProof(input bool, pubKey kyber.Point, sigs []libdrynx.PublishSignature, l int64, u int64) (*libunlynx.CipherText, int64, libdrynx.CreateProof) {
+func EncodeBitOrWithProof(input bool, pubKey kyber.Point, sigs []libdrynx.PublishSignature, l int64, u int64) (*libunlynx.CipherText, int64, libdrynxrange.CreateProof) {
 	cipher := libunlynx.CipherText{}
 	toEncrypt := int64(0)
-	cp := libdrynx.CreateProof{}
+	cp := libdrynxrange.CreateProof{}
 	if sigs != nil {
 		if input {
 			toEncrypt = int64(1)
@@ -30,7 +31,7 @@ func EncodeBitOrWithProof(input bool, pubKey kyber.Point, sigs []libdrynx.Publis
 		tmp, r := libunlynx.EncryptIntGetR(pubKey, toEncrypt)
 		cipher = *tmp
 		//input range validation proof
-		cp = libdrynx.CreateProof{Sigs: sigs, U: u, L: l, Secret: toEncrypt, R: r, CaPub: pubKey, Cipher: cipher}
+		cp = libdrynxrange.CreateProof{Sigs: sigs, U: u, L: l, Secret: toEncrypt, R: r, CaPub: pubKey, Cipher: cipher}
 
 	} else {
 		randomScalar := libunlynx.SuiTe.Scalar().Zero()
@@ -72,10 +73,10 @@ func EncodeBitAND(input bool, pubKey kyber.Point) (*libunlynx.CipherText, int64)
 }
 
 //EncodeBitANDWithProof computes the encoding of bit Xi, under the AND operation with range proofs
-func EncodeBitANDWithProof(input bool, pubKey kyber.Point, sigs []libdrynx.PublishSignature, l int64, u int64) (*libunlynx.CipherText, int64, libdrynx.CreateProof) {
+func EncodeBitANDWithProof(input bool, pubKey kyber.Point, sigs []libdrynx.PublishSignature, l int64, u int64) (*libunlynx.CipherText, int64, libdrynxrange.CreateProof) {
 	cipher := libunlynx.CipherText{}
 	toEncrypt := int64(1)
-	cp := libdrynx.CreateProof{}
+	cp := libdrynxrange.CreateProof{}
 	if sigs != nil {
 		if input {
 			toEncrypt = int64(0)
@@ -83,7 +84,7 @@ func EncodeBitANDWithProof(input bool, pubKey kyber.Point, sigs []libdrynx.Publi
 		tmp, r := libunlynx.EncryptIntGetR(pubKey, toEncrypt)
 		cipher = *tmp
 		//input range validation proof
-		cp = libdrynx.CreateProof{Sigs: sigs, U: u, L: l, Secret: toEncrypt, R: r, CaPub: pubKey, Cipher: cipher}
+		cp = libdrynxrange.CreateProof{Sigs: sigs, U: u, L: l, Secret: toEncrypt, R: r, CaPub: pubKey, Cipher: cipher}
 
 	} else {
 		randomScalar := libunlynx.SuiTe.Scalar().Zero()

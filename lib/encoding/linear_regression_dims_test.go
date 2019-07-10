@@ -1,13 +1,15 @@
-package encoding_test
+package libdrynxencoding_test
 
 import (
 	"github.com/alex-ant/gomath/gaussian-elimination"
 	"github.com/alex-ant/gomath/rational"
 	"github.com/lca1/drynx/lib"
 	"github.com/lca1/drynx/lib/encoding"
+	"github.com/lca1/drynx/lib/range"
 	"github.com/lca1/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/key"
 	"testing"
 )
 
@@ -26,7 +28,8 @@ func TestEncodeDecodeLinearRegressionDims(t *testing.T) {
 	d := len(inputValuesX[0])
 
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 	//Build the augmented matrix
 	sumXj := int64(0)
 	sumY := int64(0)
@@ -116,11 +119,11 @@ func TestEncodeDecodeLinearRegressionDims(t *testing.T) {
 
 	//Actual results
 	var resultEncrypted []libunlynx.CipherText
-	resultEncrypted, _ = encoding.EncodeLinearRegressionDims(inputValuesX, inputValuesY, pubKey)
+	resultEncrypted, _ = libdrynxencoding.EncodeLinearRegressionDims(inputValuesX, inputValuesY, pubKey)
 	//Testing the length of the encrypted tuple that is sent
 	assert.Equal(t, (d*d+5*d+4)/2, len(resultEncrypted))
 
-	coeffsActual := encoding.DecodeLinearRegressionDims(resultEncrypted, secKey)
+	coeffsActual := libdrynxencoding.DecodeLinearRegressionDims(resultEncrypted, secKey)
 	//Testing the correctness of the coefficient values
 	assert.Equal(t, coeffsExpected, coeffsActual)
 }
@@ -136,7 +139,8 @@ func TestEncodeDecodeLinearRegressionDimsWithProofs(t *testing.T) {
 	d := len(inputValuesX[0])
 
 	// key
-	secKey, pubKey := libunlynx.GenKey()
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	secKey, pubKey := keys.Private, keys.Public
 	//Build the augmented matrix
 	sumXj := int64(0)
 	sumY := int64(0)
@@ -242,8 +246,8 @@ func TestEncodeDecodeLinearRegressionDimsWithProofs(t *testing.T) {
 	ys[0] = make([]kyber.Point, lenCiphertext)
 	ys[1] = make([]kyber.Point, lenCiphertext)
 	for i := range ps[0] {
-		ps[0][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u[i]))
-		ps[1][i] = libdrynx.PublishSignatureBytesToPublishSignatures(libdrynx.InitRangeProofSignature(u[i]))
+		ps[0][i] = libdrynxrange.PublishSignatureBytesToPublishSignatures(libdrynxrange.InitRangeProofSignature(u[i]))
+		ps[1][i] = libdrynxrange.PublishSignatureBytesToPublishSignatures(libdrynxrange.InitRangeProofSignature(u[i]))
 		ys[0][i] = ps[0][i].Public
 		ys[1][i] = ps[1][i].Public
 		ranges[i] = &[]int64{u[i], l2[i]}
@@ -259,17 +263,17 @@ func TestEncodeDecodeLinearRegressionDimsWithProofs(t *testing.T) {
 
 	//Actual results
 	var resultEncrypted []libunlynx.CipherText
-	resultEncrypted, _, prf := encoding.EncodeLinearRegressionDimsWithProofs(inputValuesX, inputValuesY, pubKey, ps, ranges)
+	resultEncrypted, _, prf := libdrynxencoding.EncodeLinearRegressionDimsWithProofs(inputValuesX, inputValuesY, pubKey, ps, ranges)
 
 	//Testing the length of the encrypted tuple that is sent
 	assert.Equal(t, (d*d+5*d+4)/2, len(resultEncrypted))
 
-	coeffsActual := encoding.DecodeLinearRegressionDims(resultEncrypted, secKey)
+	coeffsActual := libdrynxencoding.DecodeLinearRegressionDims(resultEncrypted, secKey)
 	//Testing the correctness of the coefficient values
 	assert.Equal(t, coeffsExpected, coeffsActual)
 
 	for i := 0; i < lenCiphertext; i++ {
 		//Testing the correctness of the proofs
-		assert.True(t, libdrynx.RangeProofVerification(libdrynx.CreatePredicateRangeProofForAllServ(prf[i]), u[i], l2[i], yss[i], pubKey))
+		assert.True(t, libdrynxrange.RangeProofVerification(libdrynxrange.CreatePredicateRangeProofForAllServ(prf[i]), u[i], l2[i], yss[i], pubKey))
 	}
 }

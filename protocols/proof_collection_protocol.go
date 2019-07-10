@@ -1,6 +1,7 @@
 package protocols
 
 import (
+	"github.com/lca1/drynx/lib/proof"
 	"sync"
 
 	"github.com/btcsuite/goleveldb/leveldb/errors"
@@ -21,7 +22,9 @@ func init() {
 	network.RegisterMessage(ProofCollectionMessage{})
 	network.RegisterMessage(BitmapCollectionMessage{})
 	network.RegisterMessage(libdrynx.BitMap{})
-	onet.GlobalProtocolRegister(ProofCollectionProtocolName, NewProofCollectionProtocol)
+	if _, err := onet.GlobalProtocolRegister(ProofCollectionProtocolName, NewProofCollectionProtocol); err != nil {
+		log.Fatal("Error registering <ProofCollectionProtocol>:", err)
+	}
 }
 
 // Messages
@@ -29,7 +32,7 @@ func init() {
 
 // AnnouncementPCMessage message sent (with the query) to trigger a proof collection protocol.
 type AnnouncementPCMessage struct {
-	Proof libdrynx.ProofRequest
+	Proof drynxproof.ProofRequest
 }
 
 // ProofCollectionMessage message is used to signal root node that the proof was processed by all verifying nodes
@@ -105,7 +108,7 @@ type ProofCollectionProtocol struct {
 	SharedBMChannelToTerminate chan struct{}
 
 	// proof statement
-	Proof libdrynx.ProofRequest // the proof must be sent to each node before the protocol can start
+	Proof drynxproof.ProofRequest // the proof must be sent to each node before the protocol can start
 
 	// query statement
 	SQ libdrynx.SurveyQuery
@@ -278,7 +281,9 @@ func (p *ProofCollectionProtocol) Dispatch() error {
 
 		dcm := ProofCollectionMessage{Result: verif, SB: sb}
 		// 2. Send message to root
-		p.SendTo(p.Root(), &dcm)
+		if err := p.SendTo(p.Root(), &dcm); err != nil {
+			return err
+		}
 	} else {
 		// 3. If root wait for all the verifying nodes to process the proofs
 		bitmap := make(map[string]int64)
@@ -313,7 +318,9 @@ func (p *ProofCollectionProtocol) storeProof(index int, typeProof, surveyID, sen
 		nameOfProof := surveyID + "/" + typeProof + "/" + senderID + "/" + potentialDeterministicInfo + "/" + p.ServerIdentity().Address.String()
 		qi := CastToQueryInfo(p.Request.Get(string(surveyID)))
 		qi.Bitmap[nameOfProof] = verificationResult
-		p.Request.Replace(surveyID, qi)
+		if _, err := p.Request.Replace(surveyID, qi); err != nil {
+			return nil, err
+		}
 
 		//Put in the DB the proof received. Bucket is queryID + type
 		//Key is SurveyID + type_of_proof + senderID + addiInfo + serverID
@@ -325,7 +332,9 @@ func (p *ProofCollectionProtocol) storeProof(index int, typeProof, surveyID, sen
 
 		//Decrease size of proof expected for this type by 1
 		qi.TotalNbrProofs[index]--
-		p.Request.Replace(surveyID, qi)
+		if _, err := p.Request.Replace(surveyID, qi); err != nil {
+			return nil, err
+		}
 
 		//libunlynx.EndTimer(timeHandleProof)
 

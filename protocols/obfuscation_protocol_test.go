@@ -1,6 +1,8 @@
 package protocols_test
 
 import (
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/key"
 	"testing"
 	"time"
 
@@ -12,14 +14,21 @@ import (
 	"go.dedis.ch/onet/v3/network"
 )
 
-var priv1, pub1 = libunlynx.GenKey()
+var priv1 kyber.Scalar
+var pub1 kyber.Point
 
 //TestObfuscation tests collective obfuscation protocol
 func TestObfuscation(t *testing.T) {
+
+	keys := key.NewKeyPair(libunlynx.SuiTe)
+	priv1, pub1 = keys.Private, keys.Public
+
 	log.SetDebugVisible(2)
 	local := onet.NewLocalTest(libunlynx.SuiTe)
 	// You must register this protocol before creating the servers
-	onet.GlobalProtocolRegister("ObfuscationTest", NewObfuscationTest)
+	if _, err := onet.GlobalProtocolRegister("ObfuscationTest", NewObfuscationTest); err != nil {
+		log.Fatal("Failed to register the <ObfuscationTest> protocol:", err)
+	}
 
 	_, _, tree := local.GenTree(10, true)
 	defer local.CloseAll()
@@ -38,7 +47,11 @@ func TestObfuscation(t *testing.T) {
 	mu.Unlock()*/
 
 	//run protocol
-	go protocol.Start()
+	go func() {
+		if err := protocol.Start(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 	timeout := network.WaitRetry * time.Duration(network.MaxRetryConnect*5*2) * time.Millisecond
 
 	feedback := protocol.FeedbackChannel
