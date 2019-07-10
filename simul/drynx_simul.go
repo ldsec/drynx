@@ -330,13 +330,13 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 
 	idToPublic := make(map[string]kyber.Point)
 	for _, v := range rosterServers.List {
-		idToPublic[v.String()] = v.Public
+		idToPublic[v.String()] = v.ServicePublic(services.ServiceName)
 	}
 	for _, v := range rosterVNs.List {
-		idToPublic[v.String()] = v.Public
+		idToPublic[v.String()] = v.ServicePublic(services.ServiceName)
 	}
 	for _, v := range elDPs {
-		idToPublic[v.String()] = v.Public
+		idToPublic[v.String()] = v.ServicePublic(services.ServiceName)
 	}
 
 	// Create a client (querier) for the service)

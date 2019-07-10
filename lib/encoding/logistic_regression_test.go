@@ -622,7 +622,7 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: N64, NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
 		InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
 
-	resultEncrypted, _ := libdrynxencoding.EncodeLogisticRegression(data, lrParameters, pubKey)
+	resultEncrypted, _ := libdrynxencoding.EncodeLogisticRegression(X, y, lrParameters, pubKey)
 	result := libdrynxencoding.DecodeLogisticRegression(resultEncrypted, privKey, lrParameters)
 
 	// no equality because expected weights were computed in clear
@@ -714,7 +714,7 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 
 	//function call
 
-	resultEncrypted, _, prf := libdrynxencoding.EncodeLogisticRegressionWithProofs(data, lrParameters, pubKey, ps, ranges)
+	resultEncrypted, _, prf := libdrynxencoding.EncodeLogisticRegressionWithProofs(X, y, lrParameters, pubKey, ps, ranges)
 	result := libdrynxencoding.DecodeLogisticRegression(resultEncrypted, privKey, lrParameters)
 
 	assert.True(t, libdrynxrange.RangeProofVerification(libdrynxrange.CreatePredicateRangeProofForAllServ(prf[0]), (*ranges[0])[0], (*ranges[0])[1], yss[0], pubKey))

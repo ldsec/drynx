@@ -206,30 +206,31 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	fakeData := createFakeDataForOperation(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
 
 	// logistic regression specific
-	var datasFloat [][]float64
+	var xFloat [][]float64
+	var yInt []int64
 	lrParameters := p.Survey.Query.Operation.LRParameters
 	if p.Survey.Query.Operation.NameOp == "logistic regression" {
 		if lrParameters.FilePath != "" {
 			// note: GetDataForDataProvider(...) business only for testing purpose
 			dataProviderID := p.TreeNode().ServerIdentity
-			datasFloat = libdrynxencoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.FilePath, *dataProviderID)
+			xFloat, yInt = libdrynxencoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.DatasetName, p.Survey.Query.Operation.LRParameters.FilePath, *dataProviderID)
 
 			// set the number of records to the number of records owned by this data provider
 			//dataSpecifics = recq.Query.Operation.DataSpecifics
-			lrParameters.NbrRecords = int64(len(datasFloat))
+			lrParameters.NbrRecords = int64(len(xFloat))
 		} else {
 			// create dummy data
-			datasFloat = make([][]float64, lrParameters.NbrRecords)
+			xFloat = make([][]float64, lrParameters.NbrRecords)
+			yInt = make([]int64, lrParameters.NbrRecords)
 			limit := 4
 
-			m := int(lrParameters.NbrFeatures) + 1
+			m := int(lrParameters.NbrFeatures)
 			for i := 0; i < int(lrParameters.NbrRecords); i++ {
-				datasFloat[i] = make([]float64, m)
-				r := rand.Intn(2) // sample 0 or 1 randomly for the label
-				datasFloat[i][0] = float64(r)
+				xFloat[i] = make([]float64, m)
+				yInt[i] = int64(rand.Intn(2)) // sample 0 or 1 randomly for the label
 				for j := 1; j < m; j++ {
 					r := rand.Intn(limit)
-					datasFloat[i][j] = float64(r)
+					xFloat[i][j] = float64(r)
 				}
 			}
 		}
@@ -251,7 +252,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		}
 		if p.Survey.Query.Operation.NameOp == "logistic regression" {
 			//p.Survey.Query.Ranges = nil
-			encryptedResponse, clearResponse, cprf = libdrynxencoding.EncodeForFloat(datasFloat, lrParameters, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation.NameOp)
+			encryptedResponse, clearResponse, cprf = libdrynxencoding.EncodeForFloat(xFloat, yInt, lrParameters, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation.NameOp)
 		} else {
 			encryptedResponse, clearResponse, cprf = libdrynxencoding.Encode(fakeData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
 		}

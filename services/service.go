@@ -108,6 +108,7 @@ var msgTypes = MsgTypes{}
 func init() {
 	_, err := onet.RegisterNewService(ServiceName, NewService)
 	log.ErrFatal(err)
+	//onet.RegisterNewServiceWithSuite(ServiceName, libunlynx.SuiTe, NewService)
 
 	msgTypes.msgSurveyQuery = network.RegisterMessage(&libdrynx.SurveyQuery{})
 	msgTypes.msgSurveyQueryToDP = network.RegisterMessage(&libdrynx.SurveyQueryToDP{})
