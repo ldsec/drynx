@@ -67,12 +67,12 @@ func EncodeLogisticRegression(xData [][]float64, yData []int64, lrParameters lib
 
 		// add an all 1s column to the data (offset term)
 		XStandardised = Augment(XStandardised)
-		fmt.Println("Augment succ")
 
 		N := lrParameters.NbrRecords
 		// compute all approximation coefficients per record
 		approxCoefficients := make([][][]float64, N)
 		fmt.Println("Start computing approx...")
+		fmt.Println("len(XStandardised) = ", len(XStandardised))
 		for i := 0; i < len(XStandardised); i++ {
 			approxCoefficients[i] = ComputeAllApproxCoefficients(XStandardised[i], yData[i], lrParameters.K)
 			fmt.Println("approx[i]: finished")
@@ -369,14 +369,13 @@ func ComputeDistinctApproxCoefficients(X []float64, y int64, k int) [][]float64 
 // ComputeAllApproxCoefficients computes all the coefficients of the approximated logistic regression cost function
 func ComputeAllApproxCoefficients(X []float64, y int64, k int) [][]float64 {
 	fmt.Println("enter into ComputeAllApproxCoefficients")
-	fmt.Println("k:", k)
 
 	d := len(X) - 1 // the dimension of the data
+	fmt.Println("d: ", d)
 
 	// case k <= 3 ok
 	approxCoefficients := make([][]float64, k)
 	for j := 0; j < k; j++ {
-		fmt.Println("loop")
 		approxCoefficients[j] = make([]float64, int(math.Pow(float64(d+1), float64(j+1))))
 	}
 
@@ -394,7 +393,7 @@ func ComputeAllApproxCoefficients(X []float64, y int64, k int) [][]float64 {
 
 		// generate all indices combinations with repetitions, order matters, of size j (cartesian product)
 		combinations := CartesianProduct(0, int64(d+1), j)
-		fmt.Println("generate combinations: ok")
+		log.Lvl2("finish CartesianProduct")
 
 		// compute the product of the Xs for each combination of indices
 		for ri := 0; ri < len(combinations); ri++ {
@@ -1006,7 +1005,7 @@ func StandardiseWith(data [][]float64, means []float64, standardDeviations []flo
 			standardisedData[record][i] = float64(data[record][i]-means[i]) / standardDeviations[i]
 		}
 	}
-	fmt.Println("before Standardise return")
+
 	return standardisedData
 }
 
@@ -1393,7 +1392,7 @@ func LoadData(dataset string, filename string) ([][]float64, []int64) {
 // ReadFile reads a dataset from file into a string matrix
 // removes incorrectly formatted records
 func ReadFile(path string, separator string) [][]string {
-	const maxCapacity = 512*1024
+	const maxCapacity = 512 * 1024
 
 	inFile, err := os.Open(path)
 	if err != nil {
@@ -1434,7 +1433,6 @@ func ReadFile(path string, separator string) [][]string {
 
 	nbrFeatures := len(matrix[0])
 	var result [][]string
-
 
 	for _, row := range matrix {
 		if len(row) == nbrFeatures {
@@ -1597,21 +1595,22 @@ func CartesianProduct(start, end int64, dimension int) [][]int64 {
 	for i := 0; i < dimension; i++ {
 		indices[i] = Range(start, end)
 	}
-	fmt.Println("Computing Cartesian...")
+
 	combinationsMatrix := combin.Cartesian(nil, Int64ToFloat642DArray(indices))
-	fmt.Println("combinationsMatrix: ok")
 
 	// convert the cartesian product dense matrix into a 2D slice
 	// note: dimension == nbCols
 	nbRows, _ := combinationsMatrix.Dims()
 	combinations := make([][]int64, nbRows)
+
+	fmt.Println("nbRows: ", nbRows)
 	for i := 0; i < nbRows; i++ {
 		combinations[i] = make([]int64, dimension)
 		for j := 0; j < dimension; j++ {
 			combinations[i][j] = int64(combinationsMatrix.At(i, j))
 		}
 	}
-
+	log.Lvl2("CartesianProduct END")
 	return combinations
 }
 
