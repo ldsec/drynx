@@ -71,25 +71,18 @@ func EncodeLogisticRegression(xData [][]float64, yData []int64, lrParameters lib
 		N := lrParameters.NbrRecords
 		// compute all approximation coefficients per record
 		approxCoefficients := make([][][]float64, N)
-		fmt.Println("Start computing approx...")
-		fmt.Println("len(XStandardised) = ", len(XStandardised))
 		for i := 0; i < len(XStandardised); i++ {
 			approxCoefficients[i] = ComputeAllApproxCoefficients(XStandardised[i], yData[i], lrParameters.K)
-			fmt.Println("approx[i]: finished")
 		}
-		fmt.Println("compute all approximation coefficients per record: ok")
 
 		// aggregate the approximation coefficients locally
 		aggregatedApproxCoefficients := AggregateApproxCoefficients(approxCoefficients)
-		fmt.Println("aggregate the approximation coefficients locally: ok")
 
 		// convert (and optionally scale) the aggregated approximation coefficients to int
 		aggregatedApproxCoefficientsInt := Float64ToInt642DArrayWithPrecision(aggregatedApproxCoefficients, lrParameters.PrecisionApproxCoefficients)
-		fmt.Println("convert (and optionally scale) the aggregated approximation coefficients to int: ok")
 
 		// encrypt the aggregated approximation coefficients
 		encryptedApproxCoefficients, _ := ComputeEncryptedApproxCoefficients(aggregatedApproxCoefficientsInt, pubKey)
-		fmt.Println("encrypt the aggregated approximation coefficients: ok")
 
 		// pack the encrypted aggregated approximation coefficients (will need to unpack the result at the querier side)
 		for j := 0; j < lrParameters.K; j++ {
@@ -99,7 +92,6 @@ func EncodeLogisticRegression(xData [][]float64, yData []int64, lrParameters lib
 				encryptedAggregatedApproxCoefficients[j*nLevelPrevious+i] = (*encryptedApproxCoefficients[j])[i]
 			}
 		}
-		fmt.Println("pack the encrypted aggregated approximation coefficients: ok")
 
 		// pack the aggregated approximation coefficients
 		for j := 0; j < lrParameters.K; j++ {
@@ -109,7 +101,6 @@ func EncodeLogisticRegression(xData [][]float64, yData []int64, lrParameters lib
 				aggregatedApproxCoefficientsIntPacked[j*nLevelPrevious+i] = aggregatedApproxCoefficientsInt[j][i]
 			}
 		}
-		fmt.Println("pack the aggregated approximation coefficients: ok")
 	}
 
 	log.Lvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
@@ -368,10 +359,8 @@ func ComputeDistinctApproxCoefficients(X []float64, y int64, k int) [][]float64 
 
 // ComputeAllApproxCoefficients computes all the coefficients of the approximated logistic regression cost function
 func ComputeAllApproxCoefficients(X []float64, y int64, k int) [][]float64 {
-	fmt.Println("enter into ComputeAllApproxCoefficients")
 
 	d := len(X) - 1 // the dimension of the data
-	fmt.Println("d: ", d)
 
 	// case k <= 3 ok
 	approxCoefficients := make([][]float64, k)
@@ -393,7 +382,6 @@ func ComputeAllApproxCoefficients(X []float64, y int64, k int) [][]float64 {
 
 		// generate all indices combinations with repetitions, order matters, of size j (cartesian product)
 		combinations := CartesianProduct(0, int64(d+1), j)
-		log.Lvl2("finish CartesianProduct")
 
 		// compute the product of the Xs for each combination of indices
 		for ri := 0; ri < len(combinations); ri++ {
@@ -994,7 +982,6 @@ func StandardiseWithTrain(matrixTest, matrixTrain [][]float64) [][]float64 {
 // StandardiseWith standardises a dataset column-wise using the given means and standard deviations
 func StandardiseWith(data [][]float64, means []float64, standardDeviations []float64) [][]float64 {
 
-	fmt.Println("enter into StandardiseWith")
 	nbFeatures := len(data[0])
 
 	standardisedData := make([][]float64, len(data))
@@ -1603,14 +1590,13 @@ func CartesianProduct(start, end int64, dimension int) [][]int64 {
 	nbRows, _ := combinationsMatrix.Dims()
 	combinations := make([][]int64, nbRows)
 
-	fmt.Println("nbRows: ", nbRows)
 	for i := 0; i < nbRows; i++ {
 		combinations[i] = make([]int64, dimension)
 		for j := 0; j < dimension; j++ {
 			combinations[i][j] = int64(combinationsMatrix.At(i, j))
 		}
 	}
-	log.Lvl2("CartesianProduct END")
+
 	return combinations
 }
 
