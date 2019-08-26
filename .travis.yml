@@ -1,19 +1,34 @@
 language: go
+go: stable
 
-go:
-  - 1.x
+stages:
+  - lint
+  - build
+  - test
 
-env:
-  - GO111MODULE=on
+jobs:
+  include:
+    - stage: lint
+      name: go fmt
+      script: make test_fmt
+    - name: golint
+      script: make test_lint
 
-install:
-  - go get -t ./...
+    - stage: build
+      name: go build
+      script: go build ./...
+    - name: go build -tags vartime
+      script: go build -tags vartime ./...
 
-script:
-  - make test
+    - stage: test
+      name: go test
+      script: ./coveralls.sh -race
+    - name: go test -tags vartime
+      script: ./coveralls.sh -race -tags vartime
+      after_success: $GOPATH/bin/goveralls -coverprofile=profile.cov -service=travis-ci
 
-after_success:
-  - $GOPATH/bin/goveralls -coverprofile=profile.cov -service=travis-ci
+cache:
+  directories: $GOPATH/src
 
 notifications:
   email: false

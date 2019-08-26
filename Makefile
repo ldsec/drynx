@@ -1,4 +1,5 @@
 EXCLUDE_LINT = "_test.go"
+GO_TEST_ARGS := -short -p=1 -tags vartime
 
 test_fmt:
 	@echo Checking correct formatting of files
@@ -27,10 +28,10 @@ test_lint:
 	}
 
 test_local:
-	go test -v -race -short -p=1 -tags vartime ./...
+	go test -v $(GO_TEST_ARGS) ./...
 
 test_codecov:
-	./coveralls.sh
+	./coveralls.sh $(GO_TEST_ARGS)
 
 test: test_fmt test_lint test_codecov
 
