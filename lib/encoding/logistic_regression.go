@@ -3,9 +3,9 @@ package libdrynxencoding
 import (
 	"bufio"
 	"fmt"
-	"github.com/lca1/drynx/lib"
-	"github.com/lca1/drynx/lib/range"
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/drynx/lib"
+	"github.com/ldsec/drynx/lib/range"
+	"github.com/ldsec/unlynx/lib"
 	"github.com/montanaflynn/stats"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/onet/v3/log"
@@ -1549,20 +1549,20 @@ func Range(start int64, end int64) []int64 {
 // CartesianProduct returns the cartesian product of <dimension> arrays ranging from <start> (included) to <end> (excluded)
 func CartesianProduct(start, end int64, dimension int) [][]int64 {
 	// generate all indices combinations with repetitions, order matters, of size j+1 (cartesian product)
-	indices := make([][]int64, dimension)
+	indices := make([]int, dimension)
 	for i := 0; i < dimension; i++ {
-		indices[i] = Range(start, end)
+		indices[i] = int(end - start)
 	}
-	combinationsMatrix := combin.Cartesian(nil, Int64ToFloat642DArray(indices))
+	combinationsMatrix := combin.Cartesian(indices)
 
 	// convert the cartesian product dense matrix into a 2D slice
 	// note: dimension == nbCols
-	nbRows, _ := combinationsMatrix.Dims()
+	nbRows := len(combinationsMatrix)
 	combinations := make([][]int64, nbRows)
 	for i := 0; i < nbRows; i++ {
 		combinations[i] = make([]int64, dimension)
 		for j := 0; j < dimension; j++ {
-			combinations[i][j] = int64(combinationsMatrix.At(i, j))
+			combinations[i][j] = int64(combinationsMatrix[i][j])
 		}
 	}
 

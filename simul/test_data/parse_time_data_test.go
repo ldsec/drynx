@@ -1,7 +1,7 @@
 package timedata
 
 import (
-	"github.com/lca1/unlynx/simul/test_data/time_data"
+	"github.com/ldsec/unlynx/simul/test_data/time_data"
 	"testing"
 )
 

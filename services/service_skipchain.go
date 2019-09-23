@@ -8,9 +8,9 @@ import (
 
 	"github.com/coreos/bbolt"
 	"github.com/fanliao/go-concurrentMap"
-	"github.com/lca1/drynx/lib"
-	"github.com/lca1/drynx/protocols"
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/drynx/lib"
+	"github.com/ldsec/drynx/protocols"
+	"github.com/ldsec/unlynx/lib"
 	"go.dedis.ch/cothority/v3/skipchain"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"

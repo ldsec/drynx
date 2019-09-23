@@ -9,9 +9,9 @@ package main
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
-	"github.com/lca1/unlynx/lib"
-	"github.com/lca1/unlynx/services/common"
-	"github.com/lca1/unlynx/services/skipChain"
+	"github.com/ldsec/unlynx/lib"
+	"github.com/ldsec/unlynx/services/common"
+	"github.com/ldsec/unlynx/services/skipChain"
 )
 
 //Defines the simulation for the service-skipchain to be run with cothority/simul.

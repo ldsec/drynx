@@ -1,7 +1,7 @@
 package libdrynx
 
 import (
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/unlynx/lib"
 	"go.dedis.ch/cothority/v3"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 )

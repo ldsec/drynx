@@ -1,9 +1,9 @@
 package libdrynxencoding
 
 import (
-	"github.com/lca1/drynx/lib"
-	"github.com/lca1/drynx/lib/range"
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/drynx/lib"
+	"github.com/ldsec/drynx/lib/range"
+	"github.com/ldsec/unlynx/lib"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/random"
 )

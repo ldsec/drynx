@@ -2,11 +2,11 @@ package services_test
 
 import (
 	"fmt"
-	"github.com/lca1/drynx/lib"
-	"github.com/lca1/drynx/lib/encoding"
-	"github.com/lca1/drynx/lib/range"
-	"github.com/lca1/drynx/services"
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/drynx/lib"
+	"github.com/ldsec/drynx/lib/encoding"
+	"github.com/ldsec/drynx/lib/range"
+	"github.com/ldsec/drynx/services"
+	"github.com/ldsec/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/cothority/v3/skipchain"
 	"go.dedis.ch/kyber/v3"

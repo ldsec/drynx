@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/lca1/drynx/lib/range"
+	"github.com/ldsec/drynx/lib/range"
 	"go.dedis.ch/kyber/v3"
 	"os"
 
@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/lca1/drynx/lib"
-	"github.com/lca1/drynx/services"
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/drynx/lib"
+	"github.com/ldsec/drynx/services"
+	"github.com/ldsec/unlynx/lib"
 	"go.dedis.ch/cothority/v3/skipchain"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"

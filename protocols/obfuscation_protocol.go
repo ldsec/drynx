@@ -8,11 +8,11 @@ package protocols
 
 import (
 	"errors"
-	"github.com/lca1/drynx/lib/obfuscation"
-	"github.com/lca1/drynx/lib/proof"
+	"github.com/ldsec/drynx/lib/obfuscation"
+	"github.com/ldsec/drynx/lib/proof"
 
-	"github.com/lca1/drynx/lib"
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/drynx/lib"
+	"github.com/ldsec/unlynx/lib"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/random"
 	"go.dedis.ch/onet/v3"

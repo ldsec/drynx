@@ -2,8 +2,8 @@ package libdrynxrange
 
 import (
 	"crypto/sha256"
-	"github.com/lca1/drynx/lib"
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/drynx/lib"
+	"github.com/ldsec/unlynx/lib"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/kyber/v3/util/key"

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"github.com/cdipaolo/goml/base"
 	"github.com/cdipaolo/goml/linear"
-	"github.com/lca1/drynx/lib"
-	"github.com/lca1/drynx/lib/encoding"
-	"github.com/lca1/drynx/lib/range"
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/drynx/lib"
+	"github.com/ldsec/drynx/lib/encoding"
+	"github.com/ldsec/drynx/lib/range"
+	"github.com/ldsec/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/key"
@@ -536,7 +536,7 @@ func TestRange(t *testing.T) {
 }
 
 func TestCombinations(t *testing.T) {
-	result := combin.Cartesian(nil, [][]float64{{1, 2, 3}, {1, 2, 3}, {1, 2, 3}})
+	result := combin.Cartesian([]int{3, 3, 3})
 	fmt.Println(result)
 }
 

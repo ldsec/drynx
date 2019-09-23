@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lca1/drynx/protocols"
-	"github.com/lca1/unlynx/lib"
+	"github.com/ldsec/drynx/protocols"
+	"github.com/ldsec/unlynx/lib"
 	"github.com/stretchr/testify/assert"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
