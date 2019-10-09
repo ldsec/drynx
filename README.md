@@ -20,7 +20,6 @@ To use the code of this repository you need to:
 - Add `$GOPATH/bin` to `$PATH`
 - Git clone this repository to $GOPATH/src `git clone https://github.com/ldsec/drynx.git` or...
 - go get repository: `go get github.com/ldsec/drynx`
-- **When building use the "-tags vartime" argument to enable the use of the bn256 pairing curve**
 
 ## Version
 

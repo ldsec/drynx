@@ -27,7 +27,7 @@ test_lint:
 	}
 
 test_local:
-	go test -v -race -short -p=1 -tags vartime ./...
+	go test -v -race -short -p=1 ./...
 
 test_codecov:
 	./coveralls.sh
