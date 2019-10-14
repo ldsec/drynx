@@ -9,25 +9,25 @@ plt.rc('font', **font)
 
 raw_data = {'roles': ['Q', 'CNs', 'DPs', 'VNs', '', ''],
             'queryCreation': [0.02, 0, 0, 0, 0, 0],
-            'waitingQ': [1.88, 0, 0, 0, 0, 0],
+            'waitingQ': [1.34, 0, 0, 0, 0, 0],
             'decode': [0.06, 0, 0, 0, 0, 0],
             'waitingCN1': [0, 0.02, 0, 0, 0, 0],
             'queryBroadcast': [0, 0.02, 0, 0, 0, 0],
-            'waitingCN2': [0, 0.83, 0, 0, 0, 0],
-            'collectiveAggregation': [0, 0.49, 0, 0, 0, 0],
-            'keySwitching': [0, 0.52, 0, 0, 0, 0],
+            'waitingCN2': [0, 0.48, 0, 0, 0, 0],
+            'collectiveAggregation': [0, 0.5, 0, 0, 0, 0],
+            'keySwitching': [0, 0.24, 0, 0, 0, 0],
             'waitingDP1': [0, 0, 0.04, 0, 0, 0],
-            'dcp': [0, 0, 0.79, 0, 0, 0],
+            'dcp': [0, 0, 0.42, 0, 0, 0],
             'waitingVN1': [0, 0, 0, 0.02, 0, 0],
             'queryAnalysis': [0, 0, 0, 0.02, 0, 0],
-            'waitingVN2': [0, 0, 0, 0.2, 0, 0],
-            'verifRanges': [0, 0, 0, 21.73, 0, 0],
+            'waitingVN2': [0, 0, 0, 0.1, 0, 0],
+            'verifRanges': [0, 0, 0, 10.1, 0, 0],
             'waitVN3': [0, 0, 0, 0, 0, 0],
             'bi': [0, 0, 0, 0.44, 0, 0],
-            'waitingVN4': [0, 0, 0, 0, 0.9, 0],
-            'verifCA': [0, 0, 0, 0, 0.60, 0],
-            'waitingVN5': [0, 0, 0, 0, 0, 1.55],
-            'verifKS': [0, 0, 0, 0, 0, 2],
+            'waitingVN4': [0, 0, 0, 0, 0.6, 0],
+            'verifCA': [0, 0, 0, 0, 0.40, 0],
+            'waitingVN5': [0, 0, 0, 0, 0, 1.25],
+            'verifKS': [0, 0, 0, 0, 0, 1.60],
             'empty': [0, 0, 0, 0, 0, 0]}
 
 df = pd.DataFrame(raw_data, raw_data['roles'])
@@ -118,7 +118,7 @@ plt.legend(loc='upper center', ncol=2)
 
 ax.tick_params(axis='x', labelsize=20)
 ax.tick_params(axis='y', labelsize=20)
-ax.xaxis.set_ticks(np.arange(0, 24, 1))
+ax.xaxis.set_ticks(np.arange(0, 13, 1))
 
 labels = [item.get_text() for item in ax.get_xticklabels()]
 labels[1] = '0'
@@ -127,17 +127,16 @@ labels[4] = '3'
 labels[6] = '5'
 labels[8] = '7'
 labels[11] = '10'
-labels[21] = '20'
 ax.set_xticklabels(labels)
 
-ax.text(1.15, 5.3, 'Query Execution', color='black', fontweight='bold')
-ax.text(9.3, 1.7, 'Proof Overhead', color='black', fontweight='bold')
+ax.text(1.12, 5.3, 'Query Execution', color='black', fontweight='bold')
+ax.text(5.6, 1.7, 'Proof Overhead', color='black', fontweight='bold')
 
 # Set a buffer around the edge
-plt.xlim(left=1, right=25)
+plt.xlim(left=1, right=13)
 plt.ylim([min(tick_pos) - bar_width, max(tick_pos) + bar_width + 2])
 
-plt.axvline(x=2.96, ymin=0, ymax=0.67, linewidth=2, color='k', linestyle="--")
-plt.axvline(x=23.41, ymin=0, ymax=10, linewidth=2, color='k', linestyle="--")
+plt.axvline(x=2.43, ymin=0, ymax=0.67, linewidth=2, color='k', linestyle="--")
+plt.axvline(x=11.7, ymin=0, ymax=10, linewidth=2, color='k', linestyle="--")
 
 plt.savefig('timeline.pdf', bbox_inches='tight', pad_inches=0)

@@ -271,7 +271,15 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 			ranges[i] = &[]int64{u, l}
 		}
 		break
+	case 19:
+		for i := range ranges {
+			u := int64(4)
+			l := int64(16)
+			ranges[i] = &[]int64{u, l}
+		}
+		break
 	}
+
 
 	// signatures for Input Validation
 	ps := make([]*[]libdrynx.PublishSignatureBytes, sim.NbrServers)

@@ -237,7 +237,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	}
 
 	// ------- START: ENCODING & ENCRYPTION -------
-	//encodeTime := libunlynx.StartTimer(p.Name() + "_DPencoding")
+	encodeTime := libunlynx.StartTimer(p.Name() + "_DPencoding")
 	cprf := make([]libdrynxrange.CreateProof, 0)
 
 	// compute response
@@ -338,7 +338,7 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 			}()
 		}
 	}
-	//libunlynx.EndTimer(encodeTime)
+	libunlynx.EndTimer(encodeTime)
 	// ------- END -------
 
 	//convert the response to bytes
