@@ -23,4 +23,4 @@ require (
 
 replace github.com/ldsec/unlynx => ../unlynx
 
-//replace go.dedis.ch/onet/v3 => ../../../go.dedis.ch/onet
+replace go.dedis.ch/onet/v3 => ../../../go.dedis.ch/onet

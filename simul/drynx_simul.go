@@ -280,7 +280,6 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 		break
 	}
 
-
 	// signatures for Input Validation
 	ps := make([]*[]libdrynx.PublishSignatureBytes, sim.NbrServers)
 	if !(ranges == nil) && sim.Ranges != 0 {
@@ -340,9 +339,12 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 	for _, v := range rosterServers.List {
 		idToPublic[v.String()] = v.ServicePublic(services.ServiceName)
 	}
-	for _, v := range rosterVNs.List {
-		idToPublic[v.String()] = v.ServicePublic(services.ServiceName)
+	if rosterVNs != nil {
+		for _, v := range rosterVNs.List {
+			idToPublic[v.String()] = v.ServicePublic(services.ServiceName)
+		}
 	}
+
 	for _, v := range elDPs {
 		idToPublic[v.String()] = v.ServicePublic(services.ServiceName)
 	}
@@ -417,21 +419,23 @@ func (sim *SimulationDrynx) Run(config *onet.SimulationConfig) error {
 		}
 	}
 
-	clientSkip := services.NewDrynxClient(elVNs[0], "simul-skip")
-	if sim.Proofs != 0 {
-		libunlynx.EndParallelize(wg)
-		// close DB
-		if err := clientSkip.SendCloseDB(rosterVNs, &libdrynx.CloseDB{Close: 1}); err != nil {
-			log.Fatal("Error closing the DB:", err)
+	if len(elVNs) > 0 {
+		clientSkip := services.NewDrynxClient(elVNs[0], "simul-skip")
+		if sim.Proofs != 0 {
+			libunlynx.EndParallelize(wg)
+			// close DB
+			if err := clientSkip.SendCloseDB(rosterVNs, &libdrynx.CloseDB{Close: 1}); err != nil {
+				log.Fatal("Error closing the DB:", err)
+			}
 		}
-	}
 
-	retrieveBlock := time.Now()
-	sb, err := clientSkip.SendGetLatestBlock(rosterVNs, block)
-	if err != nil || sb == nil {
-		log.Fatal("Something wrong when fetching the last block")
+		retrieveBlock := time.Now()
+		sb, err := clientSkip.SendGetLatestBlock(rosterVNs, block)
+		if err != nil || sb == nil {
+			log.Fatal("Something wrong when fetching the last block")
+		}
+		log.Lvl1(time.Since(retrieveBlock))
 	}
-	log.Lvl1(time.Since(retrieveBlock))
 
 	libunlynx.EndTimer(startSimulation)
 	log.Lvl1(time.Since(overallTimer))
