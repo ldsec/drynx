@@ -39,7 +39,7 @@ func init() {
 func NewDrynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 	keys := key.NewKeyPair(libunlynx.SuiTe)
 	newClient := &API{
-		Client:     onet.NewClient(libunlynx.SuiTe, ServiceName),
+		Client:     onet.NewClient(libdrynx.Suite, ServiceName),
 		clientID:   clientID,
 		entryPoint: entryPoint,
 		public:     keys.Public,
