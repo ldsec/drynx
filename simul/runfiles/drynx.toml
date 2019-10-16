@@ -6,7 +6,6 @@ Rounds = 1
 Bandwidth = 100
 Delay = 20
 GroupByValues = [1]
-TAGS = "vartime"
 RunWait = "2h"
 
 Hosts, NbrServers, NbrVNs, NbrDPs, NbrDPsPerServer, Proofs, Ranges, Obfuscation, OperationName, NbrInput, NbrOutput, DiffPEpsilon, DiffPDelta, DiffPSize, DiffPQuanta, DiffPScale, DiffPLimit, DiffPOpti, DPRows, MinData, MaxData, ThresholdGeneral, ThresholdOther, CuttingFactor, NbrRecords, MaxIterations
