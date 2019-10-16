@@ -2,6 +2,8 @@
 # Drynx
 Drynx is a library for simulating a privacy-preserving and verifiable data sharing/querying tool. It offers a series of independent protocols that when combined offer a verifiably-secure and safe way to compute statistics and train basic machine learning models on distributed sensitive data (e.g., medical data).
 
+The paper has all the details: [Drynx: Decentralized, Secure, Verifiable System for Statistical Queries and Machine Learning on Distributed Datasets](https://arxiv.org/abs/1902.03785)
+
 Drynx is developed by LDS (Laboratory for Data Security in EPFL) in collaboration with DeDiS (Laboratory for Decentralized and Distributed Systems). It is build on the [UnLynx library](https://github.com/ldsec/unlynx) and does an intensive use of [Overlay-network (ONet) library](https://go.dedis.ch/onet/v3) and of the [Advanced Crypto (kyber) library](https://go.dedis.ch/kyber/v3).
 
 ## Documentation
