@@ -10,6 +10,6 @@ TAGS = "vartime"
 RunWait = "2h"
 
 Hosts, NbrServers, NbrVNs, NbrDPs, NbrDPsPerServer, Proofs, Ranges, Obfuscation, OperationName, NbrInput, NbrOutput, DiffPEpsilon, DiffPDelta, DiffPSize, DiffPQuanta, DiffPScale, DiffPLimit, DiffPOpti, DPRows, MinData, MaxData, ThresholdGeneral, ThresholdOther, CuttingFactor, NbrRecords, MaxIterations
-24, 12, 0, 12, 1, 0, -1, false, "logistic regression", 1, 5050, 0.0, 0.0, 0, 0.0, 0.0, 0.0, false, 101, 0, 1, 0.0, 0.0, 0, 1511, 25
-# 16, 3, 3, 10, 10, 1, 18, false, "sum", 1, 1, 0.0, 0.0, 0, 0.0, 0.0, 0.0, false, 1, 1, 2, 1.0, 1.0, 0
+# 24, 12, 0, 12, 1, 0, -1, false, "logistic regression", 1, 5050, 0.0, 0.0, 0, 0.0, 0.0, 0.0, false, 101, 0, 1, 0.0, 0.0, 0, 1511, 25
+16, 3, 3, 10, 10, 1, 18, false, "sum", 1, 1, 0.0, 0.0, 0, 0.0, 0.0, 0.0, false, 1, 1, 2, 1.0, 1.0, 0
 # 25, 6, 7, 12, 2, 1, 18, false, "logistic regression", 1, 90, 0.0, 0.0, 0, 0.0, 0.0, 0.0, false, 9, 0, 1, 1.0, 1.0, 0, 50000, 25
