@@ -12,10 +12,10 @@ const filenameToml = "../runfiles/drynx.toml"
 var flags = []string{"bf", "depth", "rounds", "runwait", "servers", "\n",
 	"Simulation", "\n",
 	"DataCollectionProtocol", "JustExecution", "AllProofs", "WaitTimeDPs", "BI", "Decode", "DiffPPhase", "\n",
+	"AggregationPhase", "KeySwitchingPhase", "GradientDescent", "Decryption", "VerifyKeySwitch", "VerifyAggregation", "VerifyRange", "DPencoding", "\n",
 }
 
 func TestWriteDataFromCSVFile(t *testing.T) {
-	t.Skip()
 	testTimeData, _ := timedataunlynx.ReadDataFromCSVFile(filenameRead, flags)
 
 	timedataunlynx.CreateCSVFile(filenameWrite)

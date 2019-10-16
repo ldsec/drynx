@@ -134,8 +134,7 @@ func NewRangeProofRequest(proof *libdrynxrange.RangeProofList, ID, senderID, dif
 // VerifyProof (RangeProofRequest) checks the correctness of the signature and verifies a list of range proofs
 func (rpr *RangeProofRequest) VerifyProof(source network.ServerIdentity, sq libdrynx.SurveyQuery) (int64, error) {
 	log.Lvl2("VN", source.String(), "handles range proof")
-	//time := libunlynx.StartTimer(source.String() + "_VerifyRange")
-
+	time := libunlynx.StartTimer(source.String() + "_VerifyRange")
 	verifSign := int64(0)
 	err := error(nil)
 	wg := libunlynx.StartParallelize(1)
@@ -149,7 +148,7 @@ func (rpr *RangeProofRequest) VerifyProof(source network.ServerIdentity, sq libd
 	verif := verifyRangeProofList(rpr.Data, sq.Threshold, sq.Query.Ranges, sq.Query.IVSigs.InputValidationSigs, sq.RosterServers.Aggregate, sq.RangeProofThreshold)
 	log.Lvl2("VN", source.String(), " verified range proof:", verif)
 	libunlynx.EndParallelize(wg)
-	//libunlynx.EndTimer(time)
+	libunlynx.EndTimer(time)
 	if verifSign != 0 {
 		return verifSign, err
 	}
@@ -168,6 +167,7 @@ func verifyRangeProofList(data []byte, sample float64, ranges []*[]int64, psb []
 
 		toVerify := &libdrynxrange.RangeProofList{}
 		toVerify.FromBytes(*proofs.(*libdrynxrange.RangeProofListBytes))
+
 		result := libdrynxrange.RangeProofListVerification(*toVerify, ranges, psb, p, verifThresold)
 		if result {
 			bmInt = ProofTrue
@@ -212,7 +212,7 @@ func NewAggregationProofRequest(proofs *libunlynxaggr.PublishedAggregationListPr
 // VerifyProof (AggregationProofRequest) checks the correctness of the signature and verifies an aggregation proof
 func (apr *AggregationProofRequest) VerifyProof(source network.ServerIdentity, sq libdrynx.SurveyQuery) (int64, error) {
 	log.Lvl2("VN", source.String(), "handles aggregation proof")
-	//time := libunlynx.StartTimer(source.String() + "_VerifyAggregation")
+	time := libunlynx.StartTimer(source.String() + "_VerifyAggregation")
 
 	verifSign := int64(0)
 	err := error(nil)
@@ -228,7 +228,7 @@ func (apr *AggregationProofRequest) VerifyProof(source network.ServerIdentity, s
 	verif := verifyAggregation(apr.Data, sq.AggregationProofThreshold, sq.Threshold)
 	log.Lvl2("VN", source.String(), "verified aggregation proof:", verif)
 	libunlynx.EndParallelize(wg)
-	//libunlynx.EndTimer(time)
+	libunlynx.EndTimer(time)
 	if verifSign != 0 {
 		return verifSign, err
 	}
@@ -443,7 +443,7 @@ func NewKeySwitchProofRequest(proof *libunlynxkeyswitch.PublishedKSListProof, ID
 // VerifyProof (KeySwitchProofRequest) checks the correctness of the signature and verifies a key switch proof
 func (kpr *KeySwitchProofRequest) VerifyProof(source network.ServerIdentity, sq libdrynx.SurveyQuery) (int64, error) {
 	log.Lvl2("VN", source.String(), "handles key switch proof")
-	//timeRange := libunlynx.StartTimer(source.String() + "_VerifyKeySwitch")
+	timeRange := libunlynx.StartTimer(source.String() + "_VerifyKeySwitch")
 
 	verifSign := int64(0)
 	err := error(nil)
@@ -459,7 +459,7 @@ func (kpr *KeySwitchProofRequest) VerifyProof(source network.ServerIdentity, sq 
 	verif := verifyKeySwitch(kpr.Data, sq.KeySwitchingProofThreshold, sq.Threshold)
 	log.Lvl2("VN", source.String(), "verified key switch proof:", verif)
 	libunlynx.EndParallelize(wg)
-	//libunlynx.EndTimer(timeRange)
+	libunlynx.EndTimer(timeRange)
 	if verifSign != 0 {
 		return verifSign, err
 	}

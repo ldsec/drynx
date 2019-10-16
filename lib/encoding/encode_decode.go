@@ -242,7 +242,6 @@ func EncodeForFloat(xData [][]float64, yData []int64, lrParameters libdrynx.Logi
 			encryptedResponse, clearResponse, prf = EncodeLogisticRegressionWithProofs(xData, yData, lrParameters, pubKey, signatures, ranges)
 		} else {
 			encryptedResponse, clearResponse = EncodeLogisticRegression(xData, yData, lrParameters, pubKey)
-			log.LLvl1(clearResponse)
 		}
 	}
 	return encryptedResponse, clearResponse, prf

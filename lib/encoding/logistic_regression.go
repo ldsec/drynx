@@ -977,6 +977,7 @@ func StandardiseWith(data [][]float64, means []float64, standardDeviations []flo
 	nbFeatures := len(data[0])
 
 	standardisedData := make([][]float64, len(data))
+
 	for record := 0; record < len(data); record++ {
 		standardisedData[record] = make([]float64, nbFeatures)
 		for i := 0; i < nbFeatures; i++ {
@@ -1319,6 +1320,15 @@ func LoadData(dataset string, filename string) ([][]float64, []int64) {
 		labelColumn = 0 // /!\ 8 for Pima_dataset but 0 for Pima_dataset_training/testing
 		X = RemoveColumn(data, labelColumn)
 		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
+	case "BC":
+		fmt.Println("ReadFile starts...")
+		dataString := ReadFile(filename, ",")
+		fmt.Println("ReadFile succeed")
+		data = String2DToFloat64(dataString)
+		labelColumn = 0
+
+		X = RemoveColumn(data, labelColumn)
+		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
 	case "PCS":
 		dataString := ReadFile(filename, ",")
 
@@ -1363,20 +1373,25 @@ func LoadData(dataset string, filename string) ([][]float64, []int64) {
 // ReadFile reads a dataset from file into a string matrix
 // removes incorrectly formatted records
 func ReadFile(path string, separator string) [][]string {
-	inFile, err := os.Open(path)
+	const maxCapacity = 512 * 1024
 
+	inFile, err := os.Open(path)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(2)
 	}
-	defer inFile.Close()
 
-	scanner := bufio.NewScanner(inFile)
-	scanner.Split(bufio.ScanLines)
+	defer inFile.Close()
 
 	var matrix [][]string
 	nbrRecordsIgnored := 0
 
+	scanner := bufio.NewScanner(inFile)
+
+	buf := make([]byte, maxCapacity)
+	scanner.Buffer(buf, maxCapacity)
+
+	scanner.Split(bufio.ScanLines)
 	for scanner.Scan() {
 		line := strings.Split(scanner.Text(), separator)
 		var array []string
@@ -1389,15 +1404,22 @@ func ReadFile(path string, separator string) [][]string {
 		matrix = append(matrix, array)
 	}
 
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+
 	// remove incorrectly formatted records
 	// todo: take max of len of all rows
+	fmt.Println("matrix:")
+
 	nbrFeatures := len(matrix[0])
 	var result [][]string
+
 	for _, row := range matrix {
 		if len(row) == nbrFeatures {
 			result = append(result, row)
 		} else {
-			log.Lvl1("Incorrect record formatting: record", row, "will be ignored")
+			log.Lvl2("Incorrect record formatting: record", row, "will be ignored")
 			nbrRecordsIgnored++
 		}
 	}
@@ -1548,6 +1570,7 @@ func Range(start int64, end int64) []int64 {
 
 // CartesianProduct returns the cartesian product of <dimension> arrays ranging from <start> (included) to <end> (excluded)
 func CartesianProduct(start, end int64, dimension int) [][]int64 {
+
 	// generate all indices combinations with repetitions, order matters, of size j+1 (cartesian product)
 	indices := make([]int, dimension)
 	for i := 0; i < dimension; i++ {
@@ -1559,6 +1582,7 @@ func CartesianProduct(start, end int64, dimension int) [][]int64 {
 	// note: dimension == nbCols
 	nbRows := len(combinationsMatrix)
 	combinations := make([][]int64, nbRows)
+
 	for i := 0; i < nbRows; i++ {
 		combinations[i] = make([]int64, dimension)
 		for j := 0; j < dimension; j++ {

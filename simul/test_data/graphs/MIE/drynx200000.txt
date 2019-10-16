@@ -1,0 +1,60 @@
+
+
+
+|-------------------------------------------------------------------------|
+|----------------------------- SIMULATION #1 -----------------------------|
+|-------------------------------------------------------------------------|
+
+
+DiffPSize:                                         0
+DiffPQuanta:                                       0.0
+DPRows:                                            101
+ThresholdGeneral:                                  0.0
+NbrRecords:                                        200000
+NbrVNs:                                            0
+NbrDPsPerServer:                                   1
+Ranges:                                            -1
+NbrInput:                                          1
+DiffPEpsilon:                                      0.0
+DiffPLimit:                                        0.0
+DiffPDelta:                                        0.0
+DiffPOpti:                                         false
+ThresholdOther:                                    0.0
+Hosts:                                             6
+OperationName:                                     "logistic regression"
+NbrOutput:                                         5050
+Obfuscation:                                       false
+DiffPScale:                                        0.0
+MinData:                                           0
+MaxData:                                           1
+CuttingFactor:                                     0
+NbrServers:                                        3
+NbrDPs:                                            3
+Proofs:                                            0
+MaxIterations:                                     25
+
+bf:                                                2
+depth:                                             2
+rounds:                                            1
+runwait:                                           2h
+servers:                                           3
+
+Simulation:                                        284.024145
+
+DataCollectionProtocol:                            245.078345, 231.824366, 234.915533
+JustExecution:                                     3.484278
+AllProofs:                                         
+WaitTimeDPs:                                       
+BI:                                                
+Decode:                                            34.432282
+DiffPPhase:                                        
+
+AggregationPhase:                                  0.872223
+KeySwitchingPhase:                                 2.611924
+GradientDescent:                                   3.677952
+Decryption:                                        30.754111
+VerifyKeySwitch:                                   
+VerifyAggregation:                                 
+VerifyRange:                                       
+DPencoding:                                        243.180760, 229.890332, 233.019777
+

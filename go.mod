@@ -20,3 +20,7 @@ require (
 	gonum.org/v1/gonum v0.0.0-20190923124727-d1098a519538
 	gopkg.in/satori/go.uuid.v1 v1.2.0
 )
+
+replace github.com/ldsec/unlynx => ../unlynx
+
+replace go.dedis.ch/onet/v3 => ../../../go.dedis.ch/onet
