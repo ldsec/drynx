@@ -4,12 +4,8 @@ language: go
 go: stable
 
 before_install: make test_lint test_fmt
-install:
-  - go get -t ./...
-  - go get github.com/mattn/goveralls
-script: make test_codecov
-after_success:
-  - $GOPATH/bin/goveralls -coverprofile=profile.cov -service=travis-ci
+install: go get -t ./...
+script: make test_goveralls
 
 notifications:
   email: false
