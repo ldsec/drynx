@@ -21,6 +21,6 @@ require (
 	gopkg.in/satori/go.uuid.v1 v1.2.0
 )
 
-replace github.com/ldsec/unlynx => ../unlynx
-
-replace go.dedis.ch/onet/v3 => ../../../go.dedis.ch/onet
+// uncomment when running mininet
+//replace github.com/ldsec/unlynx => ../unlynx
+//replace go.dedis.ch/onet/v3 => ../../../go.dedis.ch/onet
