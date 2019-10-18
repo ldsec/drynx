@@ -41,3 +41,7 @@ simul/simul
 
 server_list
 pre_compute_multiplications.gob
+
+# built
+/cmd/client/client
+/cmd/server/server
