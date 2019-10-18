@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+. ./lib.sh
+
+start_nodes
+
+(
+	client_gen_network
+	client survey new test-run-survey |
+		client survey set-operation mean
+) | client survey run
