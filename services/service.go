@@ -53,12 +53,12 @@ type Survey struct {
 
 func castToSurvey(object interface{}, err error) Survey {
 	if err != nil {
-		log.Error("[SERVICE] <drynx> Server, Error reading map", err)
+		log.Fatalf("[SERVICE] <drynx> Server, Error reading map, %+v", err)
 	}
 	survey, ok := object.(Survey)
 	if !ok {
 		err := fmt.Errorf("unable to cast to Survey, is %#v", object)
-		log.Errorf("[SERVICE] <drynx> Server, %+v", err)
+		log.Fatalf("[SERVICE] <drynx> Server, %+v", err)
 	}
 	return survey
 }
@@ -228,60 +228,34 @@ func (s *ServiceDrynx) Process(msg *network.Envelope) {
 	}
 }
 
+func (s *ServiceDrynx) waitForSurvey(id string) Survey {
+	for {
+		if obj, _ := s.Survey.Get(id); obj != nil {
+			return obj.(Survey)
+		}
+
+		time.Sleep(time.Millisecond * 100)
+	}
+}
+
 // Query Handlers
 //______________________________________________________________________________________________________________________
 
 // HandleDPqueryReceived handles the channel that each server has to know when to proceed with data collection protocol
 func (s *ServiceDrynx) HandleDPqueryReceived(recq *DPqueryReceived) (network.Message, error) {
-	var el interface{}
-	el = nil
-	for el == nil {
-		el, _ = s.Survey.Get(recq.SurveyID)
-
-		if el != nil {
-			break
-		}
-
-		time.Sleep(time.Millisecond * 100)
-	}
-
-	castToSurvey(s.Survey.Get(recq.SurveyID)).DPqueryChannel <- 1
+	s.waitForSurvey(recq.SurveyID).DPqueryChannel <- 1
 	return nil, nil
 }
 
 // HandleSyncDCP handles the messages to synchronize between computing nodes
 func (s *ServiceDrynx) HandleSyncDCP(recq *SyncDCP) (network.Message, error) {
-	var el interface{}
-	el = nil
-	for el == nil {
-		el, _ = s.Survey.Get(recq.SurveyID)
-
-		if el != nil {
-			break
-		}
-
-		time.Sleep(time.Millisecond * 100)
-	}
-
-	castToSurvey(s.Survey.Get(recq.SurveyID)).SyncDCPChannel <- 1
+	s.waitForSurvey(recq.SurveyID).SyncDCPChannel <- 1
 	return nil, nil
 }
 
 // HandleDPdataFinished handles the channel that each server has to know when to proceed with the collective aggregation
 func (s *ServiceDrynx) HandleDPdataFinished(recq *DPdataFinished) (network.Message, error) {
-	var el interface{}
-	el = nil
-	for el == nil {
-		el, _ = s.Survey.Get(recq.SurveyID)
-
-		if el != nil {
-			break
-		}
-
-		time.Sleep(time.Millisecond * 100)
-	}
-
-	castToSurvey(s.Survey.Get(recq.SurveyID)).DPdataChannel <- 1
+	s.waitForSurvey(recq.SurveyID).DPdataChannel <- 1
 	return nil, nil
 }
 
@@ -475,7 +449,7 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 		}
 
 		if !tn.IsRoot() {
-			survey := castToSurvey(s.Survey.Get(target))
+			survey := s.waitForSurvey(target)
 			dataCollectionProtocol := pi.(*protocols.DataCollectionProtocol)
 
 			queryStatement := protocols.SurveyToDP{
