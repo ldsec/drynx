@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 . ./lib.sh
 
-start_nodes
+cat > providing <<EOF
+1
+2
+3
+EOF
+
+start_nodes providing
 
 (
 	client_gen_network
 	client survey new test-run-survey |
-		client survey set-operation mean
-) | client survey run
+		client survey set-operation sum
+) | client survey run |
+	xargs test $(((1+2+3) * (node_count-1))) -eq

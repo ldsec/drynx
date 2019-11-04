@@ -11,6 +11,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/ldsec/drynx/lib"
+	"github.com/ldsec/drynx/lib/provider/loaders"
 	"github.com/ldsec/drynx/services"
 	"github.com/ldsec/unlynx/lib"
 	"go.dedis.ch/cothority/v3/skipchain"
@@ -21,6 +22,16 @@ import (
 )
 
 func init() {
+	loader, err := loaders.NewRandom()
+	if err != nil {
+		panic(err)
+	}
+	services.NewBuilder().
+		WithComputingNode().
+		WithDataProvider(loader).
+		WithVerifyingNode().
+		Start()
+
 	onet.SimulationRegister("ServiceDrynx", NewSimulationDrynx)
 }
 

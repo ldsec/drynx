@@ -11,7 +11,7 @@ test_local: test_verbose
 
 private go-cmds := client server
 define go-cmd-build =
-cmd/$1/$1: cmd/$1/*.go $(wildcard */*.go */*/*.go)
+cmd/$1/$1: cmd/$1/*.go $(wildcard */*.go */*/*.go */*/*/*.go)
 	go build -o $$@ ./$$(<D)
 endef
 $(foreach c,$(go-cmds),$(eval $(call go-cmd-build,$c)))

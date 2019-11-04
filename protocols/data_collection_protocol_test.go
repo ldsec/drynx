@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ldsec/drynx/lib"
+	"github.com/ldsec/drynx/lib/provider/loaders"
 	"github.com/ldsec/drynx/protocols"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/stretchr/testify/assert"
@@ -93,9 +94,13 @@ func TestDataCollectionOperationsProtocol(t *testing.T) {
 
 // NewDataCollectionTest is a test specific protocol instance constructor that injects test data.
 func NewDataCollectionTest(tni *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
-	pi, err := protocols.NewDataCollectionProtocol(tni)
-	protocol := pi.(*protocols.DataCollectionProtocol)
+	loader, err := loaders.NewRandom()
+	if err != nil {
+		return nil, err
+	}
 
-	protocol.Survey = query
-	return protocol, err
+	dcp := protocols.NewDataCollectionProtocol(loader)
+	dcp.Survey = query
+	dcp.ProtocolRegister(tni)
+	return &dcp, nil
 }

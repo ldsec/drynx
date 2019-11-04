@@ -25,18 +25,15 @@ type API struct {
 	private    kyber.Scalar
 }
 
-//init of the network messages
-func init() {
+// NewDrynxClient constructor of a client.
+func NewDrynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 	network.RegisterMessage(libdrynx.GetLatestBlock{})
 	network.RegisterMessage(libdrynxrange.RangeProofListBytes{})
 	network.RegisterMessage(libunlynxshuffle.PublishedShufflingProofBytes{})
 	network.RegisterMessage(libunlynxkeyswitch.PublishedKSListProofBytes{})
 	network.RegisterMessage(libunlynxaggr.PublishedAggregationListProofBytes{})
 	network.RegisterMessage(libdrynxobfuscation.PublishedListObfuscationProofBytes{})
-}
 
-// NewDrynxClient constructor of a client.
-func NewDrynxClient(entryPoint *network.ServerIdentity, clientID string) *API {
 	keys := key.NewKeyPair(libunlynx.SuiTe)
 	newClient := &API{
 		Client:     onet.NewClient(libdrynx.Suite, ServiceName),

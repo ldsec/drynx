@@ -7,6 +7,7 @@ import (
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/ldsec/drynx/lib"
 	"github.com/ldsec/drynx/lib/proof"
+	"github.com/ldsec/drynx/lib/provider"
 	"github.com/ldsec/drynx/protocols"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/lib/aggregation"
@@ -86,6 +87,10 @@ type ServiceDrynx struct {
 	Survey *concurrent.ConcurrentMap
 	// -------------------------
 
+	// ---- Data Provider ----
+	loader provider.Loader
+	// -------------------------
+
 	// ---- Verifying Nodes ----
 	Skipchain     *skipchain.Client
 	LastSkipBlock *skipchain.SkipBlock
@@ -113,93 +118,6 @@ type MsgTypes struct {
 }
 
 var msgTypes = MsgTypes{}
-
-func init() {
-	_, err := onet.RegisterNewService(ServiceName, NewService)
-	log.ErrFatal(err)
-	//onet.RegisterNewServiceWithSuite(ServiceName, libunlynx.SuiTe, NewService)
-
-	msgTypes.msgSurveyQuery = network.RegisterMessage(&libdrynx.SurveyQuery{})
-	msgTypes.msgSurveyQueryToDP = network.RegisterMessage(&libdrynx.SurveyQueryToDP{})
-	msgTypes.msgDPqueryReceived = network.RegisterMessage(&DPqueryReceived{})
-	msgTypes.msgSyncDCP = network.RegisterMessage(&SyncDCP{})
-	msgTypes.msgDPdataFinished = network.RegisterMessage(&DPdataFinished{})
-
-	network.RegisterMessage(&libdrynx.SurveyQueryToVN{})
-	network.RegisterMessage(&libdrynx.ResponseDP{})
-
-	network.RegisterMessage(&libdrynx.EndVerificationRequest{})
-
-	network.RegisterMessage(libdrynx.DataBlock{})
-	network.RegisterMessage(&libdrynx.GetLatestBlock{})
-	network.RegisterMessage(&libdrynx.GetGenesis{})
-	network.RegisterMessage(&libdrynx.GetBlock{})
-	network.RegisterMessage(&libdrynx.GetProofs{})
-	network.RegisterMessage(&libdrynx.CloseDB{})
-}
-
-// NewService constructor which registers the needed messages.
-func NewService(c *onet.Context) (onet.Service, error) {
-	newDrynxInstance := &ServiceDrynx{
-		ServiceProcessor: onet.NewServiceProcessor(c),
-		Survey:           concurrent.NewConcurrentMap(),
-		Mutex:            &sync.Mutex{},
-	}
-	var cerr error
-	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleSurveyQuery); cerr != nil {
-		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
-	}
-	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleSurveyQueryToDP); cerr != nil {
-		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
-	}
-	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleSurveyQueryToVN); cerr != nil {
-		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
-	}
-	if waitOnLocalChans {
-		if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleDPqueryReceived); cerr != nil {
-			log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
-		}
-		if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleSyncDCP); cerr != nil {
-			log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
-		}
-		if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleDPdataFinished); cerr != nil {
-			log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
-		}
-	}
-	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleEndVerification); cerr != nil {
-		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
-	}
-	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleGetLatestBlock); cerr != nil {
-		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
-	}
-	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleGetGenesis); cerr != nil {
-		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
-	}
-	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleGetBlock); cerr != nil {
-		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
-	}
-	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleGetProofs); cerr != nil {
-		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
-	}
-	if cerr = newDrynxInstance.RegisterHandler(newDrynxInstance.HandleCloseDB); cerr != nil {
-		log.Fatal("[SERVICE] <drynx> Server, Wrong Handler.", cerr)
-	}
-
-	c.RegisterProcessor(newDrynxInstance, msgTypes.msgSurveyQuery)
-	c.RegisterProcessor(newDrynxInstance, msgTypes.msgSurveyQueryToDP)
-	if waitOnLocalChans {
-		c.RegisterProcessor(newDrynxInstance, msgTypes.msgDPqueryReceived)
-		c.RegisterProcessor(newDrynxInstance, msgTypes.msgSyncDCP)
-		c.RegisterProcessor(newDrynxInstance, msgTypes.msgDPdataFinished)
-	}
-
-	//Register new verifFunction
-	if err := skipchain.RegisterVerification(c, VerifyBitmap, newDrynxInstance.verifyFuncBitmap); err != nil {
-		return nil, err
-	}
-
-	return newDrynxInstance, cerr
-}
 
 // Process implements the processor interface and is used to recognize messages broadcasted between servers
 func (s *ServiceDrynx) Process(msg *network.Envelope) {
@@ -443,24 +361,21 @@ func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.Generic
 	case protocols.ProofCollectionProtocolName:
 		return s.NewProofCollectionProtocolInstance(tn, target)
 	case protocols.DataCollectionProtocolName:
-		pi, err = protocols.NewDataCollectionProtocol(tn)
-		if err != nil {
-			return nil, err
-		}
+		dcp := protocols.NewDataCollectionProtocol(s.loader)
+		dcp.ProtocolRegister(tn)
 
 		if !tn.IsRoot() {
 			survey := s.waitForSurvey(target)
-			dataCollectionProtocol := pi.(*protocols.DataCollectionProtocol)
 
 			queryStatement := protocols.SurveyToDP{
 				SurveyID:  survey.SurveyQuery.SurveyID,
 				Aggregate: survey.SurveyQuery.RosterServers.Aggregate,
 				Query:     survey.SurveyQuery.Query,
 			}
-			dataCollectionProtocol.Survey = queryStatement
-			dataCollectionProtocol.MapPIs = survey.MapPIs
+			dcp.Survey = queryStatement
+			dcp.MapPIs = survey.MapPIs
 		}
-		return pi, nil
+		return &dcp, nil
 
 	case protocolsunlynx.CollectiveAggregationProtocolName:
 		survey := castToSurvey(s.Survey.Get(target))

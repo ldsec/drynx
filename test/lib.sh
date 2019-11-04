@@ -3,6 +3,9 @@ set -eumo pipefail
 readonly node_count=3
 readonly host_name=localhost
 
+tmpdir=$(mktemp -d)
+cd "$tmpdir"
+
 trap cleanup EXIT QUIT
 cleanup() {
 	local err=$?
@@ -26,6 +29,8 @@ cleanup() {
 		fi
 	done
 
+	rm -rf "$tmpdir"
+
 	exit $err
 }
 
@@ -34,16 +39,26 @@ readonly port_top=$((port_base + 2*node_count - 1))
 nodes=''
 publics=''
 start_nodes() {
+	local loader=random
+	if [ $# -eq 1 ]
+	then
+		loader="file-loader $1"
+	fi
+
 	[ -n "$nodes" ] && ( echo nodes already started; exit 1 )
 
 	local port
 
 	for port in $(seq $port_base 2 $port_top)
 	do
-		local conf=$(server gen $host_name:{$port,$((port+1))})
-		publics+=" $(echo "$conf" | awk -F \" '/^Public\s*=/ {print $2}')"
+		local node_conf=$(server new $host_name:{$port,$((port+1))})
+		publics+=" $(echo "$node_conf" | awk -F \" '/^\s+Public\s*=/ {print $2}')"
 
-		echo "$conf" | DEBUG_COLOR=true server run &
+		echo "$node_conf" |
+				server data-provider new $loader |
+				server computing-node new |
+				server verifying-node new |
+				DEBUG_COLOR=true server run &
 		nodes+=" $!"
 	done
 

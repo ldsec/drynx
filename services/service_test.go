@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/ldsec/drynx/lib"
 	"github.com/ldsec/drynx/lib/encoding"
+	"github.com/ldsec/drynx/lib/provider/loaders"
 	"github.com/ldsec/drynx/lib/range"
 	"github.com/ldsec/drynx/services"
 	"github.com/ldsec/unlynx/lib"
@@ -23,6 +24,16 @@ import (
 )
 
 func generateNodes(local *onet.LocalTest, nbrServers int, nbrDPs int, nbrVNs int) (*onet.Roster, *onet.Roster, *onet.Roster) {
+	loader, err := loaders.NewRandom()
+	if err != nil {
+		panic(err)
+	}
+	services.NewBuilder().
+		WithComputingNode().
+		WithDataProvider(loader).
+		WithVerifyingNode().
+		Start()
+
 	_, elTotal, _ := local.GenTree(nbrServers+nbrDPs+nbrVNs, true)
 
 	// create servers and data providers

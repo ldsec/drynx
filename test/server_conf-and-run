@@ -2,3 +2,7 @@
 . ./lib.sh
 
 start_nodes
+
+get_nodes |
+	cut -d ' ' -f 1 | tr : ' ' |
+	xargs -n2 nc -q 0

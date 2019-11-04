@@ -6,6 +6,7 @@ import (
 	"github.com/ldsec/drynx/lib"
 	"github.com/ldsec/drynx/lib/encoding"
 	"github.com/ldsec/drynx/lib/proof"
+	"github.com/ldsec/drynx/lib/provider"
 	"github.com/ldsec/drynx/lib/range"
 	"github.com/ldsec/unlynx/data"
 	"github.com/ldsec/unlynx/lib"
@@ -13,7 +14,6 @@ import (
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
-	"go.dedis.ch/onet/v3/network"
 	"math/rand"
 	"sync"
 )
@@ -22,14 +22,6 @@ import (
 const DataCollectionProtocolName = "DataCollection"
 
 var mutexGroups sync.Mutex
-
-func init() {
-	network.RegisterMessage(AnnouncementDCMessage{})
-	network.RegisterMessage(DataCollectionMessage{})
-	if _, err := onet.GlobalProtocolRegister(DataCollectionProtocolName, NewDataCollectionProtocol); err != nil {
-		log.Fatal("Error registering <DataCollectionProtocol>:", err)
-	}
-}
 
 // Messages
 //______________________________________________________________________________________________________________________
@@ -85,26 +77,34 @@ type DataCollectionProtocol struct {
 
 	// Protocol proof data
 	MapPIs map[string]onet.ProtocolInstance
+
+	// how to get data locally, TODO own by ServiceDrynx
+	loader provider.Loader
 }
 
-// NewDataCollectionProtocol constructs a DataCollection protocol instance.
-func NewDataCollectionProtocol(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
-	dcp := &DataCollectionProtocol{
-		TreeNodeInstance: n,
-		FeedbackChannel:  make(chan map[string]libunlynx.CipherVector),
+// NewDataCollectionProtocol constructs a DataCollection protocol instance
+func NewDataCollectionProtocol(loader provider.Loader) DataCollectionProtocol {
+	return DataCollectionProtocol{
+		FeedbackChannel: make(chan map[string]libunlynx.CipherVector),
+		loader:          loader,
 	}
+}
 
-	err := dcp.RegisterChannel(&dcp.AnnouncementChannel)
+// ProtocolRegister is for passing to onet.GlobalProtocolRegister
+func (p *DataCollectionProtocol) ProtocolRegister(n *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
+	p.TreeNodeInstance = n
+
+	err := p.RegisterChannel(&p.AnnouncementChannel)
 	if err != nil {
 		return nil, errors.New("couldn't register data reference channel: " + err.Error())
 	}
 
-	err = dcp.RegisterChannel(&dcp.DataCollectionChannel)
+	err = p.RegisterChannel(&p.DataCollectionChannel)
 	if err != nil {
 		return nil, errors.New("couldn't register data reference channel: " + err.Error())
 	}
 
-	return dcp, nil
+	return p, nil
 }
 
 // Start is called at the root node and starts the execution of the protocol.
@@ -203,7 +203,10 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	}
 
 	// generate fake random data depending on the operation
-	fakeData := createFakeDataForOperation(p.Survey.Query.Operation, p.Survey.Query.DPDataGen.GenerateRows, p.Survey.Query.DPDataGen.GenerateDataMin, p.Survey.Query.DPDataGen.GenerateDataMax)
+	providedData, err := p.loader.Provide(p.Survey.Query)
+	if err != nil {
+		return libdrynx.ResponseDPBytes{}, err
+	}
 
 	// logistic regression specific
 	var xFloat [][]float64
@@ -254,7 +257,15 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 			//p.Survey.Query.Ranges = nil
 			encryptedResponse, clearResponse, cprf = libdrynxencoding.EncodeForFloat(xFloat, yInt, lrParameters, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation.NameOp)
 		} else {
-			encryptedResponse, clearResponse, cprf = libdrynxencoding.Encode(fakeData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
+			ints := make([][]int64, len(providedData))
+			for i, l := range providedData {
+				arr := make([]int64, len(l))
+				for j, v := range l {
+					arr[j] = int64(v)
+				}
+				ints[i] = arr
+			}
+			encryptedResponse, clearResponse, cprf = libdrynxencoding.Encode(ints, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
 		}
 
 		log.Lvl2("Data Provider", p.Name(), "computes the query response", clearResponse, "for groups:", groupsString, "with operation:", p.Survey.Query.Operation)
@@ -361,26 +372,4 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	libunlynx.EndParallelize(wg)
 
 	return libdrynx.ResponseDPBytes{Data: queryResponseBytes, Len: lenQueryResponse}, nil
-}
-
-// createFakeDataForOperation creates fake data to be used
-func createFakeDataForOperation(operation libdrynx.Operation, nbrRows, min, max int64) [][]int64 {
-	//either use the min and max defined by the query or the default constants
-	zero := int64(0)
-	if min == zero && max == zero {
-		log.Lvl2("Only generating 0s!")
-	}
-
-	//generate response tab
-	tab := make([][]int64, operation.NbrInput)
-	wg := libunlynx.StartParallelize(len(tab))
-	for i := range tab {
-		go func(i int) {
-			defer wg.Done()
-			tab[i] = dataunlynx.CreateInt64Slice(nbrRows, min, max)
-		}(i)
-
-	}
-	libunlynx.EndParallelize(wg)
-	return tab
 }
