@@ -482,7 +482,7 @@ func CheckParameters(sq SurveyQuery, diffP bool) bool {
 		}
 
 		if sq.Query.IVSigs.InputValidationSigs != nil && sq.Query.Ranges != nil {
-			if sq.Query.Operation.NbrOutput != len(*sq.Query.IVSigs.InputValidationSigs[0]) || sq.Query.Operation.NbrOutput != len(sq.Query.Ranges) {
+			if len(sq.Query.IVSigs.InputValidationSigs) == 0 || sq.Query.Operation.NbrOutput != len(*sq.Query.IVSigs.InputValidationSigs[0]) || sq.Query.Operation.NbrOutput != len(sq.Query.Ranges) {
 				result = false
 				message = message + "ranges or signatures length do not match with nbr output \n"
 			}
