@@ -107,12 +107,6 @@ type ResponseDPBytes struct {
 	Len  int
 }
 
-// WhereQueryAttributeClear is the name and value of a where attribute in the query
-type WhereQueryAttributeClear struct {
-	Name  string
-	Value string
-}
-
 // ShufflingMessage represents a message containing data to shuffle
 type ShufflingMessage struct {
 	Data []libunlynx.ProcessResponse
@@ -165,14 +159,6 @@ type QueryIVSigs struct {
 	InputValidationSize2 int
 }
 
-// QuerySQL contains SQL parameters of the query
-type QuerySQL struct {
-	Select    []string
-	Where     []WhereQueryAttributeClear
-	Predicate string
-	GroupBy   []string
-}
-
 // Query is used to transport query information through servers, to DPs
 type Query struct {
 	// query statement
@@ -188,9 +174,6 @@ type Query struct {
 	// identity skipchain simulation
 	IVSigs    QueryIVSigs
 	RosterVNs *onet.Roster
-
-	// if real DB at data providers
-	SQL QuerySQL
 
 	//simulation
 	CuttingFactor int
