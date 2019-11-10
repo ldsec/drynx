@@ -6,9 +6,12 @@ import (
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 )
 
+// Suite is the suite used for communication
+var Suite = bn256.NewSuiteG1()
+
 func init() {
-	cothority.Suite = bn256.NewSuiteG1()
-	libunlynx.SuiTe = bn256.NewSuiteG1()
+	cothority.Suite = Suite
+	libunlynx.SuiTe = Suite
 }
 
 // CurvePairingTest test the type of the curve.

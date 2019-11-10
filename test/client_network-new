@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+. ./lib.sh
+
+start_nodes
+
+client_gen_network |
+	grep -F 'localhost:' | wc -l | xargs test 4 -eq

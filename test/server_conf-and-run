@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+. ./lib.sh
+
+start_nodes
