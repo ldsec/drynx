@@ -1,10 +1,10 @@
 package protocols
 
 import (
+	"errors"
 	"github.com/ldsec/drynx/lib/proof"
 	"sync"
 
-	"github.com/btcsuite/goleveldb/leveldb/errors"
 	"github.com/coreos/bbolt"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/ldsec/drynx/lib"

@@ -1,7 +1,8 @@
 package services
 
 import (
-	"github.com/btcsuite/goleveldb/leveldb/errors"
+	"errors"
+
 	"github.com/ldsec/drynx/lib"
 	"go.dedis.ch/cothority/v3/skipchain"
 	"go.dedis.ch/onet/v3"

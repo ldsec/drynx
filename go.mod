@@ -5,7 +5,6 @@ go 1.12
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/alex-ant/gomath v0.0.0-20160516115720-89013a210a82
-	github.com/btcsuite/goleveldb v1.0.0
 	github.com/cdipaolo/goml v0.0.0-20190412180403-e1f51f713598
 	github.com/coreos/bbolt v1.3.3
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
