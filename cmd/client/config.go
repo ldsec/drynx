@@ -6,7 +6,7 @@ import (
 	kyber_encoding "go.dedis.ch/kyber/v3/util/encoding"
 	onet_network "go.dedis.ch/onet/v3/network"
 
-	drynx_lib "github.com/ldsec/drynx/lib"
+	"github.com/ldsec/drynx/lib"
 
 	"github.com/pelletier/go-toml"
 )
@@ -18,6 +18,7 @@ type configNetwork struct {
 type configSurvey struct {
 	Name      *string
 	Operation *string
+	Sources   *[]libdrynx.ColumnID
 }
 type config struct {
 	Network *configNetwork
@@ -41,7 +42,7 @@ type configStr struct {
 }
 
 func serverIdentityToUnsafe(id onet_network.ServerIdentity) (serverIdentityStr, error) {
-	point, err := kyber_encoding.PointToStringHex(drynx_lib.Suite, id.Public)
+	point, err := kyber_encoding.PointToStringHex(libdrynx.Suite, id.Public)
 	if err != nil {
 		return serverIdentityStr{}, err
 	}
@@ -81,7 +82,7 @@ func (conf configNetworkStr) toSafe() (configNetwork, error) {
 
 	nodes := make([]onet_network.ServerIdentity, len(conf.Nodes))
 	for i, n := range conf.Nodes {
-		point, err := kyber_encoding.StringHexToPoint(drynx_lib.Suite, n.PublicKey)
+		point, err := kyber_encoding.StringHexToPoint(libdrynx.Suite, n.PublicKey)
 		if err != nil {
 			return configNetwork{}, err
 		}

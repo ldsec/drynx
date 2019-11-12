@@ -23,6 +23,7 @@ func main() {
 			$my_network_config
 	if you want to generate a survey config, use something like
 		%[1]s survey new my-survey |
+			%[1]s survey set-sources my-column |
 			%[1]s survey set-operation mean >
 			$my_survey_config
 	then, you can launch a given survey on a given network
@@ -55,6 +56,11 @@ func main() {
 			ArgsUsage: "name",
 			Usage:     "generate a survey config with the given name, start a survey config stream",
 			Action:    surveyNew,
+		}, {
+			Name:      "set-sources",
+			ArgsUsage: "column-name...",
+			Usage:     "on a survey config stream, set the sources columns names",
+			Action:    surveySetSources,
 		}, {
 			Name:      "set-operation",
 			ArgsUsage: "operation",

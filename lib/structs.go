@@ -159,6 +159,9 @@ type QueryIVSigs struct {
 	InputValidationSize2 int
 }
 
+// ColumnID is a reference to a "column" the Loader can extract
+type ColumnID string
+
 // Query is used to transport query information through servers, to DPs
 type Query struct {
 	// query statement
@@ -177,6 +180,9 @@ type Query struct {
 
 	//simulation
 	CuttingFactor int
+
+	// allow to select which column to compute operation on
+	Selector []ColumnID
 }
 
 // Operation defines the operation in the query

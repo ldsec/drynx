@@ -16,4 +16,4 @@ start_nodes providing
 		client survey set-sources col2 |
 		client survey set-operation sum
 ) | client survey run |
-	xargs test $(((4+5+6) * (node_count-1))) -eq
+	xargs -t test $(((4+5+6) * (node_count-1))) -eq
