@@ -62,14 +62,10 @@ func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToSer
 
 	iVSigs := libdrynx.QueryIVSigs{InputValidationSigs: ps, InputValidationSize1: size1, InputValidationSize2: size2}
 
-	test := make([][]int64, 0)
-	test = append(test, []int64{int64(1)})
-
 	//create the query
 	sq := libdrynx.SurveyQuery{
 		SurveyID:                   surveyID,
 		RosterServers:              *rosterServers,
-		ClientPubKey:               c.public,
 		IntraMessage:               false,
 		ServerToDP:                 dpToServer,
 		IDtoPublic:                 idToPublic,
@@ -101,6 +97,10 @@ func (c *API) GenerateSurveyQuery(rosterServers, rosterVNs *onet.Roster, dpToSer
 // SendSurveyQuery creates a survey based on a set of entities (servers) and a survey description.
 func (c *API) SendSurveyQuery(sq libdrynx.SurveyQuery) (*[]string, *[][]float64, error) {
 	log.Lvl2("[API] <Drynx> Client", c.clientID, "is creating a query with SurveyID: ", sq.SurveyID)
+
+	if sq.ClientPubKey == nil {
+		sq.ClientPubKey = c.public
+	}
 
 	//send the query and get the answer
 	sr := libdrynx.ResponseDP{}
