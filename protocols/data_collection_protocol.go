@@ -128,11 +128,7 @@ func (p *DataCollectionProtocol) Dispatch() error {
 
 	// 1. If not root -> wait for announcement message from root
 	if !p.IsRoot() {
-		response, err := p.GenerateData()
-		if err != nil {
-			log.Fatal(err)
-		}
-
+		response := p.GenerateData()
 		dcm := DataCollectionMessage{DCMdata: response}
 
 		// 2. Send data to root
@@ -175,7 +171,7 @@ func (p *DataCollectionProtocol) Dispatch() error {
 //______________________________________________________________________________________________________________________
 
 // GenerateData is used to generate data at DPs, this is more for simulation's purposes
-func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error) {
+func (p *DataCollectionProtocol) GenerateData() libdrynx.ResponseDPBytes {
 
 	// Prepare the generation of all possible groups with the query information.
 	numType := make([]int64, len(p.Survey.Query.DPDataGen.GroupByValues))
@@ -205,7 +201,18 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	// generate fake random data depending on the operation
 	providedData, err := p.loader.Provide(p.Survey.Query)
 	if err != nil {
-		return libdrynx.ResponseDPBytes{}, err
+		log.Errorf("unable to provide using loader: %v", err)
+
+		encrypted := libunlynx.CipherVector{
+			*libunlynx.EncryptInt(p.Survey.Aggregate, 0)}
+		raw, _, _ := encrypted.ToBytes()
+
+		grouped := make(map[string][]byte, len(groupsString))
+		for _, g := range groupsString {
+			grouped[g] = raw
+		}
+
+		return libdrynx.ResponseDPBytes{Data: grouped, Len: 1}
 	}
 
 	// logistic regression specific
@@ -371,5 +378,5 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 	}
 	libunlynx.EndParallelize(wg)
 
-	return libdrynx.ResponseDPBytes{Data: queryResponseBytes, Len: lenQueryResponse}, nil
+	return libdrynx.ResponseDPBytes{Data: queryResponseBytes, Len: lenQueryResponse}
 }
