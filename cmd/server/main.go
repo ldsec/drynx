@@ -219,5 +219,6 @@ func main() {
 
 	if err := app.Run(os.Args); err != nil {
 		onet_log.Error(err)
+		os.Exit(1)
 	}
 }

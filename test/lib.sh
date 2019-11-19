@@ -34,6 +34,11 @@ cleanup() {
 	exit $err
 }
 
+fail() {
+	echo $@
+	exit 1
+}
+
 readonly port_base=$((RANDOM + 1024))
 readonly port_top=$((port_base + 2*node_count - 1))
 nodes=''

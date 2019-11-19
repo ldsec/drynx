@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+. ./lib.sh
+
+server new &&
+	fail 'should exit != 0 on missing args' || :
