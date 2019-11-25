@@ -1,19 +1,13 @@
+dist: trusty
+
 language: go
+go: stable
 
-go:
-  - 1.x
-
-env:
-  - GO111MODULE=on
-
-install:
-  - go get -t ./...
-
-script:
-  - make test
-
-after_success:
-  - $GOPATH/bin/goveralls -coverprofile=profile.cov -service=travis-ci
+before_install: make test_lint test_fmt
+install: go get -t ./...
+script: make test_goveralls
 
 notifications:
   email: false
+cache:
+  directories: $GOPATH/pkg
