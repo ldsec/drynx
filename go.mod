@@ -21,7 +21,6 @@ require (
 	go.dedis.ch/cothority/v3 v3.3.2
 	go.dedis.ch/kyber/v3 v3.0.8
 	go.dedis.ch/onet/v3 v3.0.26
-	go.dedis.ch/protobuf v1.0.10 // indirect
 	golang.org/x/crypto v0.0.0-20191029031824-8986dd9e96cf
 	golang.org/x/sys v0.0.0-20191029155521-f43be2a4598c // indirect
 	gonum.org/v1/gonum v0.6.0
