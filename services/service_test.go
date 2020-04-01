@@ -2,12 +2,15 @@ package services_test
 
 import (
 	"fmt"
-	"github.com/ldsec/drynx/lib"
-	"github.com/ldsec/drynx/lib/encoding"
-	"github.com/ldsec/drynx/lib/range"
-	"github.com/ldsec/drynx/services"
-	"github.com/ldsec/unlynx/lib"
+	"math"
+	"os"
+	"strconv"
+	"sync"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"go.dedis.ch/cothority/v3"
 	"go.dedis.ch/cothority/v3/skipchain"
 	"go.dedis.ch/kyber/v3"
@@ -15,11 +18,12 @@ import (
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
 	"gopkg.in/satori/go.uuid.v1"
-	"math"
-	"os"
-	"strconv"
-	"sync"
-	"testing"
+
+	"github.com/ldsec/drynx/lib"
+	"github.com/ldsec/drynx/lib/encoding"
+	"github.com/ldsec/drynx/lib/range"
+	"github.com/ldsec/drynx/services"
+	"github.com/ldsec/unlynx/lib"
 )
 
 func generateNodes(local *onet.LocalTest, nbrServers int, nbrDPs int, nbrVNs int) (*onet.Roster, *onet.Roster, *onet.Roster) {
@@ -346,7 +350,10 @@ func TestServiceDrynx(t *testing.T) {
 }
 
 func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 
@@ -707,7 +714,8 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 }
 
 func TestServiceDrynxLogisticRegression(t *testing.T) {
-	t.Skip()
+	t.Skip("hang indefinitely")
+
 	os.Remove("pre_compute_multiplications.gob")
 
 	// these nodes act as both servers and data providers
@@ -928,10 +936,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 		cuttingFactor := 0
 		sq := client.GenerateSurveyQuery(el, elVNs, dpToServers, idToPublic, uuid.NewV4().String(), operation, ranges, ps, proofs, false, thresholdEntityProofsVerif, diffP, dpData, cuttingFactor)
 		grp, aggr, err := client.SendSurveyQuery(sq)
-
-		if err != nil {
-			t.Fatal("'Drynx' service did not start.", err)
-		}
+		require.NoError(t, err)
 
 		// Result printing
 		if len(*grp) != 0 && len(*grp) != len(*aggr) {
@@ -1031,7 +1036,10 @@ func performanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, 
 }
 
 func TestServiceDrynxLogisticRegressionV2(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 
@@ -1432,7 +1440,10 @@ func TestServiceDrynxLogisticRegressionV2(t *testing.T) {
 }
 
 func TestServiceDrynxLogisticRegressionBC(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 
@@ -1805,7 +1816,10 @@ func TestServiceDrynxLogisticRegressionBC(t *testing.T) {
 }
 
 func TestServiceDrynxLogisticRegressionGSE(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	os.Remove("pre_compute_multiplications.gob")
 	log.SetDebugVisible(2)
 
