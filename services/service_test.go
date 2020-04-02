@@ -395,14 +395,18 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	filePathTraining := "../data/SPECTF_heart_dataset_training.txt"
 	filePathTesting := "../data/SPECTF_heart_dataset_testing.txt"
 
-	XTrain, _ := libdrynxencoding.LoadData("SPECTF", filePathTraining)
-	XTest, yTest := libdrynxencoding.LoadData("SPECTF", filePathTesting)
+	XTrain, _, err := libdrynxencoding.LoadData("SPECTF", filePathTraining)
+	require.NoError(t, err)
+	XTest, yTest, err := libdrynxencoding.LoadData("SPECTF", filePathTesting)
+	require.NoError(t, err)
 
 	var means = make([]float64, 0)
 	var standardDeviations = make([]float64, 0)
 	if standardisationMode == 0 || standardisationMode == 1 {
-		means = libdrynxencoding.ComputeMeans(XTrain)
-		standardDeviations = libdrynxencoding.ComputeStandardDeviations(XTrain)
+		means, err = libdrynxencoding.ComputeMeans(XTrain)
+		require.NoError(t, err)
+		standardDeviations, err = libdrynxencoding.ComputeStandardDeviations(XTrain)
+		require.NoError(t, err)
 	} else {
 		means = nil
 		standardDeviations = nil
@@ -628,7 +632,8 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 				means = nil
 				standardDeviations = nil
 			}
-			accuracy, precision, recall, fscore, auc := performanceEvaluation(weights, XTest, yTest, means, standardDeviations)
+			accuracy, precision, recall, fscore, auc, err := performanceEvaluation(weights, XTest, yTest, means, standardDeviations)
+			require.NoError(t, err)
 
 			meanAccuracy += accuracy
 			meanPrecision += precision
@@ -822,7 +827,8 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 	fmt.Println(filepath)
 
 	// load the dataset
-	X, y := libdrynxencoding.LoadData(dataset, filepath)
+	X, y, err := libdrynxencoding.LoadData(dataset, filepath)
+	require.NoError(t, err)
 
 	for i := 0; i < numberTrials; i++ {
 		log.Lvl1("Evaluating prediction on dataset for trial:", i)
@@ -855,8 +861,10 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 		var means = make([]float64, 0)
 		var standardDeviations = make([]float64, 0)
 		if standardisationMode == 0 || standardisationMode == 1 {
-			means = libdrynxencoding.ComputeMeans(XTrain)
-			standardDeviations = libdrynxencoding.ComputeStandardDeviations(XTrain)
+			means, err = libdrynxencoding.ComputeMeans(XTrain)
+			require.NoError(t, err)
+			standardDeviations, err = libdrynxencoding.ComputeStandardDeviations(XTrain)
+			require.NoError(t, err)
 		} else {
 			means = nil
 			standardDeviations = nil
@@ -953,7 +961,8 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 				means = nil
 				standardDeviations = nil
 			}
-			accuracy, precision, recall, fscore, auc := performanceEvaluation(weights, XTest, yTest, means, standardDeviations)
+			accuracy, precision, recall, fscore, auc, err := performanceEvaluation(weights, XTest, yTest, means, standardDeviations)
+			require.NoError(t, err)
 
 			meanAccuracy += accuracy
 			meanPrecision += precision
@@ -989,7 +998,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 
 func performanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, means []float64,
 	standardDeviations []float64) (float64,
-	float64, float64, float64, float64) {
+	float64, float64, float64, float64, error) {
 	fmt.Println("weights:", weights)
 
 	if means != nil && standardDeviations != nil &&
@@ -1000,7 +1009,11 @@ func performanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, 
 	} else {
 		// using local means and standard deviations, if not given
 		log.Lvl1("Standardising the testing set with local means and standard deviations...")
-		XTest = libdrynxencoding.Standardise(XTest)
+		var err error
+		XTest, err = libdrynxencoding.Standardise(XTest)
+		if err != nil {
+			return 0, 0, 0, 0, 0, err
+		}
 	}
 
 	predictions := make([]int64, len(XTest))
@@ -1032,7 +1045,7 @@ func performanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, 
 	//encoding.SaveToFile(tpr, "../data/tpr.txt")
 	//encoding.SaveToFile(fpr, "../data/fpr.txt")
 
-	return accuracy, precision, recall, fscore, auc
+	return accuracy, precision, recall, fscore, auc, nil
 }
 
 func TestServiceDrynxLogisticRegressionV2(t *testing.T) {
@@ -1124,14 +1137,18 @@ func TestServiceDrynxLogisticRegressionV2(t *testing.T) {
 	filePathTraining := "../data/" + dataset + "_dataset_training.txt"
 	filePathTesting := "../data/" + dataset + "_dataset_testing.txt"
 
-	XTrain, _ := libdrynxencoding.LoadData(dataset, filePathTraining)
-	XTest, yTest := libdrynxencoding.LoadData(dataset, filePathTesting)
+	XTrain, _, err := libdrynxencoding.LoadData(dataset, filePathTraining)
+	require.NoError(t, err)
+	XTest, yTest, err := libdrynxencoding.LoadData(dataset, filePathTesting)
+	require.NoError(t, err)
 
 	var means = make([]float64, 0)
 	var standardDeviations = make([]float64, 0)
 	if standardisationMode == 0 || standardisationMode == 1 {
-		means = libdrynxencoding.ComputeMeans(XTrain)
-		standardDeviations = libdrynxencoding.ComputeStandardDeviations(XTrain)
+		means, err = libdrynxencoding.ComputeMeans(XTrain)
+		require.NoError(t, err)
+		standardDeviations, err = libdrynxencoding.ComputeStandardDeviations(XTrain)
+		require.NoError(t, err)
 	} else {
 		means = nil
 		standardDeviations = nil
@@ -1356,7 +1373,8 @@ func TestServiceDrynxLogisticRegressionV2(t *testing.T) {
 				means = nil
 				standardDeviations = nil
 			}
-			accuracy, precision, recall, fscore, auc := performanceEvaluation(weights, XTest, yTest, means, standardDeviations)
+			accuracy, precision, recall, fscore, auc, err := performanceEvaluation(weights, XTest, yTest, means, standardDeviations)
+			require.NoError(t, err)
 
 			meanAccuracy += accuracy
 			meanPrecision += precision
@@ -1505,14 +1523,18 @@ func TestServiceDrynxLogisticRegressionBC(t *testing.T) {
 	filePathTraining := "../tmpdata/" + dataset + "_dataset_training.txt"
 	filePathTesting := "../tmpdata/" + dataset + "_dataset_testing.txt"
 
-	XTrain, _ := libdrynxencoding.LoadData(dataset, filePathTraining)
-	XTest, yTest := libdrynxencoding.LoadData(dataset, filePathTesting)
+	XTrain, _, err := libdrynxencoding.LoadData(dataset, filePathTraining)
+	require.NoError(t, err)
+	XTest, yTest, err := libdrynxencoding.LoadData(dataset, filePathTesting)
+	require.NoError(t, err)
 
 	var means = make([]float64, 0)
 	var standardDeviations = make([]float64, 0)
 	if standardisationMode == 0 || standardisationMode == 1 {
-		means = libdrynxencoding.ComputeMeans(XTrain)
-		standardDeviations = libdrynxencoding.ComputeStandardDeviations(XTrain)
+		means, err = libdrynxencoding.ComputeMeans(XTrain)
+		require.NoError(t, err)
+		standardDeviations, err = libdrynxencoding.ComputeStandardDeviations(XTrain)
+		require.NoError(t, err)
 	} else {
 		means = nil
 		standardDeviations = nil
@@ -1732,7 +1754,8 @@ func TestServiceDrynxLogisticRegressionBC(t *testing.T) {
 				means = nil
 				standardDeviations = nil
 			}
-			accuracy, precision, recall, fscore, auc := performanceEvaluation(weights, XTest, yTest, means, standardDeviations)
+			accuracy, precision, recall, fscore, auc, err := performanceEvaluation(weights, XTest, yTest, means, standardDeviations)
+			require.NoError(t, err)
 
 			meanAccuracy += accuracy
 			meanPrecision += precision
@@ -1905,14 +1928,18 @@ func TestServiceDrynxLogisticRegressionGSE(t *testing.T) {
 	filePathTraining := "../tmpdata/" + dataset + "_dataset_training.txt"
 	filePathTesting := "../tmpdata/" + dataset + "_dataset_testing.txt"
 
-	XTrain, _ := libdrynxencoding.LoadData(dataset, filePathTraining)
-	XTest, yTest := libdrynxencoding.LoadData(dataset, filePathTesting)
+	XTrain, _, err := libdrynxencoding.LoadData(dataset, filePathTraining)
+	require.NoError(t, err)
+	XTest, yTest, err := libdrynxencoding.LoadData(dataset, filePathTesting)
+	require.NoError(t, err)
 
 	var means = make([]float64, 0)
 	var standardDeviations = make([]float64, 0)
 	if standardisationMode == 0 || standardisationMode == 1 {
-		means = libdrynxencoding.ComputeMeans(XTrain)
-		standardDeviations = libdrynxencoding.ComputeStandardDeviations(XTrain)
+		means, err = libdrynxencoding.ComputeMeans(XTrain)
+		require.NoError(t, err)
+		standardDeviations, err = libdrynxencoding.ComputeStandardDeviations(XTrain)
+		require.NoError(t, err)
 	} else {
 		means = nil
 		standardDeviations = nil
@@ -2136,7 +2163,8 @@ func TestServiceDrynxLogisticRegressionGSE(t *testing.T) {
 				means = nil
 				standardDeviations = nil
 			}
-			accuracy, precision, recall, fscore, auc := performanceEvaluation(weights, XTest, yTest, means, standardDeviations)
+			accuracy, precision, recall, fscore, auc, err := performanceEvaluation(weights, XTest, yTest, means, standardDeviations)
+			require.NoError(t, err)
 
 			meanAccuracy += accuracy
 			meanPrecision += precision

@@ -213,7 +213,12 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		if lrParameters.FilePath != "" {
 			// note: GetDataForDataProvider(...) business only for testing purpose
 			dataProviderID := p.TreeNode().ServerIdentity
-			xFloat, yInt = libdrynxencoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.DatasetName, p.Survey.Query.Operation.LRParameters.FilePath, *dataProviderID)
+
+			var err error
+			xFloat, yInt, err = libdrynxencoding.GetDataForDataProvider(p.Survey.Query.Operation.LRParameters.DatasetName, p.Survey.Query.Operation.LRParameters.FilePath, *dataProviderID)
+			if err != nil {
+				return libdrynx.ResponseDPBytes{}, fmt.Errorf("when getting data for provider: %w", err)
+			}
 
 			// set the number of records to the number of records owned by this data provider
 			//dataSpecifics = recq.Query.Operation.DataSpecifics
@@ -252,7 +257,11 @@ func (p *DataCollectionProtocol) GenerateData() (libdrynx.ResponseDPBytes, error
 		}
 		if p.Survey.Query.Operation.NameOp == "logistic regression" {
 			//p.Survey.Query.Ranges = nil
-			encryptedResponse, clearResponse, cprf = libdrynxencoding.EncodeForFloat(xFloat, yInt, lrParameters, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation.NameOp)
+			var err error
+			encryptedResponse, clearResponse, cprf, err = libdrynxencoding.EncodeForFloat(xFloat, yInt, lrParameters, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation.NameOp)
+			if err != nil {
+				return libdrynx.ResponseDPBytes{}, fmt.Errorf("when getting data for provider: %w", err)
+			}
 		} else {
 			encryptedResponse, clearResponse, cprf = libdrynxencoding.Encode(fakeData, p.Survey.Aggregate, signatures, p.Survey.Query.Ranges, p.Survey.Query.Operation)
 		}

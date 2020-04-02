@@ -9,6 +9,7 @@ import (
 	"github.com/ldsec/drynx/lib/range"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/key"
 	"gonum.org/v1/gonum/stat/combin"
@@ -582,11 +583,15 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 	labelColumn := 0
 
 	// features
-	X := libdrynxencoding.RemoveColumn(data, labelColumn)
+	X, err := libdrynxencoding.RemoveColumn(data, labelColumn)
+	require.NoError(t, err)
 	// labels
-	y := libdrynxencoding.Float64ToInt641DArray(libdrynxencoding.GetColumn(data, labelColumn))
+	yFloat, err := libdrynxencoding.GetColumn(data, labelColumn)
+	require.NoError(t, err)
+	y := libdrynxencoding.Float64ToInt641DArray(yFloat)
 
-	XStandardised := libdrynxencoding.Standardise(X)
+	XStandardised, err := libdrynxencoding.Standardise(X)
+	require.NoError(t, err)
 	XStandardised = libdrynxencoding.Augment(XStandardised)
 
 	N := len(X)
@@ -622,7 +627,8 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: N64, NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
 		InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
 
-	resultEncrypted, _ := libdrynxencoding.EncodeLogisticRegression(X, y, lrParameters, pubKey)
+	resultEncrypted, _, err := libdrynxencoding.EncodeLogisticRegression(X, y, lrParameters, pubKey)
+	require.NoError(t, err)
 	result := libdrynxencoding.DecodeLogisticRegression(resultEncrypted, privKey, lrParameters)
 
 	// no equality because expected weights were computed in clear
@@ -645,11 +651,15 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 	labelColumn := 0
 
 	// features
-	X := libdrynxencoding.RemoveColumn(data, labelColumn)
+	X, err := libdrynxencoding.RemoveColumn(data, labelColumn)
+	require.NoError(t, err)
 	// labels
-	y := libdrynxencoding.Float64ToInt641DArray(libdrynxencoding.GetColumn(data, labelColumn))
+	yFloat, err := libdrynxencoding.GetColumn(data, labelColumn)
+	require.NoError(t, err)
+	y := libdrynxencoding.Float64ToInt641DArray(yFloat)
 
-	XStandardised := libdrynxencoding.Standardise(X)
+	XStandardised, err := libdrynxencoding.Standardise(X)
+	require.NoError(t, err)
 	XStandardised = libdrynxencoding.Augment(XStandardised)
 
 	N := len(X)
@@ -714,7 +724,8 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 
 	//function call
 
-	resultEncrypted, _, prf := libdrynxencoding.EncodeLogisticRegressionWithProofs(X, y, lrParameters, pubKey, ps, ranges)
+	resultEncrypted, _, prf, err := libdrynxencoding.EncodeLogisticRegressionWithProofs(X, y, lrParameters, pubKey, ps, ranges)
+	require.NoError(t, err)
 	result := libdrynxencoding.DecodeLogisticRegression(resultEncrypted, privKey, lrParameters)
 
 	assert.True(t, libdrynxrange.RangeProofVerification(libdrynxrange.CreatePredicateRangeProofForAllServ(prf[0]), (*ranges[0])[0], (*ranges[0])[1], yss[0], pubKey))
@@ -746,8 +757,10 @@ func TestStandardise(t *testing.T) {
 		}
 	}
 
-	XStandardised := libdrynxencoding.Standardise(X)
-	XScaledStandardised := libdrynxencoding.Standardise(XScaled)
+	XStandardised, err := libdrynxencoding.Standardise(X)
+	require.NoError(t, err)
+	XScaledStandardised, err := libdrynxencoding.Standardise(XScaled)
+	require.NoError(t, err)
 
 	epsilon := 1e-12
 	for i := 0; i < len(XStandardised); i++ {
