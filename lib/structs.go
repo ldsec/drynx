@@ -1,7 +1,6 @@
 package libdrynx
 
 import (
-	"github.com/coreos/bbolt"
 	"github.com/ldsec/unlynx/lib"
 	"github.com/ldsec/unlynx/protocols"
 	"go.dedis.ch/cothority/v3/skipchain"
@@ -9,6 +8,7 @@ import (
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
+	"go.etcd.io/bbolt"
 	"sync"
 	"time"
 )
