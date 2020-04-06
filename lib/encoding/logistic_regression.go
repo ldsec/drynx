@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"math/rand"
 	"os"
@@ -1331,22 +1332,20 @@ func String2DToFloat64(dataString [][]string) [][]float64 {
 func LoadData(dataset string, filename string) ([][]float64, []int64, error) {
 	labelColumn := 0
 
-	dataString, err := ReadFile(filename, ',')
+	data, err := ReadFile(filename, ',')
 	if err != nil {
 		return nil, nil, fmt.Errorf("when reading file: %w", err)
 	}
 
 	if dataset == "PCS" {
 		// remove the index column and the two last columns (unused)
-		for _, i := range []uint{11, 10, 0} {
+		for _, i := range []int{11, 10, 0} {
 			var err error
-			if dataString, err = RemoveColumnString(dataString, i); err != nil {
+			if data, err = RemoveColumn(data, i); err != nil {
 				return nil, nil, err
 			}
 		}
 	}
-
-	data := String2DToFloat64(dataString)
 
 	X, err := RemoveColumn(data, labelColumn)
 	if err != nil {
@@ -1363,7 +1362,7 @@ func LoadData(dataset string, filename string) ([][]float64, []int64, error) {
 
 // ReadFile reads a dataset from file into a string matrix
 // removes incorrectly formatted records
-func ReadFile(path string, separator rune) ([][]string, error) {
+func ReadFile(path string, separator rune) ([][]float64, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("opening file: %w", err)
@@ -1373,7 +1372,29 @@ func ReadFile(path string, separator rune) ([][]string, error) {
 	reader := csv.NewReader(file)
 	reader.Comma = separator
 
-	return reader.ReadAll()
+	var records [][]float64
+	for {
+		record, err := reader.Read()
+		if record == nil && errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("reading record: %w", err)
+		}
+
+		line := make([]float64, len(record))
+		for i, v := range record {
+			parsed, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return nil, fmt.Errorf("parsing as float at line %v, element %v: %w", len(records), i, err)
+			}
+			line[i] = parsed
+		}
+
+		records = append(records, line)
+	}
+
+	return records, nil
 }
 
 // GetColumn returns the column at index <idx> in the given 2D array <matrix>
@@ -1400,22 +1421,6 @@ func RemoveColumn(matrix [][]float64, idx int) ([][]float64, error) {
 	}
 
 	truncatedMatrix := make([][]float64, len(matrix))
-	for i := range matrix {
-		//truncatedMatrix[i] = make([]float64, len(matrix[i]) - 1)
-		truncatedMatrix[i] = append(truncatedMatrix[i], matrix[i][:idx]...)
-		truncatedMatrix[i] = append(truncatedMatrix[i], matrix[i][idx+1:]...)
-	}
-
-	return truncatedMatrix, nil
-}
-
-// RemoveColumnString removes the column at index <idx> of the given string matrix
-func RemoveColumnString(matrix [][]string, idx uint) ([][]string, error) {
-	if idx >= uint(len(matrix[0])) {
-		return nil, errors.New("column index exceeds matrix dimension")
-	}
-
-	truncatedMatrix := make([][]string, len(matrix))
 	for i := range matrix {
 		//truncatedMatrix[i] = make([]float64, len(matrix[i]) - 1)
 		truncatedMatrix[i] = append(truncatedMatrix[i], matrix[i][:idx]...)
