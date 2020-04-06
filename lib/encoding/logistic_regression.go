@@ -1,7 +1,7 @@
 package libdrynxencoding
 
 import (
-	"bufio"
+	"encoding/csv"
 	"errors"
 	"fmt"
 	"math"
@@ -1254,22 +1254,25 @@ func AreaUnderCurve(predicted []float64, actual []int64) float64 {
 }*/
 
 // SaveToFile saves a float64 array to file
-func SaveToFile(array []float64, filename string) {
+func SaveToFile(array []float64, filename string) error {
 	file, err := os.OpenFile(filename, os.O_APPEND, 0666)
-
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(2)
+		return fmt.Errorf("opening file: %w", err)
+	}
+	defer file.Close()
+
+	arrayAsStrings := make([]string, len(array))
+	for i, v := range array {
+		arrayAsStrings[i] = strconv.FormatFloat(v, 'e', -1, 64)
 	}
 
-	for j := 0; j < len(array)-1; j++ {
-		_, err = file.WriteString(fmt.Sprint(array[j]) + ",")
+	writer := csv.NewWriter(file)
+	err = writer.WriteAll([][]string{arrayAsStrings})
+	if err != nil {
+		return fmt.Errorf("writing file: %w", err)
 	}
-	_, err = file.WriteString(fmt.Sprintln(array[len(array)-1]))
 
-	if err := file.Close(); err != nil {
-		log.Fatal("Error closing file:", err)
-	}
+	return nil
 }
 
 // PrintForLatex for copy-pasting in LaTex
@@ -1328,7 +1331,10 @@ func String2DToFloat64(dataString [][]string) [][]float64 {
 func LoadData(dataset string, filename string) ([][]float64, []int64, error) {
 	labelColumn := 0
 
-	dataString := ReadFile(filename, ",")
+	dataString, err := ReadFile(filename, ',')
+	if err != nil {
+		return nil, nil, fmt.Errorf("when reading file: %w", err)
+	}
 
 	if dataset == "PCS" {
 		// remove the index column and the two last columns (unused)
@@ -1357,61 +1363,17 @@ func LoadData(dataset string, filename string) ([][]float64, []int64, error) {
 
 // ReadFile reads a dataset from file into a string matrix
 // removes incorrectly formatted records
-func ReadFile(path string, separator string) [][]string {
-	const maxCapacity = 512 * 1024
-
-	inFile, err := os.Open(path)
+func ReadFile(path string, separator rune) ([][]string, error) {
+	file, err := os.Open(path)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(2)
+		return nil, fmt.Errorf("opening file: %w", err)
 	}
+	defer file.Close()
 
-	defer inFile.Close()
+	reader := csv.NewReader(file)
+	reader.Comma = separator
 
-	var matrix [][]string
-	nbrRecordsIgnored := 0
-
-	scanner := bufio.NewScanner(inFile)
-
-	buf := make([]byte, maxCapacity)
-	scanner.Buffer(buf, maxCapacity)
-
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		line := strings.Split(scanner.Text(), separator)
-		var array []string
-		for _, e := range line {
-			i := strings.TrimSpace(e)
-			if i != "" {
-				array = append(array, i)
-			}
-		}
-		matrix = append(matrix, array)
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	// remove incorrectly formatted records
-	// todo: take max of len of all rows
-	fmt.Println("matrix:")
-
-	nbrFeatures := len(matrix[0])
-	var result [][]string
-
-	for _, row := range matrix {
-		if len(row) == nbrFeatures {
-			result = append(result, row)
-		} else {
-			log.Lvl2("Incorrect record formatting: record", row, "will be ignored")
-			nbrRecordsIgnored++
-		}
-	}
-
-	log.Lvl2("Total number of records ignored:", nbrRecordsIgnored)
-
-	return result
+	return reader.ReadAll()
 }
 
 // GetColumn returns the column at index <idx> in the given 2D array <matrix>
