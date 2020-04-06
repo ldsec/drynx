@@ -904,12 +904,10 @@ func PredictHomomorphic(encryptedData libunlynx.CipherVector, weights []float64,
 
 // ComputeMeans returns the means of each column of the given data matrix
 func ComputeMeans(data [][]float64) ([]float64, error) {
-	nbFeatures := len(data[0])
+	means := make([]float64, len(data[0]))
 
-	means := make([]float64, nbFeatures)
-
-	for i := 0; i < nbFeatures; i++ {
-		feature, err := GetColumn(data, i)
+	for i := range means {
+		feature, err := GetColumn(data, uint(i))
 		if err != nil {
 			return nil, err
 		}
@@ -921,12 +919,10 @@ func ComputeMeans(data [][]float64) ([]float64, error) {
 
 // ComputeStandardDeviations returns the standard deviation of each column of the given data matrix
 func ComputeStandardDeviations(data [][]float64) ([]float64, error) {
-	nbFeatures := len(data[0])
+	standardDeviations := make([]float64, len(data[0]))
 
-	standardDeviations := make([]float64, nbFeatures)
-
-	for i := 0; i < nbFeatures; i++ {
-		feature, err := GetColumn(data, i)
+	for i := range standardDeviations {
+		feature, err := GetColumn(data, uint(i))
 		if err != nil {
 			return nil, err
 		}
@@ -939,55 +935,25 @@ func ComputeStandardDeviations(data [][]float64) ([]float64, error) {
 // Standardise returns the standardized 2D array version of the given 2D array
 // i.e. x' = (x - mean) / standard deviation
 func Standardise(matrix [][]float64) ([][]float64, error) {
-
-	nbFeatures := len(matrix[0])
-
-	sds := make([]float64, nbFeatures)
-	means := make([]float64, nbFeatures)
-
-	for i := 0; i < nbFeatures; i++ {
-		feature, err := GetColumn(matrix, i)
-		if err != nil {
-			return nil, err
-		}
-		means[i], _ = stats.Mean(feature)
-		sds[i], _ = stats.StandardDeviation(feature)
-	}
-
-	standardisedMatrix := make([][]float64, len(matrix))
-	for record := 0; record < len(matrix); record++ {
-		standardisedMatrix[record] = make([]float64, nbFeatures)
-		for i := 0; i < nbFeatures; i++ {
-			standardisedMatrix[record][i] = float64(matrix[record][i]-means[i]) / sds[i]
-		}
-	}
-
-	return standardisedMatrix, nil
+	return StandardiseWithTrain(matrix, matrix)
 }
 
 // StandardiseWithTrain standardises a matrix with the given matrix means and standard deviations
 func StandardiseWithTrain(matrixTest, matrixTrain [][]float64) ([][]float64, error) {
-
-	nbFeatures := len(matrixTest[0])
-
-	sd := make([]float64, nbFeatures)
-	mean := make([]float64, nbFeatures)
-
-	for i := 0; i < nbFeatures; i++ {
-		feature, err := GetColumn(matrixTrain, i)
-		if err != nil {
-			return nil, err
-		}
-
-		mean[i], _ = stats.Mean(feature)
-		sd[i], _ = stats.StandardDeviation(feature)
+	sds, err := ComputeStandardDeviations(matrixTrain)
+	if err != nil {
+		return nil, err
+	}
+	means, err := ComputeMeans(matrixTrain)
+	if err != nil {
+		return nil, err
 	}
 
 	standardisedMatrix := make([][]float64, len(matrixTest))
-	for record := 0; record < len(matrixTest); record++ {
-		standardisedMatrix[record] = make([]float64, nbFeatures)
-		for i := 0; i < nbFeatures; i++ {
-			standardisedMatrix[record][i] = float64(matrixTest[record][i]-mean[i]) / sd[i]
+	for i, record := range matrixTest {
+		standardisedMatrix[i] = make([]float64, len(record))
+		for j, v := range record {
+			standardisedMatrix[i][j] = float64(v-means[j]) / sds[j]
 		}
 	}
 
@@ -1013,41 +979,18 @@ func StandardiseWith(data [][]float64, means []float64, standardDeviations []flo
 
 // Normalize normalises a matrix column-wise
 func Normalize(matrix [][]float64) ([][]float64, error) {
-
-	nbFeatures := len(matrix[0])
-	min := make([]float64, nbFeatures)
-	max := make([]float64, nbFeatures)
-
-	for i := 0; i < nbFeatures; i++ {
-		feature, err := GetColumn(matrix, i)
-		if err != nil {
-			return nil, err
-		}
-
-		min[i], _ = stats.Min(feature)
-		max[i], _ = stats.Max(feature)
-	}
-
-	normalizedMatrix := make([][]float64, len(matrix))
-	for record := 0; record < len(matrix); record++ {
-		normalizedMatrix[record] = make([]float64, nbFeatures)
-		for i := 0; i < nbFeatures; i++ {
-			normalizedMatrix[record][i] = float64(matrix[record][i]-min[i]) / (max[i] - min[i])
-		}
-	}
-
-	return normalizedMatrix, nil
+	return NormalizeWith(matrix, matrix)
 }
 
 // NormalizeWith normalises a matrix column-wise with the given matrix min and max values
 func NormalizeWith(matrixTest, matrixTrain [][]float64) ([][]float64, error) {
+	nbFeatures := len(matrixTrain[0])
 
-	nbFeatures := len(matrixTest[0])
 	min := make([]float64, nbFeatures)
 	max := make([]float64, nbFeatures)
 
-	for i := 0; i < nbFeatures; i++ {
-		feature, err := GetColumn(matrixTrain, i)
+	for i := range matrixTrain[0] {
+		feature, err := GetColumn(matrixTrain, uint(i))
 		if err != nil {
 			return nil, err
 		}
@@ -1057,10 +1000,10 @@ func NormalizeWith(matrixTest, matrixTrain [][]float64) ([][]float64, error) {
 	}
 
 	normalizedMatrix := make([][]float64, len(matrixTest))
-	for record := 0; record < len(matrixTest); record++ {
-		normalizedMatrix[record] = make([]float64, nbFeatures)
-		for i := 0; i < nbFeatures; i++ {
-			normalizedMatrix[record][i] = float64(matrixTest[record][i]-min[i]) / (max[i] - min[i])
+	for i, record := range matrixTest {
+		normalizedMatrix[i] = make([]float64, len(record))
+		for j, v := range record {
+			normalizedMatrix[i][j] = float64(v-min[j]) / (max[j] - min[j])
 		}
 	}
 
@@ -1330,7 +1273,7 @@ func String2DToFloat64(dataString [][]string) [][]float64 {
 // LoadData loads some specific datasets from file into a pair of feature matrix and label vector
 // the available datasets are: SPECTF, Pima, PCS and LBW
 func LoadData(dataset string, filename string) ([][]float64, []int64, error) {
-	labelColumn := 0
+	labelColumn := uint(0)
 
 	data, err := ReadFile(filename, ',')
 	if err != nil {
@@ -1339,7 +1282,7 @@ func LoadData(dataset string, filename string) ([][]float64, []int64, error) {
 
 	if dataset == "PCS" {
 		// remove the index column and the two last columns (unused)
-		for _, i := range []int{11, 10, 0} {
+		for _, i := range []uint{11, 10, 0} {
 			var err error
 			if data, err = RemoveColumn(data, i); err != nil {
 				return nil, nil, err
@@ -1398,11 +1341,11 @@ func ReadFile(path string, separator rune) ([][]float64, error) {
 }
 
 // GetColumn returns the column at index <idx> in the given 2D array <matrix>
-func GetColumn(matrix [][]float64, idx int) ([]float64, error) {
+func GetColumn(matrix [][]float64, idx uint) ([]float64, error) {
 	if len(matrix) < 0 {
 		return nil, errors.New("empty matrix")
 	}
-	if idx >= len(matrix[0]) {
+	if idx >= uint(len(matrix[0])) {
 		return nil, errors.New("column index exceeds matrix dimension")
 	}
 
@@ -1415,8 +1358,8 @@ func GetColumn(matrix [][]float64, idx int) ([]float64, error) {
 }
 
 // RemoveColumn returns a 2D array with the column at index <idx> removed from the given 2D array <matrix>
-func RemoveColumn(matrix [][]float64, idx int) ([][]float64, error) {
-	if idx >= len(matrix[0]) {
+func RemoveColumn(matrix [][]float64, idx uint) ([][]float64, error) {
+	if idx >= uint(len(matrix[0])) {
 		return nil, errors.New("column index exceeds matrix dimension")
 	}
 

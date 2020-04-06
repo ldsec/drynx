@@ -580,7 +580,7 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 		{0, 1.0, 4.5, 2.2, 3.8},
 		{1, 1.7, 2.8, 3.8, 2.7}}
 
-	labelColumn := 0
+	labelColumn := uint(0)
 
 	// features
 	X, err := libdrynxencoding.RemoveColumn(data, labelColumn)
@@ -648,7 +648,7 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 		{0, 1.0, 4.5, 2.2, 3.8},
 		{1, 1.7, 2.8, 3.8, 2.7}}
 
-	labelColumn := 0
+	labelColumn := uint(0)
 
 	// features
 	X, err := libdrynxencoding.RemoveColumn(data, labelColumn)
