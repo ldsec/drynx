@@ -1314,6 +1314,7 @@ func ReadFile(path string, separator rune) ([][]float64, error) {
 
 	reader := csv.NewReader(file)
 	reader.Comma = separator
+	reader.TrimLeadingSpace = true
 
 	var records [][]float64
 	for {
