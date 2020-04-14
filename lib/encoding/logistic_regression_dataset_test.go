@@ -6,11 +6,20 @@ import (
 	"github.com/cdipaolo/goml/linear"
 	"github.com/ldsec/drynx/lib/encoding"
 	"github.com/ldsec/unlynx/lib"
+	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/key"
 	"go.dedis.ch/onet/v3/log"
 	"math"
 	"testing"
+)
+
+type preprocessing uint
+
+const (
+	PREPROCESSING_NONE preprocessing = iota
+	PREPROCESSING_STANDARDIZE
+	PREPROCESSING_NORMALIZE
 )
 
 type MinimisationParameters struct {
@@ -27,7 +36,7 @@ type MinimisationParameters struct {
 }
 
 func compareFindMinimumWeights(Xtrain [][]float64, ytrain []int64, parameters MinimisationParameters,
-	preprocessing string, withEncryption bool, precisionApproxCoefficients float64, paperWeights []float64) {
+	preprocessing preprocessing, withEncryption bool, precisionApproxCoefficients float64, paperWeights []float64) error {
 
 	N := int64(len(Xtrain))
 	k := parameters.k
@@ -35,7 +44,10 @@ func compareFindMinimumWeights(Xtrain [][]float64, ytrain []int64, parameters Mi
 	step := parameters.step
 	maxIterations := parameters.maxIterations
 	initialWeights := parameters.initialWeights
-	Xtrain = libdrynxencoding.Standardise(Xtrain)
+	Xtrain, err := libdrynxencoding.Standardise(Xtrain)
+	if err != nil {
+		return err
+	}
 	Xtrain = libdrynxencoding.Augment(Xtrain)
 	// data providers part + servers part + client part collapsed here for testing
 
@@ -63,6 +75,8 @@ func compareFindMinimumWeights(Xtrain [][]float64, ytrain []int64, parameters Mi
 	log.LLvl2("cost:", libdrynxencoding.Cost(paperWeights, aggregatedApproxCoefficients, N, lambda))
 	log.LLvl2("logistic cost:", libdrynxencoding.LogisticRegressionCost(paperWeights, Xtrain, ytrain, N, lambda))
 	log.LLvl2()
+
+	return nil
 }
 
 func findMinimumWeights(X [][]float64, y []int64, k int, maxIterations int, step float64, lambda float64, initialWeights []float64) ([]float64, [][]float64) {
@@ -121,9 +135,9 @@ func predict(Xtrain [][]float64, ytrain []int64,
 	Xtest [][]float64, yTest []int64,
 	weights []float64,
 	parameters MinimisationParameters,
-	preprocessing string, withEncryption bool,
+	preprocessing preprocessing, withEncryption bool,
 	precisionApproxCoefficients float64, precisionData float64, precisionWeights float64) (float64,
-	float64, float64, float64, float64) {
+	float64, float64, float64, float64, error) {
 
 	k := parameters.k
 	lambda := parameters.lambda
@@ -137,7 +151,10 @@ func predict(Xtrain [][]float64, ytrain []int64,
 	XtrainSaved := Xtrain
 
 	// data pre-processing
-	Xtrain = libdrynxencoding.Standardise(Xtrain)
+	Xtrain, err := libdrynxencoding.Standardise(Xtrain)
+	if err != nil {
+		return 0, 0, 0, 0, 0, err
+	}
 	Xtrain = libdrynxencoding.Augment(Xtrain)
 
 	// the client's (public key, private key) pair
@@ -168,11 +185,13 @@ func predict(Xtrain [][]float64, ytrain []int64,
 
 	// prediction computation
 	// standardise the testing set using the mean and standard deviation of the training set
-	if preprocessing == "standardize" {
-		Xtest = libdrynxencoding.StandardiseWithTrain(Xtest, XtrainSaved)
-		//Xtest = encoding.Standardise(Xtest)
-	} else if preprocessing == "normalize" {
-		Xtest = libdrynxencoding.NormalizeWith(Xtest, XtrainSaved)
+	if preprocessing == PREPROCESSING_STANDARDIZE {
+		Xtest, err = libdrynxencoding.StandardiseWithTrain(Xtest, XtrainSaved)
+	} else if preprocessing == PREPROCESSING_NORMALIZE {
+		Xtest, err = libdrynxencoding.NormalizeWith(Xtest, XtrainSaved)
+	}
+	if err != nil {
+		return 0, 0, 0, 0, 0, err
 	}
 	// note: the test data does not need to be augmented with 1s
 
@@ -235,12 +254,12 @@ func predict(Xtrain [][]float64, ytrain []int64,
 	//encoding.SaveToFile(tpr, "../../data/tpr.txt")
 	//encoding.SaveToFile(fpr, "../../data/fpr.txt")
 
-	return accuracy, precision, recall, fscore, auc
+	return accuracy, precision, recall, fscore, auc, nil
 }
 
 func predictWithRandomSplit(X [][]float64, y []int64, weights []float64,
-	ratio float64, parameters MinimisationParameters, preprocessing string, precisionApproxCoefficients float64,
-	precisionData float64, precisionWeights float64, withEncryption bool, numberTrials int, initSeed int64) {
+	ratio float64, parameters MinimisationParameters, preprocessing preprocessing, precisionApproxCoefficients float64,
+	precisionData float64, precisionWeights float64, withEncryption bool, numberTrials int, initSeed int64) error {
 
 	accuracy := make([]float64, numberTrials)
 	precision := make([]float64, numberTrials)
@@ -261,8 +280,12 @@ func predictWithRandomSplit(X [][]float64, y []int64, weights []float64,
 		log.Lvl2("training set:", len(Xtrain))
 		log.Lvl2("testing set: ", len(Xtest))
 
-		accuracy[i], precision[i], recall[i], fscore[i], auc[i] = predict(Xtrain, ytrain, Xtest, ytest, weights,
+		var err error
+		accuracy[i], precision[i], recall[i], fscore[i], auc[i], err = predict(Xtrain, ytrain, Xtest, ytest, weights,
 			parameters, preprocessing, withEncryption, precisionApproxCoefficients, precisionData, precisionWeights)
+		if err != nil {
+			return err
+		}
 
 		meanAccuracy += accuracy[i]
 		meanPrecision += precision[i]
@@ -286,6 +309,8 @@ func predictWithRandomSplit(X [][]float64, y []int64, weights []float64,
 	log.Lvl2()
 
 	libdrynxencoding.PrintForLatex(meanAccuracy, meanPrecision, meanRecall, meanFscore, meanAUC)
+
+	return nil
 }
 
 func predictGoml(X [][]float64, y []int64, ratio float64, parameters MinimisationParameters, numberTrials int, initSeed int64) {
@@ -357,14 +382,14 @@ func predictGoml(X [][]float64, y []int64, ratio float64, parameters Minimisatio
 
 // minimisation parameters for the SPECTF dataset from the paper "Scalable and Secure Logistic Regression via
 // Homomorphic Encryption"
-func getParametersForSPECTF() (MinimisationParameters, float64, string, string, string, string, float64, float64,
+func getParametersForSPECTF() (MinimisationParameters, float64, preprocessing, string, string, string, float64, float64,
 	float64) {
 	k := 2
 	lambda := 1.0
 	step := 0.012
 	maxIterations := 450
 	// none, standardize or normalize
-	preprocessing := "standardize"
+	preprocessing := PREPROCESSING_STANDARDIZE
 	ratio := 0.3
 
 	// initial weights in the paper
@@ -408,50 +433,64 @@ var SPECTFpaperWeightsWithEncryption = []float64{
 	-1.123225, -0.036603, -0.394657, -0.485166, 0.421146}
 
 func TestFindMinimumWeightsForSPECTF(t *testing.T) {
-	//t.Skip()
 	log.Lvl2("Find minimum weights for SPECTF")
 	log.Lvl2("-------------------------------")
 
 	parameters, _, preprocessing, SPECTFTraining, _, _, precisionApproxCoefficients, _, _ := getParametersForSPECTF()
-	X, y := libdrynxencoding.LoadData("SPECTF", SPECTFTraining)
+	X, y, err := libdrynxencoding.LoadData("SPECTF", SPECTFTraining)
+	require.NoError(t, err)
 
-	compareFindMinimumWeights(X, y, parameters, preprocessing, false, precisionApproxCoefficients, SPECTFpaperWeightsWithoutEncryption)
+	require.NoError(t, compareFindMinimumWeights(X, y, parameters, preprocessing, false, precisionApproxCoefficients, SPECTFpaperWeightsWithoutEncryption))
 }
 
 func TestFindMinimumWeightsWithEncryptionForSPECTF(t *testing.T) {
-	t.Skip()
 	log.Lvl2("Find minimum weights with encryption for SPECTF")
 	log.Lvl2("-----------------------------------------------")
 
 	parameters, _, preprocessing, SPECTFTraining, _, _, precisionApproxCoefficients, _, _ := getParametersForSPECTF()
-	X, y := libdrynxencoding.LoadData("SPECTF", SPECTFTraining)
+	X, y, err := libdrynxencoding.LoadData("SPECTF", SPECTFTraining)
+	require.NoError(t, err)
 
-	compareFindMinimumWeights(X, y, parameters, preprocessing, true, precisionApproxCoefficients, SPECTFpaperWeightsWithEncryption)
+	require.NoError(t, compareFindMinimumWeights(X, y, parameters, preprocessing, true, precisionApproxCoefficients, SPECTFpaperWeightsWithEncryption))
 }
 
-func predictForSPECTF(weights []float64, withEncryption bool) {
+func predictForSPECTF(weights []float64, withEncryption bool) error {
 	parameters, _, preprocessing, SPECTFTraining, SPECTFTesting, _, precisionApproxCoefficients,
 		precisionData, precisionWeights := getParametersForSPECTF()
 
-	Xtrain, ytrain := libdrynxencoding.LoadData("SPECTF", SPECTFTraining)
-	Xtest, ytest := libdrynxencoding.LoadData("SPECTF", SPECTFTesting)
+	Xtrain, ytrain, err := libdrynxencoding.LoadData("SPECTF", SPECTFTraining)
+	if err != nil {
+		return err
+	}
+	Xtest, ytest, err := libdrynxencoding.LoadData("SPECTF", SPECTFTesting)
+	if err != nil {
+		return err
+	}
 
-	accuracy, precision, recall, fscore, auc := predict(Xtrain, ytrain, Xtest, ytest, weights, parameters,
+	accuracy, precision, recall, fscore, auc, err := predict(Xtrain, ytrain, Xtest, ytest, weights, parameters,
 		preprocessing, withEncryption, precisionApproxCoefficients, precisionData, precisionWeights)
 
 	libdrynxencoding.PrintForLatex(accuracy, precision, recall, fscore, auc)
+
+	return nil
 }
 
 func TestPredictForSPECTF(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	log.Lvl2("Predict for SPECTF")
 	log.Lvl2("------------------")
 
-	predictForSPECTF(nil, false)
+	require.NoError(t, predictForSPECTF(nil, false))
 }
 
 func TestPredictForSPECTFRandom(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	log.Lvl2("Predict for SPECTF random")
 	log.Lvl2("-------------------------")
 
@@ -460,41 +499,56 @@ func TestPredictForSPECTFRandom(t *testing.T) {
 
 	numberTrials := 1 //10
 	initSeed := int64(5432109876)
-	X, y := libdrynxencoding.LoadData("SPECTF", SPECTFAll)
+	X, y, err := libdrynxencoding.LoadData("SPECTF", SPECTFAll)
+	require.NoError(t, err)
 
-	predictWithRandomSplit(X, y, nil, ratio, parameters, preprocessing, precisionApproxCoefficients, precisionData,
-		precisionWeights, false, numberTrials, initSeed)
+	require.NoError(t, predictWithRandomSplit(X, y, nil, ratio, parameters, preprocessing, precisionApproxCoefficients, precisionData,
+		precisionWeights, false, numberTrials, initSeed))
 }
 
 func TestPredictWithEncryptionForSPECTF(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	log.Lvl2("Predict with encryption for SPECTF")
 	log.Lvl2("----------------------------------")
 
-	predictForSPECTF(nil, true)
+	require.NoError(t, predictForSPECTF(nil, true))
 }
 
 func TestPredictForSPECTFPaper(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	log.Lvl2("Predict for SPECTF")
 	log.Lvl2("------------------")
 
-	predictForSPECTF(SPECTFpaperWeightsWithoutEncryption, false)
+	require.NoError(t, predictForSPECTF(SPECTFpaperWeightsWithoutEncryption, false))
 }
 
 func TestPredictWithEncryptionForSPECTFPaper(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	log.Lvl2("Predict with encryption for SPECTF")
 	log.Lvl2("----------------------------------")
 
-	predictForSPECTF(SPECTFpaperWeightsWithEncryption, true)
+	require.NoError(t, predictForSPECTF(SPECTFpaperWeightsWithEncryption, true))
 }
 
 func TestPredictForSPECTFWithGoml(t *testing.T) {
-	t.Skip()
-	parameters, _, SPECTFTraining, SPECTFTesting, _, _, _, _, _ := getParametersForSPECTF()
-	Xtrain, ytrain := libdrynxencoding.LoadData("SPECTF", SPECTFTraining)
-	Xtest, ytest := libdrynxencoding.LoadData("SPECTF", SPECTFTesting)
+	if testing.Short() {
+		t.Skip()
+	}
+
+	parameters, _, _, SPECTFTraining, SPECTFTesting, _, _, _, _ := getParametersForSPECTF()
+	Xtrain, ytrain, err := libdrynxencoding.LoadData("SPECTF", SPECTFTraining)
+	require.NoError(t, err)
+	Xtest, ytest, err := libdrynxencoding.LoadData("SPECTF", SPECTFTesting)
+	require.NoError(t, err)
 
 	model := linear.NewLogistic(base.BatchGA, parameters.step, parameters.lambda, parameters.maxIterations, Xtrain,
 		libdrynxencoding.Int64ToFloat641DArray(ytrain))
@@ -530,9 +584,13 @@ func TestPredictForSPECTFWithGoml(t *testing.T) {
 }
 
 func TestLPredictForSPECTFRandomWtihGoml(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	parameters, _, _, _, path, _, _, _, _ := getParametersForSPECTF()
-	X, y := libdrynxencoding.LoadData("SPECTF", path)
+	X, y, err := libdrynxencoding.LoadData("SPECTF", path)
+	require.NoError(t, err)
 	predictGoml(X, y, 0.3, parameters, 1000, int64(5432109876))
 }
 
@@ -542,12 +600,12 @@ func TestLPredictForSPECTFRandomWtihGoml(t *testing.T) {
 
 // minimisation parameters for the Pima dataset from the paper "Scalable and Secure Logistic Regression via
 // Homomorphic Encryption"
-func getParametersForPima() (MinimisationParameters, float64, string, string, float64, float64, float64) {
+func getParametersForPima() (MinimisationParameters, float64, preprocessing, string, float64, float64, float64) {
 	k := 2
 	lambda := 1.0
 	step := 0.1
 	maxIterations := 200
-	preprocessing := "standardize"
+	preprocessing := PREPROCESSING_STANDARDIZE
 	ratio := 0.75
 
 	initialWeights := []float64{
@@ -574,27 +632,38 @@ var PimaPaperWeightsWithEncryption = []float64{
 	-0.618931, 0.272079, 0.687556, -0.164313, 0.23873, -0.078103, 0.426285, 0.215544, 0.085846}
 
 func TestFindMinimumWeightsForPima(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	log.Lvl2("Find minimum weights for Pima")
 	log.Lvl2("-----------------------------")
 
 	parameters, _, preprocessing, path, precisionApproxCoefficieents, _, _ := getParametersForPima()
-	X, y := libdrynxencoding.LoadData("Pima", path)
-	compareFindMinimumWeights(X, y, parameters, preprocessing, false, precisionApproxCoefficieents, PimaPaperWeightsWithoutEncryption)
+	X, y, err := libdrynxencoding.LoadData("Pima", path)
+	require.NoError(t, err)
+	require.NoError(t, compareFindMinimumWeights(X, y, parameters, preprocessing, false, precisionApproxCoefficieents, PimaPaperWeightsWithoutEncryption))
 }
 
 func TestFindMinimumWeightsWithEncryptionForPima(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	log.Lvl2("Find minimum weights with encryption for PIMA")
 	log.Lvl2("---------------------------------------------")
 
 	parameters, _, preprocessing, path, precisionApproxCoefficients, _, _ := getParametersForPima()
-	X, y := libdrynxencoding.LoadData("Pima", path)
-	compareFindMinimumWeights(X, y, parameters, preprocessing, true, precisionApproxCoefficients, PimaPaperWeightsWithEncryption)
+	X, y, err := libdrynxencoding.LoadData("Pima", path)
+	require.NoError(t, err)
+	require.NoError(t, compareFindMinimumWeights(X, y, parameters, preprocessing, true, precisionApproxCoefficients, PimaPaperWeightsWithEncryption))
 }
 
 func TestPredictForPima(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	log.Lvl2("Predict for Pima")
 	log.Lvl2("----------------")
 
@@ -602,14 +671,18 @@ func TestPredictForPima(t *testing.T) {
 		precisionWeights := getParametersForPima()
 	numberTrials := 10
 	initSeed := int64(5432109876)
-	X, y := libdrynxencoding.LoadData("Pima", path)
+	X, y, err := libdrynxencoding.LoadData("Pima", path)
+	require.NoError(t, err)
 
-	predictWithRandomSplit(X, y, nil, ratio, parameters, preprocessing, precisionApproxCoefficients, precisionData,
-		precisionWeights, false, numberTrials, initSeed)
+	require.NoError(t, predictWithRandomSplit(X, y, nil, ratio, parameters, preprocessing, precisionApproxCoefficients, precisionData,
+		precisionWeights, false, numberTrials, initSeed))
 }
 
 func TestPredictWithEncryptionForPima(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	log.Lvl2("Predict with encryption for Pima")
 	log.Lvl2("--------------------------------")
 
@@ -617,14 +690,18 @@ func TestPredictWithEncryptionForPima(t *testing.T) {
 		precisionWeights := getParametersForPima()
 	numberTrials := 10
 	initSeed := int64(5432109876)
-	X, y := libdrynxencoding.LoadData("Pima", path)
+	X, y, err := libdrynxencoding.LoadData("Pima", path)
+	require.NoError(t, err)
 
-	predictWithRandomSplit(X, y, nil, ratio, parameters, preprocessing, precisionApproxCoefficients, precisionData,
-		precisionWeights, true, numberTrials, initSeed)
+	require.NoError(t, predictWithRandomSplit(X, y, nil, ratio, parameters, preprocessing, precisionApproxCoefficients, precisionData,
+		precisionWeights, true, numberTrials, initSeed))
 }
 
 func TestPredictForPimaPaper(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	log.Lvl2("Predict for Pima")
 	log.Lvl2("----------------")
 
@@ -632,15 +709,19 @@ func TestPredictForPimaPaper(t *testing.T) {
 		precisionWeights := getParametersForPima()
 	numberTrials := 10
 	initSeed := int64(5432109876)
-	X, y := libdrynxencoding.LoadData("Pima", path)
+	X, y, err := libdrynxencoding.LoadData("Pima", path)
+	require.NoError(t, err)
 
-	predictWithRandomSplit(X, y, PimaPaperWeightsWithoutEncryption, ratio, parameters, preprocessing,
+	require.NoError(t, predictWithRandomSplit(X, y, PimaPaperWeightsWithoutEncryption, ratio, parameters, preprocessing,
 		precisionApproxCoefficients, precisionData, precisionWeights,
-		false, numberTrials, initSeed)
+		false, numberTrials, initSeed))
 }
 
 func TestPredictForPimaMatlab(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	log.Lvl2("Predict for Pima")
 	log.Lvl2("----------------")
 
@@ -651,41 +732,50 @@ func TestPredictForPimaMatlab(t *testing.T) {
 		precisionWeights := getParametersForPima()
 	numberTrials := 10
 	initSeed := int64(5432109876)
-	X, y := libdrynxencoding.LoadData("Pima", path)
+	X, y, err := libdrynxencoding.LoadData("Pima", path)
+	require.NoError(t, err)
 
-	predictWithRandomSplit(X, y, PimaMatlabWeights, ratio, parameters, preprocessing, precisionApproxCoefficients,
+	require.NoError(t, predictWithRandomSplit(X, y, PimaMatlabWeights, ratio, parameters, preprocessing, precisionApproxCoefficients,
 		precisionData, precisionWeights,
-		false, numberTrials, initSeed)
+		false, numberTrials, initSeed))
 }
 
 func TestPredictWithEncryptionForPimaPaper(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	log.Lvl2("Predict with encryption for Pima")
 	log.Lvl2("--------------------------------")
 
 	parameters, ratio, preprocessing, path, precisionApproxCoefficients, precisionData, precisionWeights := getParametersForPima()
 	numberTrials := 10
 	initSeed := int64(5432109876)
-	X, y := libdrynxencoding.LoadData("Pima", path)
+	X, y, err := libdrynxencoding.LoadData("Pima", path)
+	require.NoError(t, err)
 
-	predictWithRandomSplit(X, y, PimaPaperWeightsWithEncryption, ratio, parameters, preprocessing,
+	require.NoError(t, predictWithRandomSplit(X, y, PimaPaperWeightsWithEncryption, ratio, parameters, preprocessing,
 		precisionApproxCoefficients, precisionData, precisionWeights,
-		true, numberTrials, initSeed)
+		true, numberTrials, initSeed))
 }
 
 func TestPredictForPimaWithGoml(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	parameters, ratio, _, path, _, _, _ := getParametersForPima()
-	X, y := libdrynxencoding.LoadData("Pima", path)
+	X, y, err := libdrynxencoding.LoadData("Pima", path)
+	require.NoError(t, err)
 	predictGoml(X, y, ratio, parameters, 10, int64(5432109876))
 }
 
-func getParametersForPCS() (MinimisationParameters, float64, string, string, float64, float64, float64) {
+func getParametersForPCS() (MinimisationParameters, float64, preprocessing, string, float64, float64, float64) {
 	k := 2
 	lambda := 1.0
 	step := 0.1
 	maxIterations := 25
-	preprocessing := "standardize"
+	preprocessing := PREPROCESSING_STANDARDIZE
 	ratio := 0.8
 
 	initialWeights := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
@@ -697,14 +787,17 @@ func getParametersForPCS() (MinimisationParameters, float64, string, string, flo
 
 	// data file related parameters
 	dataFolder := "../../data/"
-	path := dataFolder + "PCS_dataset.txt"
+	path := dataFolder + "PCS_dataset_testing.txt"
 
 	return MinimisationParameters{k, lambda, step, maxIterations, initialWeights}, ratio,
 		preprocessing, path, precisionApproxCoefficients, precisionData, precisionWeights
 }
 
 func TestPredictForPCS(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	log.Lvl2("Predict for PCS")
 	log.Lvl2("---------------")
 
@@ -712,59 +805,20 @@ func TestPredictForPCS(t *testing.T) {
 		precisionWeights := getParametersForPCS()
 	numberTrials := 10
 	initSeed := int64(5432109876)
-	X, y := libdrynxencoding.LoadData("PCS", path)
+	X, y, err := libdrynxencoding.LoadData("PCS", path)
+	require.NoError(t, err)
 
-	predictWithRandomSplit(X, y, nil, ratio, parameters, preprocessing, precisionApproxCoefficients, precisionData,
-		precisionWeights, false, numberTrials, initSeed)
+	require.NoError(t, predictWithRandomSplit(X, y, nil, ratio, parameters, preprocessing, precisionApproxCoefficients, precisionData,
+		precisionWeights, false, numberTrials, initSeed))
 }
 
 func TestPredictForPCSWithGoml(t *testing.T) {
-	t.Skip()
+	if testing.Short() {
+		t.Skip()
+	}
+
 	parameters, ratio, _, path, _, _, _ := getParametersForPCS()
-	X, y := libdrynxencoding.LoadData("PCS", path)
+	X, y, err := libdrynxencoding.LoadData("PCS", path)
+	require.NoError(t, err)
 	predictGoml(X, y, ratio, parameters, 5, int64(5432109876))
-}
-
-func getParametersForLBW() (MinimisationParameters, float64, string, string, float64, float64, float64) {
-	k := 2
-	lambda := 1.0
-	step := 0.1
-	maxIterations := 25
-	preprocessing := "standardize"
-	ratio := 0.8
-
-	initialWeights := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
-
-	// floating-point precision when converting from float to int and later back to float
-	precisionApproxCoefficients := 1e0
-	precisionData := 1e0
-	precisionWeights := 1e0
-
-	// data file related parameters
-	dataFolder := "../../data/"
-	path := dataFolder + "LBW_dataset.txt"
-
-	return MinimisationParameters{k, lambda, step, maxIterations, initialWeights}, ratio,
-		preprocessing, path, precisionApproxCoefficients, precisionData, precisionWeights
-}
-
-func TestPredictForLBW(t *testing.T) {
-	t.Skip()
-	log.Lvl2("Predict for LBW")
-	log.Lvl2("---------------")
-
-	parameters, ratio, preprocessing, path, precisionApproxCoefficients, precisionData, precisionWeights := getParametersForLBW()
-	numberTrials := 10
-	initSeed := int64(5432109876)
-	X, y := libdrynxencoding.LoadData("LBW", path)
-
-	predictWithRandomSplit(X, y, nil, ratio, parameters, preprocessing, precisionApproxCoefficients, precisionData,
-		precisionWeights, false, numberTrials, initSeed)
-}
-
-func TestPredictForLBWWithGoml(t *testing.T) {
-	t.Skip()
-	parameters, ratio, _, path, _, _, _ := getParametersForLBW()
-	X, y := libdrynxencoding.LoadData("LBW", path)
-	predictGoml(X, y, ratio, parameters, 10, int64(5432109876))
 }

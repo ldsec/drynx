@@ -97,7 +97,7 @@ func surveyRun(c *cli.Context) error {
 		&roster, // CN roster
 		&roster, // VN roster
 		map[string]*[]onet_network.ServerIdentity{ // map CN to DPs
-			roster.List[0].String(): &[]onet_network.ServerIdentity{*roster.List[1], *roster.List[2]}},
+			roster.List[0].String(): {*roster.List[1], *roster.List[2]}},
 		map[string]kyber.Point{ // map CN|DP|VN to pub key
 			roster.List[0].String(): roster.List[0].Public,
 			roster.List[1].String(): roster.List[1].Public,

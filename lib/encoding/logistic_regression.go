@@ -1,24 +1,29 @@
 package libdrynxencoding
 
 import (
-	"bufio"
+	"encoding/csv"
+	"errors"
 	"fmt"
-	"github.com/ldsec/drynx/lib"
-	"github.com/ldsec/drynx/lib/range"
-	"github.com/ldsec/unlynx/lib"
-	"github.com/montanaflynn/stats"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/onet/v3/log"
-	"go.dedis.ch/onet/v3/network"
-	"gonum.org/v1/gonum/integrate"
-	"gonum.org/v1/gonum/stat"
-	"gonum.org/v1/gonum/stat/combin"
+	"io"
 	"math"
 	"math/rand"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/onet/v3/log"
+	"go.dedis.ch/onet/v3/network"
+
+	"github.com/ldsec/drynx/lib"
+	"github.com/ldsec/drynx/lib/range"
+	"github.com/ldsec/unlynx/lib"
+
+	"github.com/montanaflynn/stats"
+	"gonum.org/v1/gonum/integrate"
+	"gonum.org/v1/gonum/stat"
+	"gonum.org/v1/gonum/stat/combin"
 )
 
 // TaylorCoefficients are the taylor coefficients (first taylor expansion coefficients of ln(1/(1+exp(x)))
@@ -38,7 +43,7 @@ var NumDps = 10
 // -------------------------
 
 // EncodeLogisticRegression computes and encrypts the data provider's coefficients for logistic regression
-func EncodeLogisticRegression(xData [][]float64, yData []int64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point) ([]libunlynx.CipherText, []int64) {
+func EncodeLogisticRegression(xData [][]float64, yData []int64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point) ([]libunlynx.CipherText, []int64, error) {
 
 	d := lrParameters.NbrFeatures
 	n := getTotalNumberApproxCoefficients(d, lrParameters.K)
@@ -62,7 +67,10 @@ func EncodeLogisticRegression(xData [][]float64, yData []int64, lrParameters lib
 		} else {
 			// using local means and standard deviations, if not given
 			log.Lvl2("Standardising the training set with local means and standard deviations...")
-			XStandardised = Standardise(xData)
+			var err error
+			if XStandardised, err = Standardise(xData); err != nil {
+				return nil, nil, err
+			}
 		}
 
 		// add an all 1s column to the data (offset term)
@@ -106,7 +114,7 @@ func EncodeLogisticRegression(xData [][]float64, yData []int64, lrParameters lib
 	log.Lvl2("Aggregated approximation coefficients:", aggregatedApproxCoefficientsIntPacked)
 	log.Lvl2("Number of aggregated approximation coefficients:", len(aggregatedApproxCoefficientsIntPacked))
 
-	return encryptedAggregatedApproxCoefficients, aggregatedApproxCoefficientsIntPacked
+	return encryptedAggregatedApproxCoefficients, aggregatedApproxCoefficientsIntPacked, nil
 }
 
 // CipherAndRandom contains one ciphertext and the scalar used in its encryption
@@ -116,7 +124,7 @@ type CipherAndRandom struct {
 }
 
 // EncodeLogisticRegressionWithProofs computes and encrypts the data provider's coefficients for logistic regression with range proofs
-func EncodeLogisticRegressionWithProofs(xData [][]float64, yData []int64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynxrange.CreateProof) {
+func EncodeLogisticRegressionWithProofs(xData [][]float64, yData []int64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point, sigs [][]libdrynx.PublishSignature, lu []*[]int64) ([]libunlynx.CipherText, []int64, []libdrynxrange.CreateProof, error) {
 
 	d := lrParameters.NbrFeatures
 	n := getTotalNumberApproxCoefficients(d, lrParameters.K)
@@ -141,7 +149,10 @@ func EncodeLogisticRegressionWithProofs(xData [][]float64, yData []int64, lrPara
 		} else {
 			// using local means and standard deviations, if not given
 			log.Lvl2("Standardising the training set with local means and standard deviations...")
-			XStandardised = Standardise(xData)
+			var err error
+			if XStandardised, err = Standardise(xData); err != nil {
+				return nil, nil, nil, err
+			}
 		}
 
 		// add an all 1s column to the data (offset term)
@@ -199,7 +210,7 @@ func EncodeLogisticRegressionWithProofs(xData [][]float64, yData []int64, lrPara
 	}
 	libunlynx.EndParallelize(wg1)
 
-	return encryptedAggregatedApproxCoefficientsOnlyCipher, aggregatedApproxCoefficientsIntPacked, createRangeProof
+	return encryptedAggregatedApproxCoefficientsOnlyCipher, aggregatedApproxCoefficientsIntPacked, createRangeProof, nil
 }
 
 // DecodeLogisticRegression decodes the logistic regression approximation coefficients (querier side)
@@ -892,83 +903,61 @@ func PredictHomomorphic(encryptedData libunlynx.CipherVector, weights []float64,
 //--------------------
 
 // ComputeMeans returns the means of each column of the given data matrix
-func ComputeMeans(data [][]float64) []float64 {
-	nbFeatures := len(data[0])
+func ComputeMeans(data [][]float64) ([]float64, error) {
+	means := make([]float64, len(data[0]))
 
-	means := make([]float64, nbFeatures)
-
-	for i := 0; i < nbFeatures; i++ {
-		feature := GetColumn(data, i)
+	for i := range means {
+		feature, err := GetColumn(data, uint(i))
+		if err != nil {
+			return nil, err
+		}
 		means[i], _ = stats.Mean(feature)
 	}
 
-	return means
+	return means, nil
 }
 
 // ComputeStandardDeviations returns the standard deviation of each column of the given data matrix
-func ComputeStandardDeviations(data [][]float64) []float64 {
-	nbFeatures := len(data[0])
+func ComputeStandardDeviations(data [][]float64) ([]float64, error) {
+	standardDeviations := make([]float64, len(data[0]))
 
-	standardDeviations := make([]float64, nbFeatures)
-
-	for i := 0; i < nbFeatures; i++ {
-		feature := GetColumn(data, i)
+	for i := range standardDeviations {
+		feature, err := GetColumn(data, uint(i))
+		if err != nil {
+			return nil, err
+		}
 		standardDeviations[i], _ = stats.StandardDeviation(feature)
 	}
 
-	return standardDeviations
+	return standardDeviations, nil
 }
 
 // Standardise returns the standardized 2D array version of the given 2D array
 // i.e. x' = (x - mean) / standard deviation
-func Standardise(matrix [][]float64) [][]float64 {
-
-	nbFeatures := len(matrix[0])
-
-	sds := make([]float64, nbFeatures)
-	means := make([]float64, nbFeatures)
-
-	for i := 0; i < nbFeatures; i++ {
-		feature := GetColumn(matrix, i)
-		means[i], _ = stats.Mean(feature)
-		sds[i], _ = stats.StandardDeviation(feature)
-	}
-
-	standardisedMatrix := make([][]float64, len(matrix))
-	for record := 0; record < len(matrix); record++ {
-		standardisedMatrix[record] = make([]float64, nbFeatures)
-		for i := 0; i < nbFeatures; i++ {
-			standardisedMatrix[record][i] = float64(matrix[record][i]-means[i]) / sds[i]
-		}
-	}
-
-	return standardisedMatrix
+func Standardise(matrix [][]float64) ([][]float64, error) {
+	return StandardiseWithTrain(matrix, matrix)
 }
 
 // StandardiseWithTrain standardises a matrix with the given matrix means and standard deviations
-func StandardiseWithTrain(matrixTest, matrixTrain [][]float64) [][]float64 {
-
-	nbFeatures := len(matrixTest[0])
-
-	sd := make([]float64, nbFeatures)
-	mean := make([]float64, nbFeatures)
-
-	for i := 0; i < nbFeatures; i++ {
-		feature := GetColumn(matrixTrain, i)
-
-		mean[i], _ = stats.Mean(feature)
-		sd[i], _ = stats.StandardDeviation(feature)
+func StandardiseWithTrain(matrixTest, matrixTrain [][]float64) ([][]float64, error) {
+	sds, err := ComputeStandardDeviations(matrixTrain)
+	if err != nil {
+		return nil, err
+	}
+	means, err := ComputeMeans(matrixTrain)
+	if err != nil {
+		return nil, err
 	}
 
 	standardisedMatrix := make([][]float64, len(matrixTest))
-	for record := 0; record < len(matrixTest); record++ {
-		standardisedMatrix[record] = make([]float64, nbFeatures)
-		for i := 0; i < nbFeatures; i++ {
-			standardisedMatrix[record][i] = float64(matrixTest[record][i]-mean[i]) / sd[i]
+	for i, record := range matrixTest {
+		standardisedMatrix[i] = make([]float64, len(record))
+		for j, v := range record {
+			standardisedMatrix[i][j] = float64(v-means[j]) / sds[j]
 		}
 	}
 
-	return standardisedMatrix
+	return standardisedMatrix, nil
 }
 
 // StandardiseWith standardises a dataset column-wise using the given means and standard deviations
@@ -989,53 +978,36 @@ func StandardiseWith(data [][]float64, means []float64, standardDeviations []flo
 }
 
 // Normalize normalises a matrix column-wise
-func Normalize(matrix [][]float64) [][]float64 {
-
-	nbFeatures := len(matrix[0])
-	min := make([]float64, nbFeatures)
-	max := make([]float64, nbFeatures)
-
-	for i := 0; i < nbFeatures; i++ {
-		feature := GetColumn(matrix, i)
-
-		min[i], _ = stats.Min(feature)
-		max[i], _ = stats.Max(feature)
-	}
-
-	normalizedMatrix := make([][]float64, len(matrix))
-	for record := 0; record < len(matrix); record++ {
-		normalizedMatrix[record] = make([]float64, nbFeatures)
-		for i := 0; i < nbFeatures; i++ {
-			normalizedMatrix[record][i] = float64(matrix[record][i]-min[i]) / (max[i] - min[i])
-		}
-	}
-
-	return normalizedMatrix
+func Normalize(matrix [][]float64) ([][]float64, error) {
+	return NormalizeWith(matrix, matrix)
 }
 
 // NormalizeWith normalises a matrix column-wise with the given matrix min and max values
-func NormalizeWith(matrixTest, matrixTrain [][]float64) [][]float64 {
+func NormalizeWith(matrixTest, matrixTrain [][]float64) ([][]float64, error) {
+	nbFeatures := len(matrixTrain[0])
 
-	nbFeatures := len(matrixTest[0])
 	min := make([]float64, nbFeatures)
 	max := make([]float64, nbFeatures)
 
-	for i := 0; i < nbFeatures; i++ {
-		feature := GetColumn(matrixTrain, i)
+	for i := range matrixTrain[0] {
+		feature, err := GetColumn(matrixTrain, uint(i))
+		if err != nil {
+			return nil, err
+		}
 
 		min[i], _ = stats.Min(feature)
 		max[i], _ = stats.Max(feature)
 	}
 
 	normalizedMatrix := make([][]float64, len(matrixTest))
-	for record := 0; record < len(matrixTest); record++ {
-		normalizedMatrix[record] = make([]float64, nbFeatures)
-		for i := 0; i < nbFeatures; i++ {
-			normalizedMatrix[record][i] = float64(matrixTest[record][i]-min[i]) / (max[i] - min[i])
+	for i, record := range matrixTest {
+		normalizedMatrix[i] = make([]float64, len(record))
+		for j, v := range record {
+			normalizedMatrix[i][j] = float64(v-min[j]) / (max[j] - min[j])
 		}
 	}
 
-	return normalizedMatrix
+	return normalizedMatrix, nil
 }
 
 // Augment returns the given 2D array with an additional all 1's column prepended as the first column
@@ -1226,22 +1198,25 @@ func AreaUnderCurve(predicted []float64, actual []int64) float64 {
 }*/
 
 // SaveToFile saves a float64 array to file
-func SaveToFile(array []float64, filename string) {
+func SaveToFile(array []float64, filename string) error {
 	file, err := os.OpenFile(filename, os.O_APPEND, 0666)
-
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(2)
+		return fmt.Errorf("opening file: %w", err)
+	}
+	defer file.Close()
+
+	arrayAsStrings := make([]string, len(array))
+	for i, v := range array {
+		arrayAsStrings[i] = strconv.FormatFloat(v, 'e', -1, 64)
 	}
 
-	for j := 0; j < len(array)-1; j++ {
-		_, err = file.WriteString(fmt.Sprint(array[j]) + ",")
+	writer := csv.NewWriter(file)
+	err = writer.WriteAll([][]string{arrayAsStrings})
+	if err != nil {
+		return fmt.Errorf("writing file: %w", err)
 	}
-	_, err = file.WriteString(fmt.Sprintln(array[len(array)-1]))
 
-	if err := file.Close(); err != nil {
-		log.Fatal("Error closing file:", err)
-	}
+	return nil
 }
 
 // PrintForLatex for copy-pasting in LaTex
@@ -1297,149 +1272,82 @@ func String2DToFloat64(dataString [][]string) [][]float64 {
 
 // LoadData loads some specific datasets from file into a pair of feature matrix and label vector
 // the available datasets are: SPECTF, Pima, PCS and LBW
-func LoadData(dataset string, filename string) ([][]float64, []int64) {
+func LoadData(dataset string, filename string) ([][]float64, []int64, error) {
+	labelColumn := uint(0)
 
-	var data [][]float64
-	var X [][]float64
-	var y []int64
-
-	labelColumn := 0
-
-	switch dataset {
-	case "SPECTF":
-		dataString := ReadFile(filename, ",")
-		data = String2DToFloat64(dataString)
-		labelColumn = 0
-
-		X = RemoveColumn(data, labelColumn)
-		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
-	case "Pima":
-		dataString := ReadFile(filename, ",")
-		data = String2DToFloat64(dataString)
-
-		labelColumn = 0 // /!\ 8 for Pima_dataset but 0 for Pima_dataset_training/testing
-		X = RemoveColumn(data, labelColumn)
-		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
-	case "BC":
-		fmt.Println("ReadFile starts...")
-		dataString := ReadFile(filename, ",")
-		fmt.Println("ReadFile succeed")
-		data = String2DToFloat64(dataString)
-		labelColumn = 0
-
-		X = RemoveColumn(data, labelColumn)
-		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
-	case "PCS":
-		dataString := ReadFile(filename, ",")
-
-		fmt.Println(dataString)
-		// remove the index column and the two last columns (unused)
-		dataString = RemoveColumnString(dataString, 11)
-		dataString = RemoveColumnString(dataString, 10)
-		dataString = RemoveColumnString(dataString, 0)
-
-		// convert all fields from string to float64
-		data = String2DToFloat64(dataString)
-
-		X = RemoveColumn(data, 0)
-		y = Float64ToInt641DArray(GetColumn(data, 0))
-	case "LBW":
-		dataString := ReadFile(filename, " ")
-
-		// replace FTV column "2+" occurrences by 2
-		dataString = ReplaceString(dataString, "\"2+\"", "2")
-
-		// convert all fields from string to float64
-		data = String2DToFloat64(dataString)
-
-		// remove the index column
-		data = RemoveColumn(data, 3)
-		// remove the actual birth weight column (the classification task becomes trivial otherwise)
-		data = RemoveColumn(data, 1)
-
-		labelColumn := 2
-		X = RemoveColumn(data, labelColumn)
-		y = Float64ToInt641DArray(GetColumn(data, labelColumn))
-	default:
-		dataString := ReadFile(filename, ",")
-		data = String2DToFloat64(dataString)
-		X = RemoveColumn(data, 0)
-		y = Float64ToInt641DArray(GetColumn(data, 0))
+	data, err := ReadFile(filename, ',')
+	if err != nil {
+		return nil, nil, fmt.Errorf("when reading file: %w", err)
 	}
 
-	return X, y
+	if dataset == "PCS" {
+		// remove the index column and the two last columns (unused)
+		for _, i := range []uint{11, 10, 0} {
+			var err error
+			if data, err = RemoveColumn(data, i); err != nil {
+				return nil, nil, err
+			}
+		}
+	}
+
+	X, err := RemoveColumn(data, labelColumn)
+	if err != nil {
+		return nil, nil, err
+	}
+	yFloat, err := GetColumn(data, labelColumn)
+	if err != nil {
+		return nil, nil, err
+	}
+	y := Float64ToInt641DArray(yFloat)
+
+	return X, y, nil
 }
 
 // ReadFile reads a dataset from file into a string matrix
 // removes incorrectly formatted records
-func ReadFile(path string, separator string) [][]string {
-	const maxCapacity = 512 * 1024
-
-	inFile, err := os.Open(path)
+func ReadFile(path string, separator rune) ([][]float64, error) {
+	file, err := os.Open(path)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(2)
+		return nil, fmt.Errorf("opening file: %w", err)
 	}
+	defer file.Close()
 
-	defer inFile.Close()
+	reader := csv.NewReader(file)
+	reader.Comma = separator
+	reader.TrimLeadingSpace = true
 
-	var matrix [][]string
-	nbrRecordsIgnored := 0
+	var records [][]float64
+	for {
+		record, err := reader.Read()
+		if record == nil && errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("reading record: %w", err)
+		}
 
-	scanner := bufio.NewScanner(inFile)
-
-	buf := make([]byte, maxCapacity)
-	scanner.Buffer(buf, maxCapacity)
-
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		line := strings.Split(scanner.Text(), separator)
-		var array []string
-		for _, e := range line {
-			i := strings.TrimSpace(e)
-			if i != "" {
-				array = append(array, i)
+		line := make([]float64, len(record))
+		for i, v := range record {
+			parsed, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return nil, fmt.Errorf("parsing as float at line %v, element %v: %w", len(records), i, err)
 			}
+			line[i] = parsed
 		}
-		matrix = append(matrix, array)
+
+		records = append(records, line)
 	}
 
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	// remove incorrectly formatted records
-	// todo: take max of len of all rows
-	fmt.Println("matrix:")
-
-	nbrFeatures := len(matrix[0])
-	var result [][]string
-
-	for _, row := range matrix {
-		if len(row) == nbrFeatures {
-			result = append(result, row)
-		} else {
-			log.Lvl2("Incorrect record formatting: record", row, "will be ignored")
-			nbrRecordsIgnored++
-		}
-	}
-
-	log.Lvl2("Total number of records ignored:", nbrRecordsIgnored)
-
-	return result
+	return records, nil
 }
 
 // GetColumn returns the column at index <idx> in the given 2D array <matrix>
-func GetColumn(matrix [][]float64, idx int) []float64 {
-
+func GetColumn(matrix [][]float64, idx uint) ([]float64, error) {
 	if len(matrix) < 0 {
-		log.Fatalf("error: empty matrix")
-		os.Exit(2)
+		return nil, errors.New("empty matrix")
 	}
-
-	if idx >= len(matrix[0]) {
-		log.Fatalf("error: column index exceeds matrix dimension")
-		os.Exit(2)
+	if idx >= uint(len(matrix[0])) {
+		return nil, errors.New("column index exceeds matrix dimension")
 	}
 
 	array := make([]float64, len(matrix))
@@ -1447,14 +1355,13 @@ func GetColumn(matrix [][]float64, idx int) []float64 {
 		array[i] = matrix[i][idx]
 	}
 
-	return array
+	return array, nil
 }
 
 // RemoveColumn returns a 2D array with the column at index <idx> removed from the given 2D array <matrix>
-func RemoveColumn(matrix [][]float64, idx int) [][]float64 {
-	if idx >= len(matrix) {
-		log.Fatalf("error: column index exceeds matrix dimension")
-		os.Exit(2)
+func RemoveColumn(matrix [][]float64, idx uint) ([][]float64, error) {
+	if idx >= uint(len(matrix[0])) {
+		return nil, errors.New("column index exceeds matrix dimension")
 	}
 
 	truncatedMatrix := make([][]float64, len(matrix))
@@ -1464,24 +1371,7 @@ func RemoveColumn(matrix [][]float64, idx int) [][]float64 {
 		truncatedMatrix[i] = append(truncatedMatrix[i], matrix[i][idx+1:]...)
 	}
 
-	return truncatedMatrix
-}
-
-// RemoveColumnString removes the column at index <idx> of the given string matrix
-func RemoveColumnString(matrix [][]string, idx int) [][]string {
-	if idx >= len(matrix) {
-		log.Fatalf("error: column index exceeds matrix dimension")
-		os.Exit(2)
-	}
-
-	truncatedMatrix := make([][]string, len(matrix))
-	for i := range matrix {
-		//truncatedMatrix[i] = make([]float64, len(matrix[i]) - 1)
-		truncatedMatrix[i] = append(truncatedMatrix[i], matrix[i][:idx]...)
-		truncatedMatrix[i] = append(truncatedMatrix[i], matrix[i][idx+1:]...)
-	}
-
-	return truncatedMatrix
+	return truncatedMatrix, nil
 }
 
 // ReplaceString replaces all strings <old> by string <new> in the given string matrix
@@ -1534,10 +1424,13 @@ func PartitionDataset(X [][]float64, y []int64, ratio float64, shuffle bool, see
 }
 
 // GetDataForDataProvider returns data records from a file for a given data provider based on its id
-func GetDataForDataProvider(datasetName, filename string, dataProviderIdentity network.ServerIdentity) ([][]float64, []int64) {
+func GetDataForDataProvider(datasetName, filename string, dataProviderIdentity network.ServerIdentity) ([][]float64, []int64, error) {
 	var xForDP [][]float64
 	var yForDP []int64
-	X, y := LoadData(datasetName, filename)
+	X, y, err := LoadData(datasetName, filename)
+	if err != nil {
+		return nil, nil, fmt.Errorf("when loading data: %w", err)
+	}
 	dataProviderID := dataProviderIdentity.String()
 	dpID, err := strconv.Atoi(dataProviderID[len(dataProviderID)-2 : len(dataProviderID)-1])
 
@@ -1551,7 +1444,7 @@ func GetDataForDataProvider(datasetName, filename string, dataProviderIdentity n
 		fmt.Println("DP", dataProviderIdentity.String(), " has:", len(xForDP), "records")
 	}
 
-	return xForDP, yForDP
+	return xForDP, yForDP, nil
 }
 
 // -----------------

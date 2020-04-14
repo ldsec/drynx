@@ -6,7 +6,6 @@ import (
 
 	"time"
 
-	"github.com/coreos/bbolt"
 	"github.com/fanliao/go-concurrentMap"
 	"github.com/ldsec/drynx/lib"
 	"github.com/ldsec/drynx/protocols"
@@ -15,6 +14,7 @@ import (
 	"go.dedis.ch/onet/v3"
 	"go.dedis.ch/onet/v3/log"
 	"go.dedis.ch/onet/v3/network"
+	"go.etcd.io/bbolt"
 	"gopkg.in/satori/go.uuid.v1"
 )
 

@@ -1,6 +1,8 @@
 package libdrynxencoding
 
 import (
+	"fmt"
+
 	"github.com/ldsec/drynx/lib"
 	"github.com/ldsec/drynx/lib/range"
 	"github.com/ldsec/unlynx/lib"
@@ -230,7 +232,7 @@ func Decode(ciphers []libunlynx.CipherText, secKey kyber.Scalar, operation libdr
 
 // EncodeForFloat encodes floating points
 func EncodeForFloat(xData [][]float64, yData []int64, lrParameters libdrynx.LogisticRegressionParameters, pubKey kyber.Point,
-	signatures [][]libdrynx.PublishSignature, ranges []*[]int64, operation string) ([]libunlynx.CipherText, []int64, []libdrynxrange.CreateProof) {
+	signatures [][]libdrynx.PublishSignature, ranges []*[]int64, operation string) ([]libunlynx.CipherText, []int64, []libdrynxrange.CreateProof, error) {
 
 	clearResponse := make([]int64, 0)
 	encryptedResponse := make([]libunlynx.CipherText, 0)
@@ -238,11 +240,15 @@ func EncodeForFloat(xData [][]float64, yData []int64, lrParameters libdrynx.Logi
 	withProofs := len(ranges) > 0
 	switch operation {
 	case "logistic regression":
+		var err error
 		if withProofs {
-			encryptedResponse, clearResponse, prf = EncodeLogisticRegressionWithProofs(xData, yData, lrParameters, pubKey, signatures, ranges)
+			encryptedResponse, clearResponse, prf, err = EncodeLogisticRegressionWithProofs(xData, yData, lrParameters, pubKey, signatures, ranges)
 		} else {
-			encryptedResponse, clearResponse = EncodeLogisticRegression(xData, yData, lrParameters, pubKey)
+			encryptedResponse, clearResponse, err = EncodeLogisticRegression(xData, yData, lrParameters, pubKey)
+		}
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("when encoding response: %w", err)
 		}
 	}
-	return encryptedResponse, clearResponse, prf
+	return encryptedResponse, clearResponse, prf, nil
 }
