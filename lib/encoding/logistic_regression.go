@@ -22,6 +22,7 @@ import (
 
 	"github.com/montanaflynn/stats"
 	"gonum.org/v1/gonum/integrate"
+	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat"
 	"gonum.org/v1/gonum/stat/combin"
 )
@@ -1576,4 +1577,57 @@ func Float64ToInt642DArrayWithPrecision(arrayFloat64 [][]float64, precision floa
 // Round rounds a float number to the nearest <unit> digits
 func Round(x, unit float64) float64 {
 	return math.Round(x/unit) * unit
+}
+
+// MatrixToFloat2D converts a mat.Matrix to a [][]float64
+func MatrixToFloat2D(matrix mat.Matrix) [][]float64 {
+	rowCount, columnCount := matrix.Dims()
+
+	ret := make([][]float64, rowCount)
+	for i := range ret {
+		row := make([]float64, columnCount)
+		for j := range row {
+			row[j] = matrix.At(i, j)
+		}
+		ret[i] = row
+	}
+
+	return ret
+}
+
+// Float2DToMatrix converts a rectangular [][]float64 to mat.Dense
+func Float2DToMatrix(matrix [][]float64) *mat.Dense {
+	rowCount, columnCount := len(matrix), len(matrix[0])
+
+	ret := mat.NewDense(rowCount, columnCount, nil)
+	for i, row := range matrix {
+		for j, v := range row {
+			ret.Set(i, j, v)
+		}
+	}
+
+	return ret
+}
+
+// VectorToInt converts a mat.Vector to a []int64
+func VectorToInt(vector mat.Vector) []int64 {
+	ret := make([]int64, vector.Len())
+	for i := range ret {
+		ret[i] = int64(vector.AtVec(i))
+	}
+	return ret
+}
+
+// VectorToFloat converts a mat.Vector to a []float64
+func VectorToFloat(vector mat.Vector) []float64 {
+	ret := make([]float64, vector.Len())
+	for i := range ret {
+		ret[i] = vector.AtVec(i)
+	}
+	return ret
+}
+
+// FloatToVector converts a []float64 to mat.VecDense
+func FloatToVector(vector []float64) *mat.VecDense {
+	return mat.NewVecDense(len(vector), vector)
 }
