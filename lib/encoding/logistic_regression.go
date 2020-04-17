@@ -1273,37 +1273,22 @@ func String2DToFloat64(dataString [][]string) [][]float64 {
 
 // LoadData loads some specific datasets from file into a pair of feature matrix and label vector
 // the available datasets are: SPECTF, Pima, PCS and LBW
-func LoadData(dataset string, filename string) ([][]float64, []int64, error) {
-	labelColumn := uint(0)
-
-	matrix, err := ReadFile(filename, ',')
+func LoadData(dataset string, filename string) (*mat.Dense, *mat.VecDense, error) {
+	dense, err := ReadFile(filename, ',')
 	if err != nil {
 		return nil, nil, fmt.Errorf("when reading file: %w", err)
 	}
 
-	data := MatrixToFloat2D(matrix)
-
 	if dataset == "PCS" {
-		// remove the index column and the two last columns (unused)
-		for _, i := range []uint{11, 10, 0} {
-			var err error
-			if data, err = RemoveColumn(data, i); err != nil {
-				return nil, nil, err
-			}
-		}
+		rowCount, columnCount := dense.Dims()
+		dense = dense.Slice(0, rowCount, 1, columnCount-1).(*mat.Dense)
 	}
 
-	X, err := RemoveColumn(data, labelColumn)
-	if err != nil {
-		return nil, nil, err
-	}
-	yFloat, err := GetColumn(data, labelColumn)
-	if err != nil {
-		return nil, nil, err
-	}
-	y := Float64ToInt641DArray(yFloat)
+	rowCount, columnCount := dense.Dims()
+	yVector := dense.ColView(0)
+	matrix := dense.Slice(0, rowCount, 1, columnCount)
 
-	return X, y, nil
+	return matrix.(*mat.Dense), yVector.(*mat.VecDense), nil
 }
 
 // ReadFile reads a dataset from file into a string matrix
@@ -1431,10 +1416,13 @@ func PartitionDataset(X [][]float64, y []int64, ratio float64, shuffle bool, see
 func GetDataForDataProvider(datasetName, filename string, dataProviderIdentity network.ServerIdentity) ([][]float64, []int64, error) {
 	var xForDP [][]float64
 	var yForDP []int64
-	X, y, err := LoadData(datasetName, filename)
+	matrix, vector, err := LoadData(datasetName, filename)
 	if err != nil {
 		return nil, nil, fmt.Errorf("when loading data: %w", err)
 	}
+	X := MatrixToFloat2D(matrix)
+	y := VectorToInt(vector)
+
 	dataProviderID := dataProviderIdentity.String()
 	dpID, err := strconv.Atoi(dataProviderID[len(dataProviderID)-2 : len(dataProviderID)-1])
 
