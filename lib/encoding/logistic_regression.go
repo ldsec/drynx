@@ -1276,10 +1276,12 @@ func String2DToFloat64(dataString [][]string) [][]float64 {
 func LoadData(dataset string, filename string) ([][]float64, []int64, error) {
 	labelColumn := uint(0)
 
-	data, err := ReadFile(filename, ',')
+	matrix, err := ReadFile(filename, ',')
 	if err != nil {
 		return nil, nil, fmt.Errorf("when reading file: %w", err)
 	}
+
+	data := MatrixToFloat2D(matrix)
 
 	if dataset == "PCS" {
 		// remove the index column and the two last columns (unused)
@@ -1306,7 +1308,7 @@ func LoadData(dataset string, filename string) ([][]float64, []int64, error) {
 
 // ReadFile reads a dataset from file into a string matrix
 // removes incorrectly formatted records
-func ReadFile(path string, separator rune) ([][]float64, error) {
+func ReadFile(path string, separator rune) (*mat.Dense, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("opening file: %w", err)
@@ -1317,8 +1319,9 @@ func ReadFile(path string, separator rune) ([][]float64, error) {
 	reader.Comma = separator
 	reader.TrimLeadingSpace = true
 
-	var records [][]float64
-	for {
+	var records []float64
+	lineCount := 0
+	for ; ; lineCount++ {
 		record, err := reader.Read()
 		if record == nil && errors.Is(err, io.EOF) {
 			break
@@ -1331,15 +1334,15 @@ func ReadFile(path string, separator rune) ([][]float64, error) {
 		for i, v := range record {
 			parsed, err := strconv.ParseFloat(v, 64)
 			if err != nil {
-				return nil, fmt.Errorf("parsing as float at line %v, element %v: %w", len(records), i, err)
+				return nil, fmt.Errorf("parsing as float at line %v, element %v: %w", lineCount, i, err)
 			}
 			line[i] = parsed
 		}
 
-		records = append(records, line)
+		records = append(records, line...)
 	}
 
-	return records, nil
+	return mat.NewDense(lineCount, reader.FieldsPerRecord, records), nil
 }
 
 // GetColumn returns the column at index <idx> in the given 2D array <matrix>
