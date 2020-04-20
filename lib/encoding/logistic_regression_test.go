@@ -2,6 +2,9 @@ package libdrynxencoding_test
 
 import (
 	"fmt"
+	"math"
+	"testing"
+
 	"github.com/cdipaolo/goml/base"
 	"github.com/cdipaolo/goml/linear"
 	"github.com/ldsec/drynx/lib"
@@ -12,9 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/key"
+	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat/combin"
-	"math"
-	"testing"
 )
 
 func TestComputeApproxCoefficients(t *testing.T) {
@@ -571,30 +573,27 @@ func TestAddSub(t *testing.T) {
 }
 
 func TestEncodeDecodeLogisticRegression(t *testing.T) {
-	// data
-	data := [][]float64{{0, 1.3, 5.0, 3.4, 3.2},
-		{1, 2.0, 4.4, 4.2, 3.3},
-		{1, 1.2, 1.9, 3.8, 2.3},
-		{0, 1.0, 4.5, 2.2, 3.8},
-		{1, 1.7, 2.8, 3.8, 2.7}}
-
-	labelColumn := uint(0)
-
 	// features
-	X, err := libdrynxencoding.RemoveColumn(data, labelColumn)
-	require.NoError(t, err)
-	// labels
-	yFloat, err := libdrynxencoding.GetColumn(data, labelColumn)
-	require.NoError(t, err)
-	y := libdrynxencoding.Float64ToInt641DArray(yFloat)
+	matrixX := mat.NewDense(5, 4, nil)
+	matrixX.SetRow(0, []float64{1.3, 5.0, 3.4, 3.2})
+	matrixX.SetRow(1, []float64{2.0, 4.4, 4.2, 3.3})
+	matrixX.SetRow(2, []float64{1.2, 1.9, 3.8, 2.3})
+	matrixX.SetRow(3, []float64{1.0, 4.5, 2.2, 3.8})
+	matrixX.SetRow(4, []float64{1.7, 2.8, 3.8, 2.7})
 
-	matrixXStandardised := libdrynxencoding.Float2DToMatrix(X)
+	// labels
+	yFloat := mat.NewVecDense(5, []float64{0, 1, 1, 0, 1})
+	y := libdrynxencoding.VectorToInt(yFloat)
+
+	// dimensions
+	N, d := matrixX.Dims()
+
+	// standarized
+	matrixXStandardised := mat.NewDense(N, d, nil)
+	matrixXStandardised.Copy(matrixX)
 	libdrynxencoding.Standardise(matrixXStandardised)
 	matrixXStandardised = libdrynxencoding.Augment(matrixXStandardised)
 	XStandardised := libdrynxencoding.MatrixToFloat2D(matrixXStandardised)
-
-	N := len(X)
-	d := int64(len(X[0]))
 
 	k := 2
 	precision := 1e2
@@ -610,7 +609,7 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 
 	// compute all approximation coefficients per record
 	approxCoefficients := make([][][]float64, N)
-	for i := range X {
+	for i := range approxCoefficients {
 		approxCoefficients[i] = libdrynxencoding.ComputeAllApproxCoefficients(XStandardised[i], y[i], k)
 	}
 
@@ -622,9 +621,10 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 
 	initialWeights = []float64{0.1, 0.2, 0.3, 0.4, 0.5} // libdrynxencoding.FindMinimumWeights modifies the initial weights...
 
-	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: int64(N), NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
+	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: int64(N), NbrFeatures: int64(d), Lambda: lambda, Step: step, MaxIterations: maxIterations,
 		InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
 
+	X := libdrynxencoding.MatrixToFloat2D(matrixX)
 	resultEncrypted, _, err := libdrynxencoding.EncodeLogisticRegression(X, y, lrParameters, pubKey)
 	require.NoError(t, err)
 	result := libdrynxencoding.DecodeLogisticRegression(resultEncrypted, privKey, lrParameters)
@@ -639,30 +639,27 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 }
 
 func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
-	// data
-	data := [][]float64{{0, 1.3, 5.0, 3.4, 3.2},
-		{1, 2.0, 4.4, 4.2, 3.3},
-		{1, 1.2, 1.9, 3.8, 2.3},
-		{0, 1.0, 4.5, 2.2, 3.8},
-		{1, 1.7, 2.8, 3.8, 2.7}}
-
-	labelColumn := uint(0)
-
 	// features
-	X, err := libdrynxencoding.RemoveColumn(data, labelColumn)
-	require.NoError(t, err)
-	// labels
-	yFloat, err := libdrynxencoding.GetColumn(data, labelColumn)
-	require.NoError(t, err)
-	y := libdrynxencoding.Float64ToInt641DArray(yFloat)
+	matrixX := mat.NewDense(5, 4, nil)
+	matrixX.SetRow(0, []float64{1.3, 5.0, 3.4, 3.2})
+	matrixX.SetRow(1, []float64{2.0, 4.4, 4.2, 3.3})
+	matrixX.SetRow(2, []float64{1.2, 1.9, 3.8, 2.3})
+	matrixX.SetRow(3, []float64{1.0, 4.5, 2.2, 3.8})
+	matrixX.SetRow(4, []float64{1.7, 2.8, 3.8, 2.7})
 
-	matrixXStandardised := libdrynxencoding.Float2DToMatrix(X)
+	// labels
+	yFloat := mat.NewVecDense(5, []float64{0, 1, 1, 0, 1})
+	y := libdrynxencoding.VectorToInt(yFloat)
+
+	// dimensions
+	N, d := matrixX.Dims()
+
+	// standarized
+	matrixXStandardised := mat.NewDense(N, d, nil)
+	matrixXStandardised.Copy(matrixX)
 	libdrynxencoding.Standardise(matrixXStandardised)
 	matrixXStandardised = libdrynxencoding.Augment(matrixXStandardised)
 	XStandardised := libdrynxencoding.MatrixToFloat2D(matrixXStandardised)
-
-	N := len(X)
-	d := int64(len(X[0]))
 
 	k := 2
 	precision := 1e2
@@ -678,7 +675,7 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 
 	// compute all approximation coefficients per record
 	approxCoefficients := make([][][]float64, N)
-	for i := range X {
+	for i := range approxCoefficients {
 		approxCoefficients[i] = libdrynxencoding.ComputeAllApproxCoefficients(XStandardised[i], y[i], k)
 	}
 
@@ -690,7 +687,7 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 
 	initialWeights = []float64{0.1, 0.2, 0.3, 0.4, 0.5} // libdrynxencoding.FindMinimumWeights modifies the initial weights...
 
-	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: int64(N), NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
+	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: int64(N), NbrFeatures: int64(d), Lambda: lambda, Step: step, MaxIterations: maxIterations,
 		InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
 
 	//signatures needed to check the proof; create signatures for 2 servers and all DPs outputs
@@ -722,6 +719,7 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 
 	//function call
 
+	X := libdrynxencoding.MatrixToFloat2D(matrixX)
 	resultEncrypted, _, prf, err := libdrynxencoding.EncodeLogisticRegressionWithProofs(X, y, lrParameters, pubKey, ps, ranges)
 	require.NoError(t, err)
 	result := libdrynxencoding.DecodeLogisticRegression(resultEncrypted, privKey, lrParameters)

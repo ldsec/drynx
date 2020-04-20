@@ -53,11 +53,6 @@ func EncodeLogisticRegression(xData [][]float64, yData []int64, lrParameters lib
 	encryptedAggregatedApproxCoefficients := make([]libunlynx.CipherText, n)
 
 	if xData != nil && len(xData) > 0 {
-		// unpack the data into features and labels
-		/*labelColumn := 0
-		X := RemoveColumn(data, labelColumn)
-		y := Float64ToInt641DArray(GetColumn(data, labelColumn))*/
-
 		// standardise the data
 		X := Float2DToMatrix(xData)
 		if lrParameters.Means != nil && lrParameters.StandardDeviations != nil &&
@@ -133,11 +128,6 @@ func EncodeLogisticRegressionWithProofs(xData [][]float64, yData []int64, lrPara
 	encryptedAggregatedApproxCoefficientsOnlyCipher := make([]libunlynx.CipherText, n)
 
 	if xData != nil && len(xData) > 0 {
-		// unpack the data into features and labels
-		/*labelColumn := 0
-		X := RemoveColumn(data, labelColumn)
-		y := Float64ToInt641DArray(GetColumn(data, labelColumn))*/
-
 		// standardise the data
 		X := Float2DToMatrix(xData)
 		if lrParameters.Means != nil && lrParameters.StandardDeviations != nil &&
@@ -1299,39 +1289,6 @@ func ReadFile(path string, separator rune) (*mat.Dense, error) {
 	}
 
 	return mat.NewDense(lineCount, reader.FieldsPerRecord, records), nil
-}
-
-// GetColumn returns the column at index <idx> in the given 2D array <matrix>
-func GetColumn(matrix [][]float64, idx uint) ([]float64, error) {
-	if len(matrix) < 0 {
-		return nil, errors.New("empty matrix")
-	}
-	if idx >= uint(len(matrix[0])) {
-		return nil, errors.New("column index exceeds matrix dimension")
-	}
-
-	array := make([]float64, len(matrix))
-	for i := range matrix {
-		array[i] = matrix[i][idx]
-	}
-
-	return array, nil
-}
-
-// RemoveColumn returns a 2D array with the column at index <idx> removed from the given 2D array <matrix>
-func RemoveColumn(matrix [][]float64, idx uint) ([][]float64, error) {
-	if idx >= uint(len(matrix[0])) {
-		return nil, errors.New("column index exceeds matrix dimension")
-	}
-
-	truncatedMatrix := make([][]float64, len(matrix))
-	for i := range matrix {
-		//truncatedMatrix[i] = make([]float64, len(matrix[i]) - 1)
-		truncatedMatrix[i] = append(truncatedMatrix[i], matrix[i][:idx]...)
-		truncatedMatrix[i] = append(truncatedMatrix[i], matrix[i][idx+1:]...)
-	}
-
-	return truncatedMatrix, nil
 }
 
 // ReplaceString replaces all strings <old> by string <new> in the given string matrix
