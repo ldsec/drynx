@@ -904,18 +904,20 @@ func PredictHomomorphic(encryptedData libunlynx.CipherVector, weights []float64,
 //--------------------
 
 // ComputeMeans returns the means of each column of the given data matrix
-func ComputeMeans(data [][]float64) ([]float64, error) {
-	means := make([]float64, len(data[0]))
+func ComputeMeans(matrix mat.Matrix) []float64 {
+	rowCount, columnCount := matrix.Dims()
 
+	means := make([]float64, columnCount)
 	for i := range means {
-		feature, err := GetColumn(data, uint(i))
-		if err != nil {
-			return nil, err
+		column := make([]float64, rowCount)
+		for j := range column {
+			column[j] = matrix.At(j, i)
 		}
-		means[i], _ = stats.Mean(feature)
+
+		means[i] = stat.Mean(column, nil)
 	}
 
-	return means, nil
+	return means
 }
 
 // ComputeStandardDeviations returns the standard deviation of each column of the given data matrix
@@ -945,10 +947,8 @@ func StandardiseWithTrain(matrixTest, matrixTrain [][]float64) ([][]float64, err
 	if err != nil {
 		return nil, err
 	}
-	means, err := ComputeMeans(matrixTrain)
-	if err != nil {
-		return nil, err
-	}
+
+	means := ComputeMeans(Float2DToMatrix(matrixTrain))
 
 	standardisedMatrix := make([][]float64, len(matrixTest))
 	for i, record := range matrixTest {

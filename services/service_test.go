@@ -406,8 +406,7 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	var means = make([]float64, 0)
 	var standardDeviations = make([]float64, 0)
 	if standardisationMode == 0 || standardisationMode == 1 {
-		means, err = libdrynxencoding.ComputeMeans(XTrain)
-		require.NoError(t, err)
+		means = libdrynxencoding.ComputeMeans(libdrynxencoding.Float2DToMatrix(XTrain))
 		standardDeviations, err = libdrynxencoding.ComputeStandardDeviations(XTrain)
 		require.NoError(t, err)
 	} else {
@@ -866,8 +865,7 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 		var means = make([]float64, 0)
 		var standardDeviations = make([]float64, 0)
 		if standardisationMode == 0 || standardisationMode == 1 {
-			means, err = libdrynxencoding.ComputeMeans(XTrain)
-			require.NoError(t, err)
+			means = libdrynxencoding.ComputeMeans(libdrynxencoding.Float2DToMatrix(XTrain))
 			standardDeviations, err = libdrynxencoding.ComputeStandardDeviations(XTrain)
 			require.NoError(t, err)
 		} else {
@@ -1153,8 +1151,7 @@ func TestServiceDrynxLogisticRegressionV2(t *testing.T) {
 	var means = make([]float64, 0)
 	var standardDeviations = make([]float64, 0)
 	if standardisationMode == 0 || standardisationMode == 1 {
-		means, err = libdrynxencoding.ComputeMeans(XTrain)
-		require.NoError(t, err)
+		means = libdrynxencoding.ComputeMeans(libdrynxencoding.Float2DToMatrix(XTrain))
 		standardDeviations, err = libdrynxencoding.ComputeStandardDeviations(XTrain)
 		require.NoError(t, err)
 	} else {
@@ -1542,8 +1539,7 @@ func TestServiceDrynxLogisticRegressionBC(t *testing.T) {
 	var means = make([]float64, 0)
 	var standardDeviations = make([]float64, 0)
 	if standardisationMode == 0 || standardisationMode == 1 {
-		means, err = libdrynxencoding.ComputeMeans(XTrain)
-		require.NoError(t, err)
+		means = libdrynxencoding.ComputeMeans(libdrynxencoding.Float2DToMatrix(XTrain))
 		standardDeviations, err = libdrynxencoding.ComputeStandardDeviations(XTrain)
 		require.NoError(t, err)
 	} else {
@@ -1950,8 +1946,7 @@ func TestServiceDrynxLogisticRegressionGSE(t *testing.T) {
 	var means = make([]float64, 0)
 	var standardDeviations = make([]float64, 0)
 	if standardisationMode == 0 || standardisationMode == 1 {
-		means, err = libdrynxencoding.ComputeMeans(XTrain)
-		require.NoError(t, err)
+		means = libdrynxencoding.ComputeMeans(libdrynxencoding.Float2DToMatrix(XTrain))
 		standardDeviations, err = libdrynxencoding.ComputeStandardDeviations(XTrain)
 		require.NoError(t, err)
 	} else {
