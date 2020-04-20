@@ -921,18 +921,20 @@ func ComputeMeans(matrix mat.Matrix) []float64 {
 }
 
 // ComputeStandardDeviations returns the standard deviation of each column of the given data matrix
-func ComputeStandardDeviations(data [][]float64) ([]float64, error) {
-	standardDeviations := make([]float64, len(data[0]))
+func ComputeStandardDeviations(matrix mat.Matrix) []float64 {
+	rowCount, columnCount := matrix.Dims()
 
+	standardDeviations := make([]float64, columnCount)
 	for i := range standardDeviations {
-		feature, err := GetColumn(data, uint(i))
-		if err != nil {
-			return nil, err
+		column := make([]float64, rowCount)
+		for j := range column {
+			column[j] = matrix.At(j, i)
 		}
-		standardDeviations[i], _ = stats.StandardDeviation(feature)
+
+		standardDeviations[i] = stat.StdDev(column, nil)
 	}
 
-	return standardDeviations, nil
+	return standardDeviations
 }
 
 // Standardise returns the standardized 2D array version of the given 2D array
@@ -943,11 +945,7 @@ func Standardise(matrix [][]float64) ([][]float64, error) {
 
 // StandardiseWithTrain standardises a matrix with the given matrix means and standard deviations
 func StandardiseWithTrain(matrixTest, matrixTrain [][]float64) ([][]float64, error) {
-	sds, err := ComputeStandardDeviations(matrixTrain)
-	if err != nil {
-		return nil, err
-	}
-
+	sds := ComputeStandardDeviations(Float2DToMatrix(matrixTrain))
 	means := ComputeMeans(Float2DToMatrix(matrixTrain))
 
 	standardisedMatrix := make([][]float64, len(matrixTest))

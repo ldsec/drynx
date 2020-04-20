@@ -403,15 +403,11 @@ func TestServiceDrynxLogisticRegressionForSPECTF(t *testing.T) {
 	XTrain := libdrynxencoding.MatrixToFloat2D(trainMatrix)
 	XTest, yTest := libdrynxencoding.MatrixToFloat2D(testMatrix), libdrynxencoding.VectorToInt(testVector)
 
-	var means = make([]float64, 0)
-	var standardDeviations = make([]float64, 0)
+	var means []float64
+	var standardDeviations []float64
 	if standardisationMode == 0 || standardisationMode == 1 {
 		means = libdrynxencoding.ComputeMeans(libdrynxencoding.Float2DToMatrix(XTrain))
-		standardDeviations, err = libdrynxencoding.ComputeStandardDeviations(XTrain)
-		require.NoError(t, err)
-	} else {
-		means = nil
-		standardDeviations = nil
+		standardDeviations = libdrynxencoding.ComputeStandardDeviations(libdrynxencoding.Float2DToMatrix(XTrain))
 	}
 
 	lrParameters.DatasetName = "SPECTF"
@@ -862,15 +858,11 @@ func TestServiceDrynxLogisticRegression(t *testing.T) {
 			_, err = fileTesting.WriteString(fmt.Sprintln(testingSet[i][len(testingSet[i])-1]))
 		}
 
-		var means = make([]float64, 0)
-		var standardDeviations = make([]float64, 0)
+		var means []float64
+		var standardDeviations []float64
 		if standardisationMode == 0 || standardisationMode == 1 {
 			means = libdrynxencoding.ComputeMeans(libdrynxencoding.Float2DToMatrix(XTrain))
-			standardDeviations, err = libdrynxencoding.ComputeStandardDeviations(XTrain)
-			require.NoError(t, err)
-		} else {
-			means = nil
-			standardDeviations = nil
+			standardDeviations = libdrynxencoding.ComputeStandardDeviations(libdrynxencoding.Float2DToMatrix(XTrain))
 		}
 
 		lrParameters.FilePath = filePathTraining
@@ -1148,15 +1140,11 @@ func TestServiceDrynxLogisticRegressionV2(t *testing.T) {
 	XTrain := libdrynxencoding.MatrixToFloat2D(trainMatrix)
 	XTest, yTest := libdrynxencoding.MatrixToFloat2D(testMatrix), libdrynxencoding.VectorToInt(testVector)
 
-	var means = make([]float64, 0)
-	var standardDeviations = make([]float64, 0)
+	var means []float64
+	var standardDeviations []float64
 	if standardisationMode == 0 || standardisationMode == 1 {
 		means = libdrynxencoding.ComputeMeans(libdrynxencoding.Float2DToMatrix(XTrain))
-		standardDeviations, err = libdrynxencoding.ComputeStandardDeviations(XTrain)
-		require.NoError(t, err)
-	} else {
-		means = nil
-		standardDeviations = nil
+		standardDeviations = libdrynxencoding.ComputeStandardDeviations(libdrynxencoding.Float2DToMatrix(XTrain))
 	}
 
 	lrParameters.FilePath = filePathTraining
@@ -1536,15 +1524,11 @@ func TestServiceDrynxLogisticRegressionBC(t *testing.T) {
 	XTrain := libdrynxencoding.MatrixToFloat2D(trainMatrix)
 	XTest, yTest := libdrynxencoding.MatrixToFloat2D(testMatrix), libdrynxencoding.VectorToInt(testVector)
 
-	var means = make([]float64, 0)
-	var standardDeviations = make([]float64, 0)
+	var means []float64
+	var standardDeviations []float64
 	if standardisationMode == 0 || standardisationMode == 1 {
 		means = libdrynxencoding.ComputeMeans(libdrynxencoding.Float2DToMatrix(XTrain))
-		standardDeviations, err = libdrynxencoding.ComputeStandardDeviations(XTrain)
-		require.NoError(t, err)
-	} else {
-		means = nil
-		standardDeviations = nil
+		standardDeviations = libdrynxencoding.ComputeStandardDeviations(libdrynxencoding.Float2DToMatrix(XTrain))
 	}
 
 	lrParameters.FilePath = filePathTraining
@@ -1943,15 +1927,11 @@ func TestServiceDrynxLogisticRegressionGSE(t *testing.T) {
 	XTrain := libdrynxencoding.MatrixToFloat2D(trainMatrix)
 	XTest, yTest := libdrynxencoding.MatrixToFloat2D(testMatrix), libdrynxencoding.VectorToInt(testVector)
 
-	var means = make([]float64, 0)
-	var standardDeviations = make([]float64, 0)
+	var means []float64
+	var standardDeviations []float64
 	if standardisationMode == 0 || standardisationMode == 1 {
 		means = libdrynxencoding.ComputeMeans(libdrynxencoding.Float2DToMatrix(XTrain))
-		standardDeviations, err = libdrynxencoding.ComputeStandardDeviations(XTrain)
-		require.NoError(t, err)
-	} else {
-		means = nil
-		standardDeviations = nil
+		standardDeviations = libdrynxencoding.ComputeStandardDeviations(libdrynxencoding.Float2DToMatrix(XTrain))
 	}
 
 	lrParameters.FilePath = filePathTraining
