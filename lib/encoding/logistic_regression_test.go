@@ -768,7 +768,7 @@ func TestStandardise(t *testing.T) {
 	epsilon := 1e-12
 	for i := 0; i < len(XStandardised); i++ {
 		for j := 0; j < len(XStandardised[i]); j++ {
-			assert.Equal(t, true, math.Abs(XStandardised[i][j]-XScaledStandardised[i][j]) < epsilon)
+			assert.InEpsilon(t, XStandardised[i][j], XScaledStandardised[i][j], epsilon)
 		}
 	}
 
