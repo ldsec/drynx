@@ -592,7 +592,8 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 
 	matrixXStandardised := libdrynxencoding.Float2DToMatrix(X)
 	libdrynxencoding.Standardise(matrixXStandardised)
-	XStandardised := libdrynxencoding.Augment(libdrynxencoding.MatrixToFloat2D(matrixXStandardised))
+	matrixXStandardised = libdrynxencoding.Augment(matrixXStandardised)
+	XStandardised := libdrynxencoding.MatrixToFloat2D(matrixXStandardised)
 
 	N := len(X)
 	N64 := int64(N)
@@ -660,7 +661,8 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 
 	matrixXStandardised := libdrynxencoding.Float2DToMatrix(X)
 	libdrynxencoding.Standardise(matrixXStandardised)
-	XStandardised := libdrynxencoding.Augment(libdrynxencoding.MatrixToFloat2D(matrixXStandardised))
+	matrixXStandardised = libdrynxencoding.Augment(matrixXStandardised)
+	XStandardised := libdrynxencoding.MatrixToFloat2D(matrixXStandardised)
 
 	N := len(X)
 	N64 := int64(N)
@@ -759,11 +761,13 @@ func TestStandardise(t *testing.T) {
 
 	matrixXStandardised := libdrynxencoding.Float2DToMatrix(X)
 	libdrynxencoding.Standardise(matrixXStandardised)
-	XStandardised := libdrynxencoding.Augment(libdrynxencoding.MatrixToFloat2D(matrixXStandardised))
+	matrixXStandardised = libdrynxencoding.Augment(matrixXStandardised)
+	XStandardised := libdrynxencoding.MatrixToFloat2D(matrixXStandardised)
 
 	matrixXScaledStandardised := libdrynxencoding.Float2DToMatrix(X)
 	libdrynxencoding.Standardise(matrixXScaledStandardised)
-	XScaledStandardised := libdrynxencoding.Augment(libdrynxencoding.MatrixToFloat2D(matrixXStandardised))
+	matrixXScaledStandardised = libdrynxencoding.Augment(matrixXScaledStandardised)
+	XScaledStandardised := libdrynxencoding.MatrixToFloat2D(matrixXScaledStandardised)
 
 	epsilon := 1e-12
 	for i := 0; i < len(XStandardised); i++ {

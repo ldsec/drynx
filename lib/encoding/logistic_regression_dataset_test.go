@@ -46,8 +46,8 @@ func compareFindMinimumWeights(Xtrain [][]float64, ytrain []int64, parameters Mi
 	initialWeights := parameters.initialWeights
 	X := libdrynxencoding.Float2DToMatrix(Xtrain)
 	libdrynxencoding.Standardise(X)
+	X = libdrynxencoding.Augment(X)
 	Xtrain = libdrynxencoding.MatrixToFloat2D(X)
-	Xtrain = libdrynxencoding.Augment(Xtrain)
 	// data providers part + servers part + client part collapsed here for testing
 
 	var weights []float64
@@ -152,8 +152,8 @@ func predict(Xtrain [][]float64, ytrain []int64,
 	// data pre-processing
 	matrixXTrain := libdrynxencoding.Float2DToMatrix(Xtrain)
 	libdrynxencoding.Standardise(matrixXTrain)
+	matrixXTrain = libdrynxencoding.Augment(matrixXTrain)
 	Xtrain = libdrynxencoding.MatrixToFloat2D(matrixXTrain)
-	Xtrain = libdrynxencoding.Augment(Xtrain)
 
 	// the client's (public key, private key) pair
 	keys := key.NewKeyPair(libunlynx.SuiTe)

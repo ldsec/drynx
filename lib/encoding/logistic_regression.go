@@ -70,10 +70,10 @@ func EncodeLogisticRegression(xData [][]float64, yData []int64, lrParameters lib
 			log.Lvl2("Standardising the training set with local means and standard deviations...")
 			Standardise(X)
 		}
-		XStandardised := MatrixToFloat2D(X)
 
 		// add an all 1s column to the data (offset term)
-		XStandardised = Augment(XStandardised)
+		X = Augment(X)
+		XStandardised := MatrixToFloat2D(X)
 
 		N := lrParameters.NbrRecords
 		// compute all approximation coefficients per record
@@ -150,10 +150,10 @@ func EncodeLogisticRegressionWithProofs(xData [][]float64, yData []int64, lrPara
 			log.Lvl2("Standardising the training set with local means and standard deviations...")
 			Standardise(X)
 		}
-		XStandardised := MatrixToFloat2D(X)
 
 		// add an all 1s column to the data (offset term)
-		XStandardised = Augment(XStandardised)
+		X = Augment(X)
+		XStandardised := MatrixToFloat2D(X)
 
 		N := lrParameters.NbrRecords
 
@@ -980,15 +980,18 @@ func NormalizeWith(matrixTest *mat.Dense, matrixTrain mat.Matrix) {
 }
 
 // Augment returns the given 2D array with an additional all 1's column prepended as the first column
-func Augment(matrix [][]float64) [][]float64 {
-	column := make([]float64, len(matrix))
-	for i := 0; i < len(matrix); i++ {
-		column[i] = 1
+func Augment(matrix mat.Matrix) *mat.Dense {
+	rowCount, columnCount := matrix.Dims()
+	ret := mat.NewDense(rowCount, columnCount+1, nil)
+
+	augment := mat.NewVecDense(rowCount, nil)
+	for i := 0; i < rowCount; i++ {
+		augment.SetVec(i, 1)
 	}
 
-	matrix = InsertColumn(matrix, column, 0)
+	ret.Augment(augment, matrix)
 
-	return matrix
+	return ret
 }
 
 // returns the given 2D array flattened into a 1D array
