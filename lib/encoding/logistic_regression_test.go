@@ -348,7 +348,6 @@ func TestGradient(t *testing.T) {
 	y := []int64{1}
 	k := 1
 	N := len(X) //len(X[0]) * 10
-	N64 := int64(N)
 
 	lambda := 10.0
 	step := 0.0001
@@ -365,7 +364,7 @@ func TestGradient(t *testing.T) {
 			expected[i] += (lambda / float64(N)) * weights[i]
 		}
 	}
-	actual := libdrynxencoding.Gradient(weights, approxCoeffs, k, N64, lambda)
+	actual := libdrynxencoding.Gradient(weights, approxCoeffs, k, int64(N), lambda)
 	assert.Equal(t, expected[1:], actual[1:])
 
 	// libdrynxencoding.Gradient for k = 2
@@ -373,7 +372,7 @@ func TestGradient(t *testing.T) {
 	approxCoeffs = libdrynxencoding.ComputeAllApproxCoefficients(X[0], y[0], k)
 
 	expected = libdrynxencoding.GradientFor2(weights, approxCoeffs, k, N, lambda)
-	actual = libdrynxencoding.Gradient(weights, approxCoeffs, k, N64, lambda)
+	actual = libdrynxencoding.Gradient(weights, approxCoeffs, k, int64(N), lambda)
 	assert.Equal(t, expected[1:], actual[1:])
 
 	testX := make([][]float64, 1)
@@ -391,7 +390,6 @@ func TestCost(t *testing.T) {
 	y := []int64{1}
 	k := 1
 	N := len(X)
-	N64 := int64(N)
 
 	lambda := 1.0
 
@@ -414,7 +412,7 @@ func TestCost(t *testing.T) {
 		expectedCost += weights[i] * weights[i] * (lambda / 2 * float64(N))
 	}
 
-	actuaCost := libdrynxencoding.Cost(weights, aggregatedApproxCoeffs, N64, lambda)
+	actuaCost := libdrynxencoding.Cost(weights, aggregatedApproxCoeffs, int64(N), lambda)
 
 	assert.Equal(t, expectedCost, actuaCost)
 }
@@ -596,7 +594,6 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 	XStandardised := libdrynxencoding.MatrixToFloat2D(matrixXStandardised)
 
 	N := len(X)
-	N64 := int64(N)
 	d := int64(len(X[0]))
 
 	k := 2
@@ -620,12 +617,12 @@ func TestEncodeDecodeLogisticRegression(t *testing.T) {
 	// aggregate the approximation coefficients locally
 	aggregatedApproxCoefficients := libdrynxencoding.AggregateApproxCoefficients(approxCoefficients)
 
-	expected := libdrynxencoding.FindMinimumWeights(aggregatedApproxCoefficients, initialWeights, N64, lambda, step,
+	expected := libdrynxencoding.FindMinimumWeights(aggregatedApproxCoefficients, initialWeights, int64(N), lambda, step,
 		maxIterations)
 
 	initialWeights = []float64{0.1, 0.2, 0.3, 0.4, 0.5} // libdrynxencoding.FindMinimumWeights modifies the initial weights...
 
-	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: N64, NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
+	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: int64(N), NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
 		InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
 
 	resultEncrypted, _, err := libdrynxencoding.EncodeLogisticRegression(X, y, lrParameters, pubKey)
@@ -665,7 +662,6 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 	XStandardised := libdrynxencoding.MatrixToFloat2D(matrixXStandardised)
 
 	N := len(X)
-	N64 := int64(N)
 	d := int64(len(X[0]))
 
 	k := 2
@@ -689,12 +685,12 @@ func TestEncodeDecodeLogisticRegressionWithProofs(t *testing.T) {
 	// aggregate the approximation coefficients locally
 	aggregatedApproxCoefficients := libdrynxencoding.AggregateApproxCoefficients(approxCoefficients)
 
-	expected := libdrynxencoding.FindMinimumWeights(aggregatedApproxCoefficients, initialWeights, N64, lambda, step,
+	expected := libdrynxencoding.FindMinimumWeights(aggregatedApproxCoefficients, initialWeights, int64(N), lambda, step,
 		maxIterations)
 
 	initialWeights = []float64{0.1, 0.2, 0.3, 0.4, 0.5} // libdrynxencoding.FindMinimumWeights modifies the initial weights...
 
-	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: N64, NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
+	lrParameters := libdrynx.LogisticRegressionParameters{FilePath: "", NbrRecords: int64(N), NbrFeatures: d, Lambda: lambda, Step: step, MaxIterations: maxIterations,
 		InitialWeights: initialWeights, K: 2, PrecisionApproxCoefficients: precision}
 
 	//signatures needed to check the proof; create signatures for 2 servers and all DPs outputs

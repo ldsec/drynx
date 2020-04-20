@@ -82,7 +82,6 @@ func findMinimumWeights(X [][]float64, y []int64, k int, maxIterations int, step
 
 	// each data provider computes its approximation coefficients on its side and then sends them to its chosen server
 	N := len(X)
-	N64 := int64(N)
 	approxCoefficients := make([][][]float64, N)
 	for i := range X {
 		approxCoefficients[i] = libdrynxencoding.ComputeAllApproxCoefficients(X[i], y[i], k)
@@ -91,7 +90,7 @@ func findMinimumWeights(X [][]float64, y []int64, k int, maxIterations int, step
 
 	// the client computes the weights on its side
 	weights := libdrynxencoding.FindMinimumWeights(aggregatedApproxCoefficients,
-		initialWeights, N64,
+		initialWeights, int64(N),
 		lambda, step, maxIterations)
 
 	log.Lvl2("weights 1", weights)
