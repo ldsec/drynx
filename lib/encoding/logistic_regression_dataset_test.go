@@ -147,8 +147,7 @@ func predict(Xtrain [][]float64, ytrain []int64,
 	log.Lvl2("init:", initialWeights)
 
 	// save the original training set in order to standardise the testing set
-	XtrainSaved := Xtrain
-	matrixXTrainSaved := libdrynxencoding.Float2DToMatrix(Xtrain)
+	XtrainSaved := libdrynxencoding.Float2DToMatrix(Xtrain)
 
 	// data pre-processing
 	matrixXTrain := libdrynxencoding.Float2DToMatrix(Xtrain)
@@ -184,17 +183,13 @@ func predict(Xtrain [][]float64, ytrain []int64,
 
 	// prediction computation
 	// standardise the testing set using the mean and standard deviation of the training set
-	var err error
+	matrixXTest := libdrynxencoding.Float2DToMatrix(Xtest)
 	if preprocessing == PREPROCESSING_STANDARDIZE {
-		matrixXTest := libdrynxencoding.Float2DToMatrix(Xtest)
-		libdrynxencoding.StandardiseWithTrain(matrixXTest, matrixXTrainSaved)
-		Xtest = libdrynxencoding.MatrixToFloat2D(matrixXTest)
+		libdrynxencoding.StandardiseWithTrain(matrixXTest, XtrainSaved)
 	} else if preprocessing == PREPROCESSING_NORMALIZE {
-		Xtest, err = libdrynxencoding.NormalizeWith(Xtest, XtrainSaved)
+		libdrynxencoding.NormalizeWith(matrixXTest, XtrainSaved)
 	}
-	if err != nil {
-		return 0, 0, 0, 0, 0, err
-	}
+	Xtest = libdrynxencoding.MatrixToFloat2D(matrixXTest)
 	// note: the test data does not need to be augmented with 1s
 
 	predictions := make([]int64, len(Xtest))

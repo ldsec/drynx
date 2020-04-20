@@ -20,7 +20,7 @@ import (
 	"github.com/ldsec/drynx/lib/range"
 	"github.com/ldsec/unlynx/lib"
 
-	"github.com/montanaflynn/stats"
+	"gonum.org/v1/gonum/floats"
 	"gonum.org/v1/gonum/integrate"
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat"
@@ -955,36 +955,28 @@ func StandardiseWith(matrix *mat.Dense, means []float64, standardDeviations []fl
 }
 
 // Normalize normalises a matrix column-wise
-func Normalize(matrix [][]float64) ([][]float64, error) {
-	return NormalizeWith(matrix, matrix)
+func Normalize(matrix *mat.Dense) {
+	NormalizeWith(matrix, matrix)
 }
 
 // NormalizeWith normalises a matrix column-wise with the given matrix min and max values
-func NormalizeWith(matrixTest, matrixTrain [][]float64) ([][]float64, error) {
-	nbFeatures := len(matrixTrain[0])
+func NormalizeWith(matrixTest *mat.Dense, matrixTrain mat.Matrix) {
+	rowCount, columnCount := matrixTrain.Dims()
 
-	min := make([]float64, nbFeatures)
-	max := make([]float64, nbFeatures)
-
-	for i := range matrixTrain[0] {
-		feature, err := GetColumn(matrixTrain, uint(i))
-		if err != nil {
-			return nil, err
+	min, max := make([]float64, columnCount), make([]float64, columnCount)
+	for i := range min {
+		column := make([]float64, rowCount)
+		for j := range column {
+			column[j] = matrixTrain.At(j, i)
 		}
 
-		min[i], _ = stats.Min(feature)
-		max[i], _ = stats.Max(feature)
+		min[i] = floats.Min(column)
+		max[i] = floats.Max(column)
 	}
 
-	normalizedMatrix := make([][]float64, len(matrixTest))
-	for i, record := range matrixTest {
-		normalizedMatrix[i] = make([]float64, len(record))
-		for j, v := range record {
-			normalizedMatrix[i][j] = float64(v-min[j]) / (max[j] - min[j])
-		}
-	}
-
-	return normalizedMatrix, nil
+	matrixTest.Apply(func(i, j int, v float64) float64 {
+		return (v - min[j]) / (max[j] - min[j])
+	}, matrixTest)
 }
 
 // Augment returns the given 2D array with an additional all 1's column prepended as the first column
