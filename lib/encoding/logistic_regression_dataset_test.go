@@ -44,10 +44,9 @@ func compareFindMinimumWeights(Xtrain [][]float64, ytrain []int64, parameters Mi
 	step := parameters.step
 	maxIterations := parameters.maxIterations
 	initialWeights := parameters.initialWeights
-	Xtrain, err := libdrynxencoding.Standardise(Xtrain)
-	if err != nil {
-		return err
-	}
+	X := libdrynxencoding.Float2DToMatrix(Xtrain)
+	libdrynxencoding.Standardise(X)
+	Xtrain = libdrynxencoding.MatrixToFloat2D(X)
 	Xtrain = libdrynxencoding.Augment(Xtrain)
 	// data providers part + servers part + client part collapsed here for testing
 
@@ -149,12 +148,12 @@ func predict(Xtrain [][]float64, ytrain []int64,
 
 	// save the original training set in order to standardise the testing set
 	XtrainSaved := Xtrain
+	matrixXTrainSaved := libdrynxencoding.Float2DToMatrix(Xtrain)
 
 	// data pre-processing
-	Xtrain, err := libdrynxencoding.Standardise(Xtrain)
-	if err != nil {
-		return 0, 0, 0, 0, 0, err
-	}
+	matrixXTrain := libdrynxencoding.Float2DToMatrix(Xtrain)
+	libdrynxencoding.Standardise(matrixXTrain)
+	Xtrain = libdrynxencoding.MatrixToFloat2D(matrixXTrain)
 	Xtrain = libdrynxencoding.Augment(Xtrain)
 
 	// the client's (public key, private key) pair
@@ -185,8 +184,11 @@ func predict(Xtrain [][]float64, ytrain []int64,
 
 	// prediction computation
 	// standardise the testing set using the mean and standard deviation of the training set
+	var err error
 	if preprocessing == PREPROCESSING_STANDARDIZE {
-		Xtest, err = libdrynxencoding.StandardiseWithTrain(Xtest, XtrainSaved)
+		matrixXTest := libdrynxencoding.Float2DToMatrix(Xtest)
+		libdrynxencoding.StandardiseWithTrain(matrixXTest, matrixXTrainSaved)
+		Xtest = libdrynxencoding.MatrixToFloat2D(matrixXTest)
 	} else if preprocessing == PREPROCESSING_NORMALIZE {
 		Xtest, err = libdrynxencoding.NormalizeWith(Xtest, XtrainSaved)
 	}

@@ -996,20 +996,18 @@ func performanceEvaluation(weights []float64, XTest [][]float64, yTest []int64, 
 	float64, float64, float64, float64, error) {
 	fmt.Println("weights:", weights)
 
+	X := libdrynxencoding.Float2DToMatrix(XTest)
 	if means != nil && standardDeviations != nil &&
 		len(means) > 0 && len(standardDeviations) > 0 {
 		// using global means and standard deviations, if given
 		log.Lvl1("Standardising the testing set with global means and standard deviations...")
-		XTest = libdrynxencoding.StandardiseWith(XTest, means, standardDeviations)
+		libdrynxencoding.StandardiseWith(X, means, standardDeviations)
 	} else {
 		// using local means and standard deviations, if not given
 		log.Lvl1("Standardising the testing set with local means and standard deviations...")
-		var err error
-		XTest, err = libdrynxencoding.Standardise(XTest)
-		if err != nil {
-			return 0, 0, 0, 0, 0, err
-		}
+		libdrynxencoding.Standardise(X)
 	}
+	XTest = libdrynxencoding.MatrixToFloat2D(X)
 
 	predictions := make([]int64, len(XTest))
 	predictionsFloat := make([]float64, len(XTest))

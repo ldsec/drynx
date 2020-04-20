@@ -59,20 +59,18 @@ func EncodeLogisticRegression(xData [][]float64, yData []int64, lrParameters lib
 		y := Float64ToInt641DArray(GetColumn(data, labelColumn))*/
 
 		// standardise the data
-		var XStandardised [][]float64
+		X := Float2DToMatrix(xData)
 		if lrParameters.Means != nil && lrParameters.StandardDeviations != nil &&
 			len(lrParameters.Means) > 0 && len(lrParameters.StandardDeviations) > 0 {
 			// using global means and standard deviations, if given
 			log.Lvl2("Standardising the training set with global means and standard deviations...")
-			XStandardised = StandardiseWith(xData, lrParameters.Means, lrParameters.StandardDeviations)
+			StandardiseWith(X, lrParameters.Means, lrParameters.StandardDeviations)
 		} else {
 			// using local means and standard deviations, if not given
 			log.Lvl2("Standardising the training set with local means and standard deviations...")
-			var err error
-			if XStandardised, err = Standardise(xData); err != nil {
-				return nil, nil, err
-			}
+			Standardise(X)
 		}
+		XStandardised := MatrixToFloat2D(X)
 
 		// add an all 1s column to the data (offset term)
 		XStandardised = Augment(XStandardised)
@@ -141,20 +139,18 @@ func EncodeLogisticRegressionWithProofs(xData [][]float64, yData []int64, lrPara
 		y := Float64ToInt641DArray(GetColumn(data, labelColumn))*/
 
 		// standardise the data
-		var XStandardised [][]float64
+		X := Float2DToMatrix(xData)
 		if lrParameters.Means != nil && lrParameters.StandardDeviations != nil &&
 			len(lrParameters.Means) > 0 && len(lrParameters.StandardDeviations) > 0 {
 			// using global means and standard deviations, if given
 			log.Lvl2("Standardising the training set with global means and standard deviations...")
-			XStandardised = StandardiseWith(xData, lrParameters.Means, lrParameters.StandardDeviations)
+			StandardiseWith(X, lrParameters.Means, lrParameters.StandardDeviations)
 		} else {
 			// using local means and standard deviations, if not given
 			log.Lvl2("Standardising the training set with local means and standard deviations...")
-			var err error
-			if XStandardised, err = Standardise(xData); err != nil {
-				return nil, nil, nil, err
-			}
+			Standardise(X)
 		}
+		XStandardised := MatrixToFloat2D(X)
 
 		// add an all 1s column to the data (offset term)
 		XStandardised = Augment(XStandardised)
@@ -939,41 +935,23 @@ func ComputeStandardDeviations(matrix mat.Matrix) []float64 {
 
 // Standardise returns the standardized 2D array version of the given 2D array
 // i.e. x' = (x - mean) / standard deviation
-func Standardise(matrix [][]float64) ([][]float64, error) {
-	return StandardiseWithTrain(matrix, matrix)
+func Standardise(matrix *mat.Dense) {
+	StandardiseWithTrain(matrix, matrix)
 }
 
 // StandardiseWithTrain standardises a matrix with the given matrix means and standard deviations
-func StandardiseWithTrain(matrixTest, matrixTrain [][]float64) ([][]float64, error) {
-	sds := ComputeStandardDeviations(Float2DToMatrix(matrixTrain))
-	means := ComputeMeans(Float2DToMatrix(matrixTrain))
+func StandardiseWithTrain(matrixTest *mat.Dense, matrixTrain mat.Matrix) {
+	sds := ComputeStandardDeviations(matrixTrain)
+	means := ComputeMeans(matrixTrain)
 
-	standardisedMatrix := make([][]float64, len(matrixTest))
-	for i, record := range matrixTest {
-		standardisedMatrix[i] = make([]float64, len(record))
-		for j, v := range record {
-			standardisedMatrix[i][j] = float64(v-means[j]) / sds[j]
-		}
-	}
-
-	return standardisedMatrix, nil
+	StandardiseWith(matrixTest, means, sds)
 }
 
 // StandardiseWith standardises a dataset column-wise using the given means and standard deviations
-func StandardiseWith(data [][]float64, means []float64, standardDeviations []float64) [][]float64 {
-
-	nbFeatures := len(data[0])
-
-	standardisedData := make([][]float64, len(data))
-
-	for record := 0; record < len(data); record++ {
-		standardisedData[record] = make([]float64, nbFeatures)
-		for i := 0; i < nbFeatures; i++ {
-			standardisedData[record][i] = float64(data[record][i]-means[i]) / standardDeviations[i]
-		}
-	}
-
-	return standardisedData
+func StandardiseWith(matrix *mat.Dense, means []float64, standardDeviations []float64) {
+	matrix.Apply(func(i, j int, v float64) float64 {
+		return float64(v-means[j]) / standardDeviations[j]
+	}, matrix)
 }
 
 // Normalize normalises a matrix column-wise
