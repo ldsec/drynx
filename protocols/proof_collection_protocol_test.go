@@ -128,7 +128,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			rootInstance, err := local.CreateProtocol("ProofCollectionTest", tree)
 			if err != nil {
-				t.Fatal("Couldn't start protocol:", err)
+				log.Fatal("Couldn't start protocol:", err)
 			}
 			protocol := rootInstance.(*ProofCollectionProtocol)
 
@@ -156,7 +156,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			rootInstance, err := local.CreateProtocol("ProofCollectionTest", tree)
 			if err != nil {
-				t.Fatal("Couldn't start protocol:", err)
+				log.Fatal("Couldn't start protocol:", err)
 			}
 			protocol := rootInstance.(*ProofCollectionProtocol)
 
@@ -185,7 +185,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			rootInstance, err := local.CreateProtocol("ProofCollectionTest", tree)
 			if err != nil {
-				t.Fatal("Couldn't start protocol:", err)
+				log.Fatal("Couldn't start protocol:", err)
 			}
 			protocol := rootInstance.(*ProofCollectionProtocol)
 
@@ -214,7 +214,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			rootInstance, err := local.CreateProtocol("ProofCollectionTest", tree)
 			if err != nil {
-				t.Fatal("Couldn't start protocol:", err)
+				log.Fatal("Couldn't start protocol:", err)
 			}
 			protocol := rootInstance.(*ProofCollectionProtocol)
 
@@ -242,7 +242,7 @@ func TestProofCollectionProtocol(t *testing.T) {
 
 			rootInstance, err := local.CreateProtocol("ProofCollectionTest", tree)
 			if err != nil {
-				t.Fatal("Couldn't start protocol:", err)
+				log.Fatal("Couldn't start protocol:", err)
 			}
 			protocol := rootInstance.(*ProofCollectionProtocol)
 

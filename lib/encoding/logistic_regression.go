@@ -1282,7 +1282,7 @@ func LoadData(dataset string, filename string) ([][]float64, []int64, error) {
 
 	if dataset == "PCS" {
 		// remove the index column and the two last columns (unused)
-		for _, i := range []uint{11, 10, 0} {
+		for _, i := range []uint{10, 9, 0} {
 			var err error
 			if data, err = RemoveColumn(data, i); err != nil {
 				return nil, nil, err

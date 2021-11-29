@@ -430,15 +430,13 @@ func (s *ServiceDrynx) HandleSurveyQuery(recq *libdrynx.SurveyQuery) (network.Me
 
 // NewProtocol creates a protocol instance executed by all nodes
 func (s *ServiceDrynx) NewProtocol(tn *onet.TreeNodeInstance, conf *onet.GenericConfig) (onet.ProtocolInstance, error) {
-	err := tn.SetConfig(conf)
-	if err != nil {
-		return nil, err
-	}
+	// ignore config twice error
+	tn.SetConfig(conf)
 
 	var pi onet.ProtocolInstance
+	var err error
 
 	target := string(conf.Data)
-
 	switch tn.ProtocolName() {
 	case protocols.ProofCollectionProtocolName:
 		return s.NewProofCollectionProtocolInstance(tn, target)
@@ -679,8 +677,7 @@ func (s *ServiceDrynx) StartProtocol(name string, targetSurvey string) (onet.Pro
 	var tn *onet.TreeNodeInstance
 	tn = s.NewTreeNodeInstance(tree, tree.Root, name)
 
-	conf := onet.GenericConfig{Data: []byte(string(targetSurvey))}
-
+	conf := onet.GenericConfig{Data: []byte(targetSurvey)}
 	pi, err := s.NewProtocol(tn, &conf)
 	if err != nil {
 		log.Fatal("Error running" + name)

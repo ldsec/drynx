@@ -778,7 +778,7 @@ func getParametersForPCS() (MinimisationParameters, float64, preprocessing, stri
 	preprocessing := PREPROCESSING_STANDARDIZE
 	ratio := 0.8
 
-	initialWeights := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+	initialWeights := []float64{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
 
 	// floating-point precision when converting from float to int and later back to float
 	precisionApproxCoefficients := 1e0
