@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/ldsec/drynx.svg?branch=master)](https://travis-ci.org/ldsec/drynx) [![Go Report Card](https://goreportcard.com/badge/github.com/ldsec/drynx)](https://goreportcard.com/report/github.com/ldsec/drynx) [![Coverage Status](https://coveralls.io/repos/github/ldsec/drynx/badge.svg?branch=master)](https://coveralls.io/github/ldsec/drynx?branch=master)
+[![Build Status](https://travis-ci.org/ldsec/drynx.svg?branch=master)](https://travis-ci.org/ldsec/drynx) [![Go Report Card](https://goreportcard.com/badge/github.com/ldsec/drynx)](https://goreportcard.com/report/github.com/ldsec/drynx) [![Coverage Status]
+
 # Drynx
 Drynx is a library for simulating a privacy-preserving and verifiable data sharing/querying tool. It offers a series of independent protocols that when combined offer a verifiably-secure and safe way to compute statistics and train basic machine learning models on distributed sensitive data (e.g., medical data).
 
