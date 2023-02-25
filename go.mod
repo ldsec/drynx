@@ -19,7 +19,7 @@ require (
 	go.dedis.ch/kyber/v3 v3.0.13
 	go.dedis.ch/onet/v3 v3.2.9
 	go.etcd.io/bbolt v1.3.4
-	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37
+	golang.org/x/crypto v0.1.0
 	gonum.org/v1/gonum v0.6.0
 	gopkg.in/satori/go.uuid.v1 v1.2.0
 )
